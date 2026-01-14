@@ -1,19 +1,23 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .rakdeel import Rakdeel
 
 
 class Rak(BaseModel):
-    """Rak"""
+    """Rak.
+
+    Attributes:
+        rakdelen: Lijst van rakdelen waaruit het rak is opgebouwd.
+        raknaam: Naam of code van het rak.
+        totale_lengte_m: Totale lengte van het rak in meters.
+        opmerkingen: Eventuele aanvullende opmerkingen over het gehele rak.
+    """
 
     # Elk rakdeel heeft een eigen constructietype.
-    rakdelen: list[Rakdeel] = Field(description="Lijst van rakdelen waaruit het rak is opgebouwd.")
+    rakdelen: list[Rakdeel]
     # Te vinden in de rapporttitel, projectgegevens of paragraaf 2.2.1 (paspoortgegevens).
-    raknaam: str = Field(description="Naam of code van het rak.")
+    raknaam: str
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
-    totale_lengte_m: float = Field(description="Totale lengte van het rak in meters.")
+    totale_lengte_m: float
     # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
-    opmerkingen: str | None = Field(
-        default=None,
-        description="Eventuele aanvullende opmerkingen over het gehele rak.",
-    )
+    opmerkingen: str | None = None
