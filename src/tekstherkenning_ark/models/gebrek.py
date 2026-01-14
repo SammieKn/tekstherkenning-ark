@@ -16,7 +16,7 @@ class Gebrek(BaseModel):
 
 
 class Scheur(Gebrek):
-    """Scheur (crack).
+    """Scheur (crack). 
 
     Attributes:
         lengte_cm: Lengte van de scheur in centimeters.
