@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from tekstherkenning_ark.enums import PaalMateriaal
+
 from .aansluiting_status import AansluitingStatus
 from .gebrek import Gebrek
 
@@ -23,6 +25,8 @@ class Paal(BaseModel):
     gebreken: list[Gebrek]
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
+    paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
     aansluiting_status: AansluitingStatus | None = None
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'.
@@ -35,3 +39,5 @@ class Paal(BaseModel):
     opmerkingen: str | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
+    scheefstand: bool | None = None
+    materiaal: PaalMateriaal | None = None

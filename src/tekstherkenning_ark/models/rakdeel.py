@@ -22,6 +22,7 @@ class Rakdeel(BaseModel):
     bovenbouw: Bovenbouw
     # Te vinden in paragraaf 5.x, eerste alinea.
     constructietype: str
+
     gebreken: list[Gebrek]
     # Te vinden in paragraaf 5.x, eerste zin.
     lengte_m: float
