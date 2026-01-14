@@ -9,19 +9,20 @@
 from pathlib import Path
 
 from src.tekstherkenning_ark.parsed_pdf import ParsedPDF
+from tekstherkenning_ark.constants import DATA_DIR
 
-PDF_PATH = Path("./data/HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf")
+TEST_PDF_PATH = DATA_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
 
 
 def main():
     """Main function to process documents using Azure Document Intelligence."""
-    print(f"\nProcessing: {PDF_PATH.name}")
+    print(f"\nProcessing: {TEST_PDF_PATH.name}")
 
     # Create ParsedPDF instance from PDF file
-    parsed_pdf = ParsedPDF.from_pdf(PDF_PATH, use_cache=True)
+    parsed_pdf = ParsedPDF.from_pdf(TEST_PDF_PATH, use_cache=True)
 
     # Print results to console
-    parsed_pdf.print()
+    # parsed_pdf.print()
 
     # Save results to JSON
     parsed_pdf.to_json()
