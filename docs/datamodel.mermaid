@@ -1,0 +1,161 @@
+classDiagram
+%% Optional indicated by '?' ; collections shown as list~T~
+
+class AansluitingStatus {
+  <<enumeration>>
+  GOED
+  NIET_MEETBAAR
+  SLECHT
+}
+
+class Gebrek {
+  locatie_meter: int
+  codering: str
+  omschrijving: str
+}
+
+class Scheur {
+  lengte_cm: int
+  scheurwijdte_mm: int
+}
+
+class GrondVoerendGat {
+  afmetingen_cm: int
+}
+
+class BuikInWand {
+  uitbuiging_cm: int
+}
+
+class Scheefstand {
+  hoek_graden: int
+}
+
+class LokaalVerdwenenMetselwerk {
+  afmetingen_cm: int
+}
+
+class Metselwerk {
+  gebreken: list~Gebrek~
+  is_banden_aanwezig: bool?
+  dikte_cm: float?
+  hoogte_cm: float?
+  opmerkingen: str?
+  type_metselwerk: str?
+}
+
+class Bovenbouw {
+  metselwerk: Metselwerk
+  is_buik_in_wand_aanwezig: bool?
+  is_grondvoerend_gat_aanwezig: bool?
+  is_lokaal_verdwenen_metselwerk: bool?
+  materiaal: str?
+  maximaal_aantal_scheuren_per_10_m: int?
+  maximale_scheurwijdte_mm: float?
+  opmerkingen: str?
+  percentage_niet_functionerend_schuifhout: float?
+  is_scheefstand_aanwezig: bool?
+}
+
+class Kesp {
+  breedte_cm: int
+  gebreken: list~Gebrek~
+  hoogte_cm: int
+  kespnummer: str
+  is_aantasting: bool?
+  is_beschadigd: bool?
+  is_gebroken: bool?
+  hoek_tov_lengte_as_graden: int?
+  indrukking_paal_in_kesp_cm: int?
+  lengte_uitstekend_deel_cm: int?
+  mate_inknijping_cm: int?
+  opmerkingen: str?
+  is_opsluitklos_aanwezig: bool?
+  is_vervorming: bool?
+}
+
+class Onderloopsheidscherm {
+  is_aanwezig: bool
+  gebrek: Gebrek
+  is_beschadigd: bool?
+  is_meerdere_locaties: bool?
+  opmerkingen: str?
+}
+
+class Paal {
+  gebreken: list~Gebrek~
+  paalnummer: str
+  aansluiting_status: AansluitingStatus?
+  houtmonsters: list~dict~?
+  is_negatief_schoor: bool?
+  is_onderzocht: bool?
+  opmerkingen: str?
+  schoorstand_graden: float?
+}
+
+class PaalRij {
+  paalrij_nummer: str
+  palen: list~Paal~
+}
+
+class Vloer {
+  is_beschadigd: bool
+  gebreken: list~Gebrek~
+  materiaal: str
+  bovenkant_deksteen_cm_tov_nap: float?
+  bovenkant_vloer_cm_tov_nap: float?
+  is_meerdere_locaties: bool?
+  opmerkingen: str?
+}
+
+class Onderbouw {
+  kespen: list~Kesp~
+  onderloopsheidscherm: Onderloopsheidscherm
+  paalrijen: list~PaalRij~
+  vloer: Vloer
+  materiaal: str?
+  opmerkingen: str?
+}
+
+class Rakdeel {
+  bovenbouw: Bovenbouw
+  constructietype: str
+  gebreken: list~Gebrek~
+  lengte_m: float
+  onderbouw: Onderbouw
+  rakdeel_id: str
+  bouwjaar: int?
+  opmerkingen: str?
+}
+
+class Rak {
+  rakdelen: list~Rakdeel~
+  raknaam: str
+  totale_lengte_m: float
+  opmerkingen: str?
+}
+
+%% Inheritance relationships
+Scheur --|> Gebrek
+GrondVoerendGat --|> Gebrek
+BuikInWand --|> Gebrek
+Scheefstand --|> Gebrek
+LokaalVerdwenenMetselwerk --|> Gebrek
+
+%% Composition relationships
+Metselwerk *-- "0..*" Gebrek : gebreken
+Bovenbouw *-- Metselwerk : metselwerk
+Kesp *-- "0..*" Gebrek : gebreken
+Onderloopsheidscherm *-- Gebrek : gebrek
+Paal *-- "0..*" Gebrek : gebreken
+Paal --> AansluitingStatus : aansluiting_status
+PaalRij *-- "1..*" Paal : palen
+Vloer *-- "0..*" Gebrek : gebreken
+Onderbouw *-- "0..*" Kesp : kespen
+Onderbouw *-- Onderloopsheidscherm : onderloopsheidscherm
+Onderbouw *-- "1..*" PaalRij : paalrijen
+Onderbouw *-- Vloer : vloer
+Rakdeel *-- Bovenbouw : bovenbouw
+Rakdeel *-- Onderbouw : onderbouw
+Rakdeel *-- "0..*" Gebrek : gebreken
+Rak *-- "1..*" Rakdeel : rakdelen
