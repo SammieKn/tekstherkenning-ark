@@ -4,12 +4,18 @@ version = "0.1.0"
 description = "Deze tool ondersteunt het ARK-proces (Amsterdamse Risicobeoordeling Kademuren) van de Gemeente Amsterdam door duikinspecties automatisch te transformeren naar gestructureerde data. Duikinspectierapporten van Nebest worden ingelezen en omgezet naar een standaard datastructuur die direct gebruikt kan worden in de [ARK-tool](https://github.com/ic144/ark-automatiseren)."
 readme = "README.md"
 authors = [
-    { name = "Matthias Tavasszy", email = "matthias.tavasszy@witteveenbos.com" }
+    { name = "Matthias Tavasszy", email = "matthias.tavasszy@witteveenbos.com" },
     { name = "Sammie Knoppert", email = "sammie.knoppert@arcadis.com" }
-
 ]
 requires-python = ">=3.13"
 dependencies = []
+
+[tool.black]
+line-length = 119
+
+[tool.isort]
+profile = "black"
+line_length = 119
 
 [build-system]
 requires = ["uv_build>=0.9.17,<0.10.0"]
