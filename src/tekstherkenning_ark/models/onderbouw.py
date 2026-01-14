@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from tekstherkenning_ark.enums import Materiaal
 from tekstherkenning_ark.models.paal import Paal
 
 from .kesp import Kesp
@@ -24,5 +25,6 @@ class Onderbouw(BaseModel):
     # Elke paalrij bevat de bijbehorende palen. Te vinden in de meettabel funderingspalen (Bijlage 3).
     palen: list[Paal]
     vloer: Vloer
+
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
-    materiaal: str | None = None
+    materiaal: Materiaal | None = None

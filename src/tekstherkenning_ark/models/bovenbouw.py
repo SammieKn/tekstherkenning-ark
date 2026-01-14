@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from tekstherkenning_ark.enums import BovenbouwMateriaal
+
 from .metselwerk import Metselwerk
 
 
@@ -27,7 +29,7 @@ class Bovenbouw(BaseModel):
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'GBx' met omschrijving 'lokaal verdwenen metselwerk'.
     is_lokaal_verdwenen_metselwerk: bool | None = None
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
-    materiaal: str | None = None
+    materiaal: BovenbouwMateriaal | None = None
     # Te bepalen uit de gebrekentabel (paragraaf 2.3 of 5.3.3) door het aantal scheuren te tellen en te relateren aan de lengte van het rakdeel.
     maximaal_aantal_scheuren_per_10_m: int | None = None
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3), kolom 'Omschrijving', vaak als 'SW'.

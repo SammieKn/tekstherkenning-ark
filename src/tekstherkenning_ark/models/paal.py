@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from tekstherkenning_ark.enums import PaalMateriaal
+from tekstherkenning_ark.enums import Materiaal
 
 from .aansluiting_status import AansluitingStatus
 from .gebrek import Gebrek
@@ -40,4 +40,4 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
-    materiaal: PaalMateriaal | None = None
+    materiaal: Materiaal | None = None

@@ -21,6 +21,7 @@ class Kesp(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over de kesp.
         is_opsluitklos_aanwezig: Indicatie of een opsluitklos aanwezig is.
         is_vervorming: Indicatie of er vervorming van de kesp is vastgesteld.
+        paalrij_nr: Nummer van de paalrij waartoe de kesp behoort.
     """
 
     # Te vinden in Bijlage 3, kolom 'Breedte'.
@@ -50,3 +51,6 @@ class Kesp(BaseModel):
     is_opsluitklos_aanwezig: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Vervormingen'.
     is_vervorming: bool | None = None
+
+    # TBD waar te vinden
+    paalrij_nr: str | None = None
