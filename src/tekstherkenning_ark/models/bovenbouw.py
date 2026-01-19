@@ -1,8 +1,7 @@
 from pydantic import BaseModel
 
 from tekstherkenning_ark.enums import BovenbouwMateriaal
-
-from .metselwerk import Metselwerk
+from tekstherkenning_ark.models.metselwerk import Metselwerk
 
 
 class Bovenbouw(BaseModel):
@@ -19,6 +18,7 @@ class Bovenbouw(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over de bovenbouw.
         percentage_niet_functionerend_schuifhout: Percentage van het schuifhout dat niet functioneert.
         is_scheefstand_aanwezig: Indicatie of er scheefstand van de wand aanwezig is.
+        bovenkant_deksteen_cm_tov_nap: Hoogte van de bovenkant van de deksteen ten opzichte van NAP, in centimeters.
     """
 
     metselwerk: Metselwerk

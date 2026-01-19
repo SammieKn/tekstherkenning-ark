@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .rakdeel import Rakdeel
+from tekstherkenning_ark.models.rakdeel import Rakdeel
 
 
 class Rak(BaseModel):

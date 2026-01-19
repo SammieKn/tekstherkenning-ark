@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import Gebrek
 
 
 class Vloer(BaseModel):
@@ -10,7 +10,6 @@ class Vloer(BaseModel):
         is_beschadigd: Indicatie of de vloer beschadigd of kierend is.
         gebreken: Lijst van gebreken in de vloer.
         materiaal: Materiaal van de vloer (bijvoorbeeld hout, beton).
-        bovenkant_deksteen_cm_tov_nap: Hoogte van de bovenkant van de deksteen ten opzichte van NAP, in centimeters.
         bovenkant_vloer_cm_tov_nap: Hoogte van de bovenkant van de vloer ten opzichte van NAP, in centimeters.
         is_meerdere_locaties: Indicatie of de schade aan de vloer op meerdere locaties voorkomt.
         opmerkingen: Eventuele aanvullende opmerkingen over de vloer.

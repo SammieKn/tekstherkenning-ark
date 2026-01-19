@@ -1,11 +1,10 @@
 from pydantic import BaseModel
 
 from tekstherkenning_ark.enums import Materiaal
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
-
-from .kesp import Kesp
-from .onderloopsheidscherm import Onderloopsheidscherm
-from .vloer import Vloer
+from tekstherkenning_ark.models.vloer import Vloer
 
 
 class Onderbouw(BaseModel):
@@ -14,7 +13,7 @@ class Onderbouw(BaseModel):
     Attributes:
         kespen: Lijst van onderzochte kespen onder het rakdeel.
         onderloopsheidscherm: Onderloopsheidscherm van de onderbouw.
-        paalrijen: Lijst van paalrijen onder het rakdeel.
+        palen: Lijst van palen onder het rakdeel.
         vloer: Vloer van de onderbouw.
         materiaal: Materiaal van de onderbouw (bijvoorbeeld hout, beton, staal).
     """

@@ -8,6 +8,22 @@ class AansluitingStatus {
   SLECHT
 }
 
+class Materiaal {
+  <<enumeration>>
+  HOUT
+  BETON
+  STAAL
+}
+
+class BovenbouwMateriaal {
+  <<enumeration>>
+  MESTELWERK
+  BASALT
+  BETON_MESTELWERK
+  BETON_BASALT
+  BETON
+}
+
 class Gebrek {
   locatie_meter: int
   codering: str
@@ -35,13 +51,21 @@ class LokaalVerdwenenMetselwerk {
   afmetingen_cm: int
 }
 
+class Houtmonster {
+  houtmonster_code: str
+  diameter_paal_ter_hoogte_houtmonster_mm: int?
+  hoogte_onder_nap_cm: int?
+  hoogte_tov_onderzijde_fundering_cm: int?
+  stichtingjaar: int?
+  is_aangetast: bool?
+  is_wankant_aanwezig: bool?
+}
+
 class Metselwerk {
   gebreken: list~Gebrek~
-  is_banden_aanwezig: bool?
   dikte_cm: float?
   hoogte_cm: float?
   opmerkingen: str?
-  type_metselwerk: str?
 }
 
 class Bovenbouw {
@@ -49,29 +73,30 @@ class Bovenbouw {
   is_buik_in_wand_aanwezig: bool?
   is_grondvoerend_gat_aanwezig: bool?
   is_lokaal_verdwenen_metselwerk: bool?
-  materiaal: str?
+  materiaal: BovenbouwMateriaal?
   maximaal_aantal_scheuren_per_10_m: int?
   maximale_scheurwijdte_mm: float?
   opmerkingen: str?
   percentage_niet_functionerend_schuifhout: float?
   is_scheefstand_aanwezig: bool?
+  bovenkant_deksteen_cm_tov_nap: float?
 }
 
 class Kesp {
-  breedte_cm: int
-  gebreken: list~Gebrek~
-  hoogte_cm: int
   kespnummer: str
-  is_aantasting: bool?
-  is_beschadigd: bool?
-  is_gebroken: bool?
+  hoogte_cm: int
+  breedte_cm: int
   hoek_tov_lengte_as_graden: int?
-  indrukking_paal_in_kesp_cm: int?
   lengte_uitstekend_deel_cm: int?
   mate_inknijping_cm: int?
-  opmerkingen: str?
+  indrukking_paal_in_kesp_cm: int?
   is_opsluitklos_aanwezig: bool?
-  is_vervorming: bool?
+  is_opsluitklos_aangetast: bool?
+  is_vervormd: bool?
+  is_aangetast: bool?
+  opmerkingen: str?
+  paalrij_nr: str?
+  gebreken: list~Gebrek~
 }
 
 class Onderloopsheidscherm {
@@ -85,24 +110,21 @@ class Onderloopsheidscherm {
 class Paal {
   gebreken: list~Gebrek~
   paalnummer: str
+  paalrij_nummer: str
   aansluiting_status: AansluitingStatus?
-  houtmonsters: list~dict~?
+  houtmonsters: list~Houtmonster~?
   is_negatief_schoor: bool?
   is_onderzocht: bool?
   opmerkingen: str?
   schoorstand_graden: float?
-}
-
-class PaalRij {
-  paalrij_nummer: str
-  palen: list~Paal~
+  scheefstand: bool?
+  materiaal: Materiaal?
 }
 
 class Vloer {
   is_beschadigd: bool
   gebreken: list~Gebrek~
   materiaal: str
-  bovenkant_deksteen_cm_tov_nap: float?
   bovenkant_vloer_cm_tov_nap: float?
   is_meerdere_locaties: bool?
   opmerkingen: str?
@@ -111,10 +133,9 @@ class Vloer {
 class Onderbouw {
   kespen: list~Kesp~
   onderloopsheidscherm: Onderloopsheidscherm
-  paalrijen: list~PaalRij~
+  palen: list~Paal~
   vloer: Vloer
-  materiaal: str?
-  opmerkingen: str?
+  materiaal: Materiaal?
 }
 
 class Rakdeel {
@@ -149,12 +170,15 @@ Kesp *-- "0..*" Gebrek : gebreken
 Onderloopsheidscherm *-- Gebrek : gebrek
 Paal *-- "0..*" Gebrek : gebreken
 Paal --> AansluitingStatus : aansluiting_status
-PaalRij *-- "1..*" Paal : palen
+Paal --> Materiaal : materiaal
+Paal *-- "0..*" Houtmonster : houtmonsters
 Vloer *-- "0..*" Gebrek : gebreken
 Onderbouw *-- "0..*" Kesp : kespen
 Onderbouw *-- Onderloopsheidscherm : onderloopsheidscherm
-Onderbouw *-- "1..*" PaalRij : paalrijen
+Onderbouw *-- "1..*" Paal : palen
 Onderbouw *-- Vloer : vloer
+Onderbouw --> Materiaal : materiaal
+Bovenbouw --> BovenbouwMateriaal : materiaal
 Rakdeel *-- Bovenbouw : bovenbouw
 Rakdeel *-- Onderbouw : onderbouw
 Rakdeel *-- "0..*" Gebrek : gebreken

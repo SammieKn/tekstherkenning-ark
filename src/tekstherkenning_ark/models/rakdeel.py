@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-from .bovenbouw import Bovenbouw
-from .gebrek import Gebrek
-from .onderbouw import Onderbouw
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.onderbouw import Onderbouw
 
 
 class Rakdeel(BaseModel):
