@@ -24,6 +24,19 @@ class BovenbouwMateriaal {
   BETON
 }
 
+class SchoorStand {
+  <<enumeration>>
+  POSITIEF
+  NEGATIEF
+  NEUTRAAL
+}
+
+class NietBeschikbaar {
+  <<enumeration>>
+  NIET_VAN_TOEPASSING
+  NIET_MEETBAAR
+}
+
 class Gebrek {
   locatie_meter: int
   codering: str
@@ -109,16 +122,28 @@ class Onderloopsheidscherm {
 
 class Paal {
   gebreken: list~Gebrek~
-  paalnummer: str
   paalrij_nummer: str
+  paalnummer: str
   aansluiting_status: AansluitingStatus?
-  houtmonsters: list~Houtmonster~?
   is_negatief_schoor: bool?
   is_onderzocht: bool?
   opmerkingen: str?
   schoorstand_graden: float?
   scheefstand: bool?
   materiaal: Materiaal?
+  diameter_haaks: int | NietBeschikbaar?
+  diameter_parallel: int | NietBeschikbaar?
+  diameter_gemiddeld: int | NietBeschikbaar?
+  afstand_hoh: int | NietBeschikbaar?
+  schoor_graden: int | NietBeschikbaar?
+  schoor_richting: SchoorStand | NietBeschikbaar?
+  afstand_frontwand_cm: int | NietBeschikbaar?
+  is_scheefstand: bool | NietBeschikbaar?
+  is_paalbreak: bool | NietBeschikbaar?
+  is_aantasting: bool | NietBeschikbaar?
+  is_juiste_aansluiting: bool | NietBeschikbaar?
+  positionering_aansluiting_cm: int | NietBeschikbaar?
+  houtmonsters: list~Houtmonster~?
 }
 
 class Vloer {
@@ -171,6 +196,7 @@ Onderloopsheidscherm *-- Gebrek : gebrek
 Paal *-- "0..*" Gebrek : gebreken
 Paal --> AansluitingStatus : aansluiting_status
 Paal --> Materiaal : materiaal
+Paal --> SchoorStand : schoor_richting
 Paal *-- "0..*" Houtmonster : houtmonsters
 Vloer *-- "0..*" Gebrek : gebreken
 Onderbouw *-- "0..*" Kesp : kespen

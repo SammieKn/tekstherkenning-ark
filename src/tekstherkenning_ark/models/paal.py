@@ -9,34 +9,31 @@ from tekstherkenning_ark.models.houtmonster import Houtmonster
 
 class Paal(BaseModel):
     """Paal (Foundation Pile).
-    `
-        Attributes:
-            gebreken: Lijst van gebreken gevonden in de paal.
-            paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
-            paalnummer: Nummer van de paal binnen de paalrij.
-            paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
-            aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
-            houtmonsters: Lijst van houtmonsters genomen uit deze paal.
-            is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
-            is_onderzocht: Indicatie of de paal is onderzocht.
-            opmerkingen: Eventuele opmerkingen over de paal.
-            schoorstand_graden: Schoorstand van de paal in graden.
-            scheefstand: Indicatie of de paal scheefstand heeft.
-            materiaal: Materiaal van de paal.
-            diameter_haaks: Diameter haaks op de gevel in mm.
-            diameter_parallel: Diameter parallel aan de gevel in mm.
-            diameter_gemiddeld: Gemiddelde diameter in mm.
-            afstand_hoh: Hart-op-hart afstand tussen palen in mm.
-            schoor_graden: Schoorstand van de paal in graden.
-            schoor_richting: Richting van de schoorstand (PNV/PNA/LR).
-            afstand_frontwand_cm: Afstand tot de frontwand in cm.
-            is_scheefstand: Indicatie of er scheefstand is geconstateerd.
-            is_paalbreak: Indicatie of er paalbreuk is geconstateerd.
-            is_aantasting: Indicatie of er aantasting is geconstateerd.
-            is_juiste_aansluiting: Indicatie of de aansluiting correct is.
-            positionering_aansluiting_cm: Positionering van de aansluiting in cm.
-            opmerkingen: Eventuele opmerkingen over de paal.
-            houtmonsters: Lijst van houtmonsters genomen uit deze paal.
+
+    Attributes:
+        gebreken: Lijst van gebreken gevonden in de paal.
+        paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
+        paalnummer: Nummer van de paal binnen de paalrij.
+        aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
+        is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
+        is_onderzocht: Indicatie of de paal is onderzocht.
+        opmerkingen: Eventuele opmerkingen over de paal.
+        schoorstand_graden: Schoorstand van de paal in graden.
+        scheefstand: Indicatie of de paal scheefstand heeft.
+        materiaal: Materiaal van de paal.
+        diameter_haaks: Diameter haaks op de gevel in mm.
+        diameter_parallel: Diameter parallel aan de gevel in mm.
+        diameter_gemiddeld: Gemiddelde diameter in mm.
+        afstand_hoh: Hart-op-hart afstand tussen palen in mm.
+        schoor_graden: Schoorstand van de paal in graden.
+        schoor_richting: Richting van de schoorstand (PNV/PNA/LR).
+        afstand_frontwand_cm: Afstand tot de frontwand in cm.
+        is_scheefstand: Indicatie of er scheefstand is geconstateerd.
+        is_paalbreak: Indicatie of er paalbreuk is geconstateerd.
+        is_aantasting: Indicatie of er aantasting is geconstateerd.
+        is_juiste_aansluiting: Indicatie of de aansluiting correct is.
+        positionering_aansluiting_cm: Positionering van de aansluiting in cm.
+        houtmonsters: Lijst van houtmonsters genomen uit deze paal.
     """
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
