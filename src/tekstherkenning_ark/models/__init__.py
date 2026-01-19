@@ -8,6 +8,7 @@ from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.vloer import Vloer
+from tekstherkenning_ark.models.houtmonster import Houtmonster
 
 __all__ = [
     "Bovenbouw",
@@ -20,4 +21,5 @@ __all__ = [
     "Rak",
     "Rakdeel",
     "Vloer",
+    "Houtmonster",
 ]
