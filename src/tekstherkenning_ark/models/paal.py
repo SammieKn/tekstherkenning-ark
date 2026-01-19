@@ -11,6 +11,7 @@ class Paal(BaseModel):
 
     Attributes:
         gebreken: Lijst van gebreken in de paal.
+        paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
         paalnummer: Nummer van de paal binnen de paalrij.
         aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
@@ -19,8 +20,10 @@ class Paal(BaseModel):
         opmerkingen: Eventuele opmerkingen over de paal.
         schoorstand_graden: Schoorstand van de paal in graden.
     """
-
+    
     gebreken: list[Gebrek]
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
+    paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
