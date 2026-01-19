@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from .kesp import Kesp
 from .onderloopsheidscherm import Onderloopsheidscherm
-from .paalrij import PaalRij
+from .paal import Paal
 from .vloer import Vloer
 
 
@@ -12,7 +12,7 @@ class Onderbouw(BaseModel):
     Attributes:
         kespen: Lijst van onderzochte kespen onder het rakdeel.
         onderloopsheidscherm: Onderloopsheidscherm van de onderbouw.
-        paalrijen: Lijst van paalrijen onder het rakdeel.
+        palen: Lijst van palen onder het rakdeel.
         vloer: Vloer van de onderbouw.
         materiaal: Materiaal van de onderbouw (bijvoorbeeld hout, beton, staal).
         opmerkingen: Eventuele aanvullende opmerkingen over de onderbouw.
