@@ -1,10 +1,9 @@
-from typing import Any
+from typing import Any, Union
 
 from pydantic import BaseModel
 
-from .aansluiting_status import AansluitingStatus
-from .gebrek import Gebrek
-
+from .gebrek import Gebrek, Scheefstand
+from .enums import SchoorStand, NietBeschikbaar
 
 class Paal(BaseModel):
     """Paal.
@@ -19,8 +18,10 @@ class Paal(BaseModel):
         opmerkingen: Eventuele opmerkingen over de paal.
         schoorstand_graden: Schoorstand van de paal in graden.
     """
-
-    gebreken: list[Gebrek]
+    # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
+    gebreken: list[Union[Gebrek, Scheefstand]] = []
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
+    paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
