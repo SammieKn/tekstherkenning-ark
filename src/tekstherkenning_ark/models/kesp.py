@@ -24,33 +24,32 @@ class Kesp(BaseModel):
         paalrij_nr: Nummer van de paalrij waartoe de kesp behoort.
     """
 
-    # Te vinden in Bijlage 3, kolom 'Breedte'.
-    breedte_cm: int
-    gebreken: list[Gebrek]
-    # Te vinden in Bijlage 3, kolom 'Hoogte'.
-    hoogte_cm: int
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.
     kespnummer: str
-    # Te vinden in Bijlage 3, kolom 'Aantasting'.
-    is_aantasting: bool | None = None
-    # Te vinden in de gebrekentabel, kolom 'Schades' of uit de tekst in paragraaf 2.3.
-    is_beschadigd: bool | None = None
-    # Te vinden in de gebrekentabel, kolom 'Schades' of uit de tekst in paragraaf 2.3.
-    is_gebroken: bool | None = None
+    # Te vinden in Bijlage 3, kolom 'Hoogte'.
+    hoogte_cm: int
+    # Te vinden in Bijlage 3, kolom 'Breedte'.
+    breedte_cm: int
     # Te vinden in Bijlage 3, kolom 'Hoek t.o.v. lengte-as frontwand'.
     hoek_tov_lengte_as_graden: int | None = None
-    # Te vinden in Bijlage 3, kolom 'Indrukking van de funderingspaal in de kesp'.
-    indrukking_paal_in_kesp_cm: int | None = None
     # Te vinden in Bijlage 3, kolom 'Lengte uitstekende deel t.o.v. voorzijde frontwand'.
     lengte_uitstekend_deel_cm: int | None = None
     # Te vinden in Bijlage 3, kolom 'Mate van inknijping t.o.v. oorspronkelijke staat'.
     mate_inknijping_cm: int | None = None
-    # Te vinden in Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str | None = None
+    # Te vinden in Bijlage 3, kolom 'Indrukking van de funderingspaal in de kesp'.
+    indrukking_paal_in_kesp_cm: int | None = None
     # Te vinden in Bijlage 3, kolom 'Opsluitklos aanwezig?'.
     is_opsluitklos_aanwezig: bool | None = None
-    # Te vinden in Bijlage 3, kolom 'Vervormingen'.
-    is_vervorming: bool | None = None
+    # Te vinden in Bijlage 3, kolom 'Opsluitklos aantasting'.
+    is_opsluitklos_aangetast: bool | None = None
+    # Te vinden in Bijlage 3, kolom 'Schades Vervormingen'.
+    is_vervormd: bool | None = None
+    # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
+    is_aangetast: bool | None = None
+    # Te vinden in Bijlage 3, kolom 'Opmerkingen'.
+    opmerkingen: str | None = None
 
     # TBD waar te vinden
     paalrij_nr: str | None = None
+
+    gebreken: list[Gebrek]
