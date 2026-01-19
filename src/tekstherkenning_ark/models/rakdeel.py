@@ -1,8 +1,7 @@
-from typing import Union
 from pydantic import BaseModel
 
 from .bovenbouw import Bovenbouw
-from .gebrek import Gebrek, Scheefstand, Scheur, GrondVoerendGat, BuikInWand
+from .gebrek import Gebrek
 from .onderbouw import Onderbouw
 
 
@@ -23,7 +22,7 @@ class Rakdeel(BaseModel):
     bovenbouw: Bovenbouw
     # Te vinden in paragraaf 5.x, eerste alinea.
     constructietype: str
-    gebreken: list[Union[Gebrek, Scheefstand, Scheur, GrondVoerendGat, BuikInWand]] = []
+    gebreken: list[Gebrek]
     # Te vinden in paragraaf 5.x, eerste zin.
     lengte_m: float
     onderbouw: Onderbouw

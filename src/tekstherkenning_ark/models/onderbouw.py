@@ -22,7 +22,7 @@ class Onderbouw(BaseModel):
     kespen: list[Kesp]
     onderloopsheidscherm: Onderloopsheidscherm
     # Elke paalrij bevat de bijbehorende palen. Te vinden in de meettabel funderingspalen (Bijlage 3).
-    palen: list[Paal]
+    paalrijen: list[Paal]
     vloer: Vloer
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: str | None = None

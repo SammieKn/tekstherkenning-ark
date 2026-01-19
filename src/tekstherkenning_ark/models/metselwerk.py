@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import List, Union
-from .gebrek import Gebrek, Scheur, GrondVoerendGat, BuikInWand
+
+from .gebrek import Gebrek
 
 
 class Metselwerk(BaseModel):
@@ -17,7 +17,7 @@ class Metselwerk(BaseModel):
         type_metselwerk: Type metselwerk (bijvoorbeeld halfsteens, kruisverband, etc.).
     """
 
-    gebreken: List[Union[Gebrek, Scheur, GrondVoerendGat, BuikInWand]] = []
+    gebreken: list[Gebrek]
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
     is_banden_aanwezig: bool | None = None
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
