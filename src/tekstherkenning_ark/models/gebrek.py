@@ -1,4 +1,3 @@
-from typing import List
 from pydantic import BaseModel
 
 
@@ -10,9 +9,10 @@ class Gebrek(BaseModel):
         codering: Codering van het gebrek.
         omschrijving: Omschrijving van het gebrek.
     """
+
+    locatie_meter: int
     codering: str
     omschrijving: str
-    figuurnummer: List[str]
 
 
 class Scheur(Gebrek):
@@ -37,7 +37,7 @@ class GrondVoerendGat(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: List[int | None]
+    afmetingen_cm: int
 
 
 class BuikInWand(Gebrek):
@@ -48,7 +48,7 @@ class BuikInWand(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    uitbuiking_cm: int
+    uitbuiging_cm: int
 
 
 class Scheefstand(Gebrek):
@@ -70,4 +70,4 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: List[int | None]
+    afmetingen_cm: int
