@@ -1,6 +1,5 @@
 from pydantic import BaseModel
-
-from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheur, GrondVoerendGat, BuikInWand
 
 
 class Metselwerk(BaseModel):
@@ -15,7 +14,7 @@ class Metselwerk(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over het metselwerk.
     """
 
-    gebreken: list[Gebrek]
+    gebreken: list[Gebrek | Scheur | GrondVoerendGat | BuikInWand]] = []
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
     dikte_cm: float | None = None
     # Te vinden in de constructiebeschrijving of doorsnedetekening.

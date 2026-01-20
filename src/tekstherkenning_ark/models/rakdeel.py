@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, GrondVoerendGat, BuikInWand
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 
 
@@ -22,8 +22,7 @@ class Rakdeel(BaseModel):
     bovenbouw: Bovenbouw
     # Te vinden in paragraaf 5.x, eerste alinea.
     constructietype: str
-
-    gebreken: list[Gebrek]
+    gebreken: list[Scheefstand | Scheur | GrondVoerendGat | BuikInWand] = []
     # Te vinden in paragraaf 5.x, eerste zin.
     lengte_m: float
     onderbouw: Onderbouw

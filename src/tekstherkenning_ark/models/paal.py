@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
-from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 
 
@@ -37,7 +37,9 @@ class Paal(BaseModel):
     """
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
-    gebreken: list[Gebrek]
+    gebreken: list[Gebrek | Scheefstand] = []
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
+    paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.

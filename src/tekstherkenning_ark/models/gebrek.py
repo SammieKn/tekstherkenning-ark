@@ -10,10 +10,9 @@ class Gebrek(BaseModel):
         codering: Codering van het gebrek.
         omschrijving: Omschrijving van het gebrek.
     """
-
-    locatie_meter: int
     codering: str
     omschrijving: str
+    figuurnummer: list[str]
 
 
 class Scheur(Gebrek):
@@ -46,7 +45,7 @@ class GrondVoerendGat(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: int
+    afmetingen_cm: list[int | None]
 
 
 class BuikInWand(Gebrek):
@@ -57,7 +56,7 @@ class BuikInWand(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    uitbuiging_cm: int
+    uitbuiking_cm: int
 
 
 class Scheefstand(Gebrek):
@@ -79,4 +78,4 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: int
+    afmetingen_cm: list[int | None]
