@@ -4,6 +4,7 @@ import json
 import os
 import pickle
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 
 from azure.ai.documentintelligence import DocumentIntelligenceClient
@@ -70,7 +71,7 @@ class ParsedPDF:
         with open(pdf_path, "rb") as f:
             document_bytes = f.read()
 
-        poller = client.begin_analyze_document("prebuilt-layout", document_bytes, content_type="application/pdf")
+        poller = client.begin_analyze_document("prebuilt-layout", BytesIO(document_bytes), content_type="application/pdf")
         result = poller.result()
 
         # Cache the result
