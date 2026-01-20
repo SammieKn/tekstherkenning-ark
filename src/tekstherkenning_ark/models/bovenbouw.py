@@ -41,4 +41,4 @@ class Bovenbouw(BaseModel):
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
     is_scheefstand_aanwezig: bool | None = None
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
-    bovenkant_deksteen_cm_tov_nap: float | None = None
+    bovenkant_deksteen_cm_tov_nap: int | None = None
