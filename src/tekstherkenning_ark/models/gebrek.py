@@ -69,4 +69,4 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: List[int | None]
+    afmetingen_cm: list[int | None]
