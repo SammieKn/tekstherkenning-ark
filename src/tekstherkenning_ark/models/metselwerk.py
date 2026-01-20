@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import List, Union
 from .gebrek import Gebrek, Scheur, GrondVoerendGat, BuikInWand
 
 
