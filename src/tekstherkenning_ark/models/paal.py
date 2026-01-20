@@ -28,7 +28,7 @@ class Paal(BaseModel):
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
     """
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
-    gebreken: list[Union[Gebrek, Scheefstand]] = []
+    gebreken: list[Gebrek | Scheefstand] = []
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
