@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .gebrek import Gebrek
+from .gebrek import Gebrek, Scheefstand
 from .enums import SchoorStand, NietBeschikbaar
 
 class Paal(BaseModel):
@@ -28,7 +28,9 @@ class Paal(BaseModel):
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
     """
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
-    gebreken: list[Gebrek]
+    gebreken: list[Gebrek | Scheefstand] = []
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
+    paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
