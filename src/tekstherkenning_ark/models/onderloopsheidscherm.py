@@ -15,7 +15,7 @@ class Onderloopsheidscherm(BaseModel):
 
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of op de archieftekening.
     is_aanwezig: bool
-    gebrek: List[Gebrek]
+    gebrek: list[Gebrek]
     # Te vinden in de toestandstabel (figuur 1.11) of als 'algemeen' gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_beschadigd: bool | None = None
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
