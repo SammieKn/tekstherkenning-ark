@@ -1,10 +1,13 @@
+from __future__ import annotations
 from typing import Any
 
 from pydantic import BaseModel
 
+from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
+from azure.ai.documentintelligence.models import DocumentTable
 
 
 class Paal(BaseModel):
@@ -38,20 +41,16 @@ class Paal(BaseModel):
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
     gebreken: list[Gebrek] = []
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
-    paalrij_nummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
-    paalrij_nummer: str
+
+    # TODO Waar te vinden? - MT
+    paalrij_nummer: str = ""
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
-    paalrij_nummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
-    aansluiting_status: AansluitingStatus
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str = ""
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
@@ -61,23 +60,113 @@ class Paal(BaseModel):
     diameter_haaks: int | NietBeschikbaar
     diameter_parallel: int | NietBeschikbaar
     diameter_gemiddeld: int | NietBeschikbaar
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'afstand'.
-    afstand_hoh: int | NietBeschikbaar
+
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Hart-op-hart-afstanden' -> 'afstand' en 'Paal'.
+    hoh_afstand_cm: int | NietBeschikbaar
+    hoh_paalnummer: str
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schoorstand'.
     schoor_graden: int | NietBeschikbaar
     schoor_richting: SchoorStand | NietBeschikbaar
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Afstand frontwand'.
     afstand_frontwand_cm: int | NietBeschikbaar
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schades'.
     is_scheefstand: bool | NietBeschikbaar
-    is_paalbreak: bool | NietBeschikbaar
+    is_paalbreuk: bool | NietBeschikbaar
     is_aantasting: bool | NietBeschikbaar
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'aansluiting'.
-    is_juiste_aansluiting: bool | NietBeschikbaar
-    positionering_aansluiting_cm: int | NietBeschikbaar
+
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
+    aansluiting_status: AansluitingStatus
+    positionering_aansluiting_cm: str | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
     opmerkingen: str = ""
 
     # Te vinden in bijlage 2 en houtmonsters csv.
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
     houtmonsters: list[Houtmonster] = []
+
+    @classmethod
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Paal]]:
+        """Parse and return a list of Paal objects from a Azure Doc
+        Intelligence DocumentTable object
+
+        Parameters
+        ----------
+        tables : list[DocumentTable]
+            List of DocumentTable objects as returned by Azure Document Intelligence SDK
+            belonging to the `Palen` bijlage
+
+        Returns
+        -------
+        dict[str, list[Paal]]
+            A dictionary mapping constructie ID's to lists of Paal objects containing information from the table
+        """
+
+        paal_rows: list[list[str]] = []
+        for table in tables:
+
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
+
+            # Skip header rows and add to paal_rows
+            content_rows = [r for r in table_rows if utils.is_paal_id(r[0])]
+            paal_rows.extend(content_rows)
+
+        # Parse each row into a Paal object
+        paal_dict: dict[str, list[Paal]] = {}
+        current_constructie_id = ""
+
+        for row in paal_rows:
+
+            constructie_id_col_val = row[16].strip()
+
+            if constructie_id_col_val != "":
+                current_constructie_id = constructie_id_col_val
+
+                if current_constructie_id not in paal_dict:
+                    paal_dict[current_constructie_id] = []
+                else:
+                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+
+            if current_constructie_id != "":
+                paal = cls.from_paal_table_row(row)
+                paal_dict[current_constructie_id].append(paal)
+
+        return paal_dict
+
+    @classmethod
+    def from_paal_table_row(cls, row: list[str]) -> Paal:
+        """Parse and return a Paal object from a single row of the
+        funderingspalen table.
+
+        Parameters
+        ----------
+        row : list[str]
+            A single row from the funderingspalen table as a list of strings.
+
+        Returns
+        -------
+        Paal
+            A Paal object containing information from the row.
+        """
+
+        row_clean = [utils.clean_string(val) for val in row]
+
+        return cls(
+            paalnummer=row_clean[0],
+            diameter_haaks=row_clean[1],
+            diameter_parallel=row_clean[2],
+            diameter_gemiddeld=row_clean[3],
+            hoh_afstand_cm=row_clean[4],
+            hoh_paalnummer=row_clean[5],
+            schoor_graden=row_clean[8],
+            schoor_richting=row_clean[9],
+            afstand_frontwand_cm=row_clean[10],
+            is_scheefstand=utils.parse_ja_nee(row_clean[11]),
+            is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
+            is_aantasting=utils.parse_ja_nee(row_clean[13]),
+            aansluiting_status=AansluitingStatus(row_clean[14]),
+            positionering_aansluiting_cm=row_clean[15],
+        )

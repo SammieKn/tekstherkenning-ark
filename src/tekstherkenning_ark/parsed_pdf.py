@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 
 from azure.ai.documentintelligence import DocumentIntelligenceClient
-from azure.ai.documentintelligence.models import AnalyzeResult
+from azure.ai.documentintelligence.models import AnalyzeResult, DocumentTable
 from azure.core.credentials import AzureKeyCredential
 from dotenv import load_dotenv
 from reportlab.lib import colors
