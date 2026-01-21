@@ -22,10 +22,6 @@ class Houtmonster(BaseModel):
 
     # Te vinden in bijlage 1, kolom 'Codering'
     codering: str
-    # Te vinden in bijlage 1, kolom "Rakcode"
-    rak_code: str
-    # Te vinden in bijlage 1, kolom "Paalnummer"
-    paal_nummer: str
     # Te vinden in bijlage 1, kolom "Houtmonster", of bijlage 2, kolom "Houtmonstercode"
     houtmonster_code: str
     # Te vinden in bijlage 1, kolom "Diameter paal" of bijlage 2, kolom "Diameter paal ter hoogte van houtmonster:"

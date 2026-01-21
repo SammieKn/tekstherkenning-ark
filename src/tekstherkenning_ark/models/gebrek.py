@@ -10,6 +10,7 @@ class Gebrek(BaseModel):
         codering: Codering van het gebrek.
         omschrijving: Omschrijving van het gebrek.
     """
+
     codering: str
     omschrijving: str
     figuurnummer: list[str]
@@ -31,7 +32,7 @@ class Scheur(Gebrek):
     scheurwijdte_mm: int
 
     # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
-    afstand_van_startrak: int
+    afstand_van_startrak: int | None = None
 
     # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
     orientatie: Literal["vertikaal", "horizontaal"] | None = None

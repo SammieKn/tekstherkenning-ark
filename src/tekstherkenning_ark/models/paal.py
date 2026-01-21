@@ -48,9 +48,6 @@ class Paal(BaseModel):
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
     aansluiting_status: AansluitingStatus | None = None
-
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
-    is_negatief_schoor: bool | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
