@@ -20,4 +20,4 @@ class Rak(BaseModel):
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
     totale_lengte_m: float
     # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""

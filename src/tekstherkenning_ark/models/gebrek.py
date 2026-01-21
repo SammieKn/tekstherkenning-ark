@@ -13,7 +13,7 @@ class Gebrek(BaseModel):
 
     codering: str
     omschrijving: str
-    figuurnummer: list[str]
+    figuurnummer: str
 
 
 class Scheur(Gebrek):

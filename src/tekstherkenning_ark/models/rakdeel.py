@@ -31,4 +31,4 @@ class Rakdeel(BaseModel):
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None
     # Te vinden in de tekst van de constructiebeschrijving of samenvatting.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""

@@ -17,7 +17,7 @@ class Vloer(BaseModel):
 
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
     is_beschadigd: bool
-    gebreken: list[Gebrek]
+    gebreken: list[Gebrek] = []
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: str
 
@@ -27,4 +27,4 @@ class Vloer(BaseModel):
     is_meerdere_locaties: bool | None = None
 
     # Te vinden in de tekst van de constructiebeschrijving of de gebrekentabel.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""

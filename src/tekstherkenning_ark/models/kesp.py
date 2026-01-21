@@ -46,9 +46,9 @@ class Kesp(BaseModel):
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
     is_aangetast: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""
 
     # TBD waar te vinden
     paalrij_nr: str | None = None
 
-    gebreken: list[Gebrek]
+    gebreken: list[Gebrek] = []
