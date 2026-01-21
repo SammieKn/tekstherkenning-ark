@@ -4,7 +4,6 @@ import pickle
 from tekstherkenning_ark.constants import DATA_DIR
 from azure.ai.documentintelligence.models import AnalyzeResult, DocumentTable, DocumentParagraph
 
-result = pickle.load(open(DATA_DIR / ".cache" / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311_cache.pkl", "rb"))
 
 
 @dataclass
@@ -230,6 +229,7 @@ class SmartDocument:
 
 
 if __name__ == "__main__":
+    result = pickle.load(open(DATA_DIR / ".cache" / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311_cache.pkl", "rb"))
     doc = SmartDocument(result)
     print(doc)
     print("\n" + "="*80 + "\n")
