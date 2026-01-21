@@ -1,18 +1,16 @@
-from .aansluiting_status import AansluitingStatus
-from .bovenbouw import Bovenbouw
-from .gebrek import Gebrek
-from .kesp import Kesp
-from .metselwerk import Metselwerk
-from .onderbouw import Onderbouw
-from .onderloopsheidscherm import Onderloopsheidscherm
-from .paal import Paal
-from .paalrij import PaalRij
-from .rak import Rak
-from .rakdeel import Rakdeel
-from .vloer import Vloer
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.metselwerk import Metselwerk
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
+from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.vloer import Vloer
+from tekstherkenning_ark.models.houtmonster import Houtmonster
 
 __all__ = [
-    "AansluitingStatus",
     "Bovenbouw",
     "Gebrek",
     "Kesp",
@@ -20,8 +18,8 @@ __all__ = [
     "Onderbouw",
     "Onderloopsheidscherm",
     "Paal",
-    "PaalRij",
     "Rak",
     "Rakdeel",
     "Vloer",
+    "Houtmonster",
 ]

@@ -2,16 +2,25 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .gebrek import Gebrek, Scheefstand
-from .enums import SchoorStand, NietBeschikbaar
+from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
+from tekstherkenning_ark.models.houtmonster import Houtmonster
+
 
 class Paal(BaseModel):
     """Paal (Foundation Pile).
-`
+
     Attributes:
         gebreken: Lijst van gebreken gevonden in de paal.
         paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
         paalnummer: Nummer van de paal binnen de paalrij.
+        aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
+        is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
+        is_onderzocht: Indicatie of de paal is onderzocht.
+        opmerkingen: Eventuele opmerkingen over de paal.
+        schoorstand_graden: Schoorstand van de paal in graden.
+        scheefstand: Indicatie of de paal scheefstand heeft.
+        materiaal: Materiaal van de paal.
         diameter_haaks: Diameter haaks op de gevel in mm.
         diameter_parallel: Diameter parallel aan de gevel in mm.
         diameter_gemiddeld: Gemiddelde diameter in mm.
@@ -24,17 +33,30 @@ class Paal(BaseModel):
         is_aantasting: Indicatie of er aantasting is geconstateerd.
         is_juiste_aansluiting: Indicatie of de aansluiting correct is.
         positionering_aansluiting_cm: Positionering van de aansluiting in cm.
-        opmerkingen: Eventuele opmerkingen over de paal.
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
     """
+
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
-    gebreken: list[Gebrek | Scheefstand] = []
+    gebreken: list[Gebrek] = []
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
+    paalrij_nummer: str
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
+    aansluiting_status: AansluitingStatus | None = None
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
+    is_onderzocht: bool | None = None
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
+    opmerkingen: str | None = None
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
+    schoorstand_graden: float | None = None
+    scheefstand: bool | None = None
+    materiaal: Materiaal | None = None
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar | None = None
     diameter_parallel: int | NietBeschikbaar | None = None
@@ -42,8 +64,8 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'afstand'.
     afstand_hoh: int | NietBeschikbaar | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schoorstand'.
-    schoor_graden : int | NietBeschikbaar | None = None
-    schoor_richting : SchoorStand | NietBeschikbaar | None = None
+    schoor_graden: int | NietBeschikbaar | None = None
+    schoor_richting: SchoorStand | NietBeschikbaar | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Afstand frontwand'.
     afstand_frontwand_cm: int | NietBeschikbaar | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schades'.
@@ -55,6 +77,7 @@ class Paal(BaseModel):
     positionering_aansluiting_cm: int | NietBeschikbaar | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
     opmerkingen: str | None = None
+
     # Te vinden in bijlage 2 en houtmonsters csv.
-    houtmonsters: list[dict[str, Any]] | None = None
-   
+    # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
+    houtmonsters: list[Houtmonster] | None = None

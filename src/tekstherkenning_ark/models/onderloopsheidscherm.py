@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from .gebrek import Gebrek
+
+from tekstherkenning_ark.models.gebrek import Gebrek
 
 
 class Onderloopsheidscherm(BaseModel):
