@@ -49,42 +49,44 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
-    aansluiting_status: AansluitingStatus | None = None
+    aansluiting_status: AansluitingStatus
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
     materiaal: Materiaal | None = None
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
-    diameter_haaks: int | NietBeschikbaar | None = None
-    diameter_parallel: int | NietBeschikbaar | None = None
-    diameter_gemiddeld: int | NietBeschikbaar | None = None
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Hart-op-hart-afstanden' -> 'afstand'.
-    hoh_afstand_cm: int | NietBeschikbaar | None = None
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Hart-op-hart-afstanden' -> 'Paal'.
+    diameter_haaks: int | NietBeschikbaar
+    diameter_parallel: int | NietBeschikbaar
+    diameter_gemiddeld: int | NietBeschikbaar
+
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Hart-op-hart-afstanden' -> 'afstand' en 'Paal'.
+    hoh_afstand_cm: int | NietBeschikbaar
     hoh_paalnummer: str
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schoorstand'.
-    schoor_graden: int | NietBeschikbaar | None = None
-    schoor_richting: SchoorStand | NietBeschikbaar | None = None
+    schoor_graden: int | NietBeschikbaar
+    schoor_richting: SchoorStand | NietBeschikbaar
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Afstand frontwand'.
-    afstand_frontwand_cm: int | NietBeschikbaar | None = None
+    afstand_frontwand_cm: int | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schades'.
-    is_scheefstand: bool | NietBeschikbaar | None = None
-    is_paalbreak: bool | NietBeschikbaar | None = None
-    is_aantasting: bool | NietBeschikbaar | None = None
+    is_scheefstand: bool | NietBeschikbaar
+    is_paalbreak: bool | NietBeschikbaar
+    is_aantasting: bool | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'aansluiting'.
-    is_juiste_aansluiting: bool | NietBeschikbaar | None = None
-    positionering_aansluiting_cm: int | NietBeschikbaar | None = None
+    is_juiste_aansluiting: bool | NietBeschikbaar
+    positionering_aansluiting_cm: int | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""
 
     # Te vinden in bijlage 2 en houtmonsters csv.
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
-    houtmonsters: list[Houtmonster] | None = None
+    houtmonsters: list[Houtmonster] = []
 
     @classmethod
     def from_doc_table(cls, table: DocumentTable) -> list[Paal]:
