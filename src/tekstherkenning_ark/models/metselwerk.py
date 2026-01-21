@@ -20,4 +20,4 @@ class Metselwerk(BaseModel):
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
     hoogte_cm: float | None = None
     # Te vinden in de tekst van de constructiebeschrijving of de gebrekentabel.
-    opmerkingen: str | None = None
+    opmerkingen: str = ""
