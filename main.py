@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.tekstherkenning_ark.parsed_pdf import ParsedPDF
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.models.paal import Paal
 
 TEST_PDF_PATH = DATA_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
 
@@ -25,10 +26,16 @@ def main():
     # parsed_pdf.print()
 
     # Save results to JSON
-    parsed_pdf.to_json()
+    # parsed_pdf.to_json()
 
     # Save full results to PDF
-    parsed_pdf.to_pdf()
+    # parsed_pdf.to_pdf()
+
+    table = parsed_pdf.result.tables[90]
+    palen = Paal.from_doc_table(table)
+
+    for paal in palen:
+        print(paal)
 
 
 if __name__ == "__main__":

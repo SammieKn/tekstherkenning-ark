@@ -27,7 +27,7 @@ class SchoorStand(Enum):
 
 class NietBeschikbaar(Enum):
     NIET_VAN_TOEPASSING = "NVT"
-    NIET_MEETBAAR = "NMB"
+    NIET_MEETBAAR = "NM"
 
 
 class AansluitingStatus(Enum):
