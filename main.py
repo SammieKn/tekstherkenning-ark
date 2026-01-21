@@ -31,11 +31,13 @@ def main():
     # Save full results to PDF
     # parsed_pdf.to_pdf()
 
-    table = parsed_pdf.result.tables[90]
-    palen = Paal.from_doc_table(table)
+    tables = parsed_pdf.result.tables[89:94]
+    paal_dict = Paal.from_doc_tables(tables)
 
-    for paal in palen:
-        print(paal)
+    for constructie, palen in paal_dict.items():
+        print(f"\nConstructie ID: {constructie}")
+        for paal in palen:
+            print(paal)
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ class SchoorStand(Enum):
 class NietBeschikbaar(Enum):
     NIET_VAN_TOEPASSING = "NVT"
     NIET_MEETBAAR = "NM"
+    LEEG = ""
 
 
 class AansluitingStatus(Enum):
@@ -35,6 +36,6 @@ class AansluitingStatus(Enum):
     funderingspalen, Bijlage 3, kolom 'Aansluiting'.
     """
 
-    GOED = "GOED"
-    NIET_MEETBAAR = "NIET_MEETBAAR"
-    SLECHT = "SLECHT"
+    GOED = "G"
+    NIET_MEETBAAR = "NM"
+    SLECHT = "S"

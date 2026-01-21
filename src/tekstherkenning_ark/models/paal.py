@@ -41,20 +41,16 @@ class Paal(BaseModel):
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
     gebreken: list[Gebrek] = []
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
-    paalrij_nummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
-    paalrij_nummer: str
+
+    # TODO Waar te vinden? - MT
+    paalrij_nummer: str = ""
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalnummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalrij'.
-    paalrij_nummer: str
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
-    aansluiting_status: AansluitingStatus
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str = ""
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
@@ -78,11 +74,12 @@ class Paal(BaseModel):
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schades'.
     is_scheefstand: bool | NietBeschikbaar
-    is_paalbreak: bool | NietBeschikbaar
+    is_paalbreuk: bool | NietBeschikbaar
     is_aantasting: bool | NietBeschikbaar
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'aansluiting'.
-    is_juiste_aansluiting: bool | NietBeschikbaar
-    positionering_aansluiting_cm: int | NietBeschikbaar
+
+    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
+    aansluiting_status: AansluitingStatus
+    positionering_aansluiting_cm: str | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
     opmerkingen: str = ""
 
@@ -114,27 +111,26 @@ class Paal(BaseModel):
             table_rows = utils.get_table_content(table)
 
             # Skip header rows and add to paal_rows
-            content_rows = table_rows[7:]  # TODO check if this assumption is always correct - MT
+            content_rows = [r for r in table_rows if utils.is_paal_id(r[0])]
             paal_rows.extend(content_rows)
 
         # Parse each row into a Paal object
         paal_dict: dict[str, list[Paal]] = {}
-
         current_constructie_id = ""
 
         for row in paal_rows:
-            if row[0].startswith("P"):  # TODO do more robust check with regex - MT
 
-                constructie_id = row[16].strip()
+            constructie_id_col_val = row[16].strip()
 
-                if row[16].strip():
-                    current_constructie_id = row[16].strip()
+            if constructie_id_col_val != "":
+                current_constructie_id = constructie_id_col_val
 
-                    if current_constructie_id not in paal_dict:
-                        paal_dict[current_constructie_id] = []
-                    else:
-                        raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                if current_constructie_id not in paal_dict:
+                    paal_dict[current_constructie_id] = []
+                else:
+                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
 
+            if current_constructie_id != "":
                 paal = cls.from_paal_table_row(row)
                 paal_dict[current_constructie_id].append(paal)
 
@@ -156,14 +152,21 @@ class Paal(BaseModel):
             A Paal object containing information from the row.
         """
 
+        row_clean = [utils.clean_string(val) for val in row]
+
         return cls(
-            paalnummer=row[0],
-            diameter_haaks=row[1],
-            diameter_parallel=row[2],
-            diameter_gemiddeld=row[3],
-            hoh_afstand_cm=row[4],
-            hoh_paalnummer=row[5],
-            schoor_graden=row[8],
-            schoor_richting=row[9],
-            afstand_frontwand_cm=row[10],
+            paalnummer=row_clean[0],
+            diameter_haaks=row_clean[1],
+            diameter_parallel=row_clean[2],
+            diameter_gemiddeld=row_clean[3],
+            hoh_afstand_cm=row_clean[4],
+            hoh_paalnummer=row_clean[5],
+            schoor_graden=row_clean[8],
+            schoor_richting=row_clean[9],
+            afstand_frontwand_cm=row_clean[10],
+            is_scheefstand=utils.parse_ja_nee(row_clean[11]),
+            is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
+            is_aantasting=utils.parse_ja_nee(row_clean[13]),
+            aansluiting_status=AansluitingStatus(row_clean[14]),
+            positionering_aansluiting_cm=row_clean[15],
         )
