@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel
 
 
@@ -10,23 +11,31 @@ class Gebrek(BaseModel):
         omschrijving: Omschrijving van het gebrek.
     """
 
-    locatie_meter: int
     codering: str
     omschrijving: str
+    figuurnummer: str
 
 
 class Scheur(Gebrek):
-    """Scheur (crack). 
+    """Scheur (crack).
 
     Attributes:
         lengte_cm: Lengte van de scheur in centimeters.
         scheurwijdte_mm: Maximale scheurwijdte in millimeters.
+        afstand_van_startrak: Afstand van het startrak.
+        orientatie: Orientatie van de scheur (vertikaal of horizontaal).
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
     lengte_cm: int
     # Te vinden in de omschrijving van de gebrekentabel, vaak als 'SW'.
     scheurwijdte_mm: int
+
+    # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
+    afstand_van_startrak: int | None = None
+
+    # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
+    orientatie: Literal["vertikaal", "horizontaal"] | None = None
 
 
 class GrondVoerendGat(Gebrek):
@@ -37,7 +46,7 @@ class GrondVoerendGat(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: int
+    afmetingen_cm: list[int | None]
 
 
 class BuikInWand(Gebrek):
@@ -48,7 +57,7 @@ class BuikInWand(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    uitbuiging_cm: int
+    uitbuiking_cm: int
 
 
 class Scheefstand(Gebrek):
@@ -70,4 +79,4 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     """
 
     # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: int
+    afmetingen_cm: list[int | None]
