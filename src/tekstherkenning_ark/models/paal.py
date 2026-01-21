@@ -37,7 +37,7 @@ class Paal(BaseModel):
     """
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
-    gebreken: list[Gebrek | Scheefstand] = []
+    gebreken: list[Gebrek] = []
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paalrij_nummer: str
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.

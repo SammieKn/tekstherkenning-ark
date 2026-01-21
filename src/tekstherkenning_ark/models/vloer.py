@@ -25,5 +25,6 @@ class Vloer(BaseModel):
     bovenkant_vloer_cm_tov_nap: float | None = None
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None
+
     # Te vinden in de tekst van de constructiebeschrijving of de gebrekentabel.
     opmerkingen: str | None = None

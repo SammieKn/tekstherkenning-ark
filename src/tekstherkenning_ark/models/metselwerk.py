@@ -14,7 +14,7 @@ class Metselwerk(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over het metselwerk.
     """
 
-    gebreken: list[Gebrek | Scheur | GrondVoerendGat | BuikInWand]] = []
+    gebreken: list[Gebrek] = []
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
     dikte_cm: float | None = None
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
