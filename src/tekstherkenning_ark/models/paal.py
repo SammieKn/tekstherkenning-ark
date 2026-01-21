@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
@@ -74,6 +75,7 @@ class Paal(BaseModel):
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Afstand frontwand'.
     afstand_frontwand_cm: int | NietBeschikbaar
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'Schades'.
     is_scheefstand: bool | NietBeschikbaar
     is_paalbreak: bool | NietBeschikbaar
@@ -89,31 +91,54 @@ class Paal(BaseModel):
     houtmonsters: list[Houtmonster] = []
 
     @classmethod
-    def from_doc_table(cls, table: DocumentTable) -> list[Paal]:
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Paal]]:
         """Parse and return a list of Paal objects from a Azure Doc
         Intelligence DocumentTable object
 
         Parameters
         ----------
-        table : DocumentTable
-            DocumentTable object as returned by Azure Document Intelligence SDK
+        tables : list[DocumentTable]
+            List of DocumentTable objects as returned by Azure Document Intelligence SDK
             belonging to the `Palen` bijlage
 
         Returns
         -------
-        list[Paal]
-            A list of Paal objects containing information from the table
+        dict[str, list[Paal]]
+            A dictionary mapping constructie ID's to lists of Paal objects containing information from the table
         """
-        from tekstherkenning_ark.parsed_pdf import ParsedPDF
 
-        rows = ParsedPDF.extract_table_content(table)
+        paal_rows: list[list[str]] = []
+        for table in tables:
 
-        for line in rows:
-            print(line)
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
 
-        data_rows = rows[7:]  # Skip header rows
+            # Skip header rows and add to paal_rows
+            content_rows = table_rows[7:]  # TODO check if this assumption is always correct - MT
+            paal_rows.extend(content_rows)
 
-        a = 1
+        # Parse each row into a Paal object
+        paal_dict: dict[str, list[Paal]] = {}
+
+        current_constructie_id = ""
+
+        for row in paal_rows:
+            if row[0].startswith("P"):  # TODO do more robust check with regex - MT
+
+                constructie_id = row[16].strip()
+
+                if row[16].strip():
+                    current_constructie_id = row[16].strip()
+
+                    if current_constructie_id not in paal_dict:
+                        paal_dict[current_constructie_id] = []
+                    else:
+                        raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+
+                paal = cls.from_paal_table_row(row)
+                paal_dict[current_constructie_id].append(paal)
+
+        return paal_dict
 
     @classmethod
     def from_paal_table_row(cls, row: list[str]) -> Paal:
@@ -140,4 +165,5 @@ class Paal(BaseModel):
             hoh_paalnummer=row[5],
             schoor_graden=row[8],
             schoor_richting=row[9],
+            afstand_frontwand_cm=row[10],
         )
