@@ -13,6 +13,7 @@ dependencies = [
     "azure-ai-documentintelligence>=1.0.0",
     "python-dotenv>=1.0.0",
     "reportlab>=4.0.0",
+    "pytest>=9.0.2",
 ]
 
 [tool.black]
