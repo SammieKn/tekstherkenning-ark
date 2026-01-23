@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
+from tekstherkenning_ark import utils
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
+from azure.ai.documentintelligence.models import DocumentTable
 
 
 class Kesp(BaseModel):
@@ -32,15 +37,15 @@ class Kesp(BaseModel):
     # Te vinden in Bijlage 3, kolom 'Hoek t.o.v. lengte-as frontwand'.
     hoek_tov_lengte_as_graden: int | None = None
     # Te vinden in Bijlage 3, kolom 'Lengte uitstekende deel t.o.v. voorzijde frontwand'.
-    lengte_uitstekend_deel_cm: int | None = None
+    lengte_uitstekend_deel_cm: int | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Mate van inknijping t.o.v. oorspronkelijke staat'.
     mate_inknijping_cm: int | None = None
     # Te vinden in Bijlage 3, kolom 'Indrukking van de funderingspaal in de kesp'.
-    indrukking_paal_in_kesp_cm: int | None = None
+    indrukking_paal_in_kesp: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Opsluitklos aanwezig?'.
     is_opsluitklos_aanwezig: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Opsluitklos aantasting'.
-    is_opsluitklos_aangetast: bool | None = None
+    is_opsluitklos_aangetast: bool | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Schades Vervormingen'.
     is_vervormd: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
@@ -52,3 +57,84 @@ class Kesp(BaseModel):
     paalrij_nr: str | None = None
 
     gebreken: list[Gebrek] = []
+
+    @classmethod
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Kesp]]:
+        """Parse and return a list of Kesp objects from a Azure Doc
+        Intelligence DocumentTable object
+
+        Parameters
+        ----------
+        tables : list[DocumentTable]
+            List of DocumentTable objects as returned by Azure Document Intelligence SDK
+            belonging to the `Kespen` bijlage
+
+        Returns
+        -------
+        dict[str, list[Kesp]]
+            A dictionary mapping constructie ID's to lists of Kesp objects containing information from the table
+        """
+
+        kesp_rows: list[list[str]] = []
+        for table in tables:
+
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
+
+            # Skip header rows and add to paal_rows
+            content_rows = [r for r in table_rows if utils.is_kesp_id(r[0])]
+            kesp_rows.extend(content_rows)
+
+        # Parse each row into a Paal object
+        kesp_dict: dict[str, list[Kesp]] = {}
+        current_constructie_id = ""
+
+        for row in kesp_rows:
+
+            constructie_id_col_val = row[11].strip()
+
+            if constructie_id_col_val != "":
+                current_constructie_id = constructie_id_col_val
+
+                if current_constructie_id not in kesp_dict:
+                    kesp_dict[current_constructie_id] = []
+                else:
+                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+
+            if current_constructie_id != "":
+                paal = cls.from_kesp_table_row(row)
+                kesp_dict[current_constructie_id].append(paal)
+
+        return kesp_dict
+
+    @classmethod
+    def from_kesp_table_row(cls, row: list[str]) -> Kesp:
+        """Parse and return a Kesp object from a single row of the
+        kespen table.
+
+        Parameters
+        ----------
+        row : list[str]
+            A single row from the kespen table as a list of strings.
+
+        Returns
+        -------
+        Kesp
+            A Kesp object containing information from the row.
+        """
+
+        row_clean = [utils.clean_string(val) for val in row]
+
+        return cls(
+            kespnummer=row_clean[0],
+            hoogte_cm=row_clean[1],
+            breedte_cm=row_clean[2],
+            hoek_tov_lengte_as_graden=row_clean[3],
+            lengte_uitstekend_deel_cm=row_clean[4],
+            mate_inknijping_cm=row_clean[5],
+            indrukking_paal_in_kesp_cm=row_clean[6],
+            is_opsluitklos_aanwezig=utils.parse_ja_nee(row_clean[7]) if row_clean[7] != "" else None,
+            is_opsluitklos_aangetast=utils.parse_ja_nee(row_clean[8]),
+            is_vervormd=utils.parse_ja_nee(row_clean[9]),
+            is_aangetast=utils.parse_ja_nee(row_clean[10]),
+        )
