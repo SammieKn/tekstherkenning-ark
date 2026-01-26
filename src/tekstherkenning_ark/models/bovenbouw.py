@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from tekstherkenning_ark.enums import MateriaalBovenbouw
+from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
 from tekstherkenning_ark.models.metselwerk import Metselwerk
 
 
@@ -21,7 +21,7 @@ class Bovenbouw(BaseModel):
         bovenkant_deksteen_cm_tov_nap: Hoogte van de bovenkant van de deksteen ten opzichte van NAP, in centimeters.
     """
 
-    metselwerk: Metselwerk
+    metselwerk: Metselwerk | None = None
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
     is_buik_in_wand_aanwezig: bool | None = None
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
@@ -29,7 +29,7 @@ class Bovenbouw(BaseModel):
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'GBx' met omschrijving 'lokaal verdwenen metselwerk'.
     is_lokaal_verdwenen_metselwerk: bool | None = None
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
-    materiaal: MateriaalBovenbouw | None = None
+    materiaal: MateriaalBovenbouw | NietBeschikbaar = NietBeschikbaar.LEEG
     # Te bepalen uit de gebrekentabel (paragraaf 2.3 of 5.3.3) door het aantal scheuren te tellen en te relateren aan de lengte van het rakdeel.
     maximaal_aantal_scheuren_per_10_m: int | None = None
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3), kolom 'Omschrijving', vaak als 'SW'.
@@ -41,4 +41,4 @@ class Bovenbouw(BaseModel):
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
     is_scheefstand_aanwezig: bool | None = None
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
-    bovenkant_deksteen_cm_tov_nap: int | None = None
+    bovenkant_deksteen_cm_tov_nap: float | None = None

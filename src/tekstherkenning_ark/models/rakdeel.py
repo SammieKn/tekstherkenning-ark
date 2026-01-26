@@ -24,7 +24,7 @@ class Rakdeel(BaseModel):
     constructietype: str
     gebreken: list[Gebrek] = []
     # Te vinden in paragraaf 5.x, eerste zin.
-    lengte_m: float
+    lengte_m: float | None = None
     onderbouw: Onderbouw
     # Te vinden in paragraaf 5.x, kopregel of inhoudsopgave.
     rakdeel_id: str
