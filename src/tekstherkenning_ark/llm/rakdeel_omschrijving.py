@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from tekstherkenning_ark.llm.llm import AzureOpenAILLM
 from tekstherkenning_ark.enums import MateriaalBovenbouw, MateriaalOnderbouw, MateriaalFundering, MateriaalVloer, NietBeschikbaar
 from pydantic import BaseModel, Field
@@ -52,15 +54,44 @@ class RakdeelOmschrijving(BaseModel):
         description="De hoogte van de waterlijn tot de bovenkant van de funderingsvloer. Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer."
     )
 
-if __name__ == "__main__":
-    api_key = os.environ.get('AZURE_OPENAI_KEY')
-    deployment = os.environ.get('DEPLOYMENT_NAME_GPT41') # Set to DEPLOYMENT_NAME_GPT4 for the GPT-4 model
+    @classmethod
+    def classificeer_omschrijving(cls, omschrijving: str) -> RakdeelOmschrijving:
+        """
+        Classificeer een omschrijving naar een RakdeelOmschrijving instance via Azure OpenAI.
+        
+        Parameters
+        ----------
+        llm : AzureOpenAILLM
+            De Azure OpenAI LLM instantie.
+        omschrijving : str
+            De omschrijving tekst om te classificeren.
+            
+        Returns
+        -------
+        RakdeelOmschrijving
+            Het geclassificeerde RakdeelOmschrijving object.
+        """
+        llm = AzureOpenAILLM()
 
+        system_prompt = """Je bent een expert in het analyseren van constructie-omschrijvingen van kademuren.
+            Extraheer de relevante informatie uit de omschrijving en vul de velden in.
+            Laat velden leeg of op NietBeschikbaar.LEEG als de informatie niet beschikbaar is."""
 
-    llm = AzureOpenAILLM(api_key, deployment)
-
-    is_valid, message = llm.validate_api_key()
-    print(message)
+        response = llm.client.beta.chat.completions.parse(
+            model=llm.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"}
+            ],
+            response_format=RakdeelOmschrijving,
+            temperature=0
+        )
+        
+        parsed_result = response.choices[0].message.parsed
+        if parsed_result is None:
+            raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
+        else:
+            return parsed_result
 
 
 
