@@ -12,7 +12,7 @@ load_dotenv()
 
 class AzureOpenAILLM:
 
-    def __init__(self, input_api_key, model_name):
+    def __init__(self, input_api_key: str = None, model_name: str = None):
         """
         Initialize an instance of the AzureOpenAILLM class. This class is used
         to interact with the Azure OpenAI API. The GTP-3.5 models we currently
@@ -22,12 +22,40 @@ class AzureOpenAILLM:
         For more information on encodings tiktoken uses, see
         https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb.
 
-        """ 
+        Parameters
+        ----------
+        input_api_key : str, optioneel
+            De Azure OpenAI API key. Standaard wordt AZURE_OPENAI_KEY uit de
+            environment variabelen gebruikt.
+        model_name : str, optioneel
+            De naam van het model deployment. Standaard wordt DEPLOYMENT_NAME_GPT41
+            uit de environment variabelen gebruikt.
+            
+        Raises
+        ------
+        ValueError
+            Als de benodigde API key of model naam niet beschikbaar is.
+        """
+        if input_api_key is None:
+            input_api_key = os.environ.get('AZURE_OPENAI_KEY')
+            if not input_api_key:
+                raise ValueError("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
+        
+        if model_name is None:
+            model_name = os.environ.get('DEPLOYMENT_NAME_GPT41')
+            if not model_name:
+                raise ValueError("DEPLOYMENT_NAME_GPT41 environment variabele is niet ingesteld.")
+            
+        azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+        if not azure_endpoint:
+            raise ValueError("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
+    
+        
         self.model = model_name
         self.model_params = self.get_model_params(self.model)
         self.client = AzureOpenAI(
             api_key = input_api_key,
-            azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT"),
+            azure_endpoint = azure_endpoint,
             api_version= self.model_params["api_version"]
         )   
         self.encoding = tiktoken.get_encoding(self.model_params["encoding_name"])
@@ -124,5 +152,4 @@ class AzureOpenAILLM:
               ,f" {tokens_number}."
         )
         return tokens
-    
     
