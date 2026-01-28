@@ -108,3 +108,20 @@ class Houtmonster(BaseModel):
             is_wankant_aanwezig=utils.parse_ja_nee(row_clean[7]) if row_clean[7] else None,
             datum_monstername=row_clean[8],
         )
+
+    def __hash__(self):
+        return hash(self.codering)
+
+
+if __name__ == "__main__":
+
+    from tekstherkenning_ark.smart_document import SmartDocument
+    from tekstherkenning_ark import constants
+
+    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
+
+    houtmonsters_tables = doc.get_meettabel_houtmonsters()
+    houtmonsters = Houtmonster.from_doc_tables(houtmonsters_tables)
+
+    for x in houtmonsters:
+        print(x.codering)
