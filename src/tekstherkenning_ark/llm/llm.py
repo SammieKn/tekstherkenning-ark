@@ -60,7 +60,7 @@ class AzureOpenAILLM:
         )   
         self.encoding = tiktoken.get_encoding(self.model_params["encoding_name"])
     
-    def get_model_params(self, model):
+    def get_model_params(self, model: str) -> dict[str, str]:
         """Get the model parameters for the Azure OpenAI API.
         Update as required."""
         model_params = {}
@@ -88,12 +88,12 @@ class AzureOpenAILLM:
 
     def chat_completion(
             self,
-            prompt,
-            max_tokens=4096,
-            temperature=0,
-            system="You are an OpenAI chatbot. You should use professional language and give brief replies where possible while retaining all context.",
-            get_tokens:bool=False
-    ):
+            prompt: str,
+            max_tokens: int=4096,
+            temperature: float=0,
+            system: str="You are an OpenAI chatbot. You should use professional language and give brief replies where possible while retaining all context.",
+            get_tokens: bool=False
+    ) -> str | None:
         """Function to create a chat completion request. Works by pushing 
         request to the model with optional parameters. Reports the number
         of tokens used in the request as reported by the model resource if 
@@ -128,7 +128,7 @@ class AzureOpenAILLM:
             return ""
         return response.choices[0].message.content
 
-    def validate_api_key(self):
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validate the API key with a minimal request."""
         test_prompt = "Hello, world!"
         response = self.chat_completion(test_prompt)
@@ -136,7 +136,7 @@ class AzureOpenAILLM:
             return True, "API key is valid and working."
         return False, "API key is invalid or not working."
 
-    def count_prompt_tokens(self, system:str, prompt:str):
+    def count_prompt_tokens(self, system:str, prompt:str) -> list[int]:
         """
         Tokenize the system and prompt text combo using tiktoken, print the
         length of the list of tokens (aka the number of tokens) and return the 
