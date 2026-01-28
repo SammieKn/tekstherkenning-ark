@@ -66,7 +66,7 @@ class Rakdeel(BaseModel):
             if len(paragraaf.content.strip()) > 20:
                 omschrijving += paragraaf.content + "\n"
         rakdeel_omschrijving = RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
-
+        return
         # Parse gebrekentabel
         gebreken = Rakdeel._parse_gebreken_tabel(tabellen=section.gebreken_tabel)
 
