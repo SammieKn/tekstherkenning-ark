@@ -13,7 +13,7 @@ load_dotenv()
 
 class AzureOpenAILLM:
 
-    def __init__(self, input_api_key: str = None, model_name: str = None):
+    def __init__(self, input_api_key: str | None = None, model_name: str | None = None):
         """
         Initialize an instance of the AzureOpenAILLM class. This class is used
         to interact with the Azure OpenAI API. The GTP-3.5 models we currently

@@ -6,9 +6,9 @@ from typing import ClassVar
 
 from pydantic import Field
 
-from tekstherkenning_ark.llm.base import LLMClassificeerbaar
+from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 from tekstherkenning_ark import constants
-from tekstherkenning_ark.llm.llm import AzureOpenAILLM
+from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.enums import (
     MateriaalBovenbouw,
     MateriaalOnderbouw,
@@ -18,7 +18,7 @@ from tekstherkenning_ark.enums import (
 )
 
 
-class RakdeelOmschrijving(LLMClassificeerbaar):
+class RakdeelOmschrijving(LLMClassifier):
     """Model voor het classificeren van rakdeel omschrijvingen via LLM.
 
     Attributes

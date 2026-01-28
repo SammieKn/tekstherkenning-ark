@@ -9,10 +9,10 @@ from typing import ClassVar, Self
 from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
-from tekstherkenning_ark.llm.llm import AzureOpenAILLM
+from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 
 
-class LLMClassificeerbaar(BaseModel):
+class LLMClassifier(BaseModel):
     """Generieke base class voor modellen die via LLM geclassificeerd worden.
 
     Subclasses dienen `_systeem_prompt` als ClassVar te definiëren met een

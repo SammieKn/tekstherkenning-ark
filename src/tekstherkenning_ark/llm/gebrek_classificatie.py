@@ -12,7 +12,7 @@ from typing import ClassVar, Literal
 from pydantic import BaseModel, Field
 
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.llm.base import LLMClassificeerbaar
+from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 
 
 class ScheurLLM(BaseModel):
@@ -36,7 +36,7 @@ class ScheurLLM(BaseModel):
     )
 
 
-class ScheurMetselwerkLLM(ScheurLLM, LLMClassificeerbaar):
+class ScheurMetselwerkLLM(ScheurLLM, LLMClassifier):
     """LLM model voor scheur in metselwerk classificatie.
 
     Attributes
@@ -87,7 +87,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class ScheurHoutLLM(ScheurLLM, LLMClassificeerbaar):
+class ScheurHoutLLM(ScheurLLM, LLMClassifier):
     """LLM model voor scheur in hout classificatie.
 
     Attributes
@@ -120,7 +120,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class GrondVoerendGatLLM(LLMClassificeerbaar):
+class GrondVoerendGatLLM(LLMClassifier):
     """LLM model voor grondvoerend gat classificatie.
 
     Attributes
@@ -162,7 +162,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class BuikInWandLLM(LLMClassificeerbaar):
+class BuikInWandLLM(LLMClassifier):
     """LLM model voor buik in wand classificatie.
 
     Attributes
@@ -191,7 +191,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class ScheefstandLLM(LLMClassificeerbaar):
+class ScheefstandLLM(LLMClassifier):
     """LLM model voor scheefstand classificatie.
 
     Attributes
@@ -220,7 +220,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class LokaalVerdwenenMetselwerkLLM(LLMClassificeerbaar):
+class LokaalVerdwenenMetselwerkLLM(LLMClassifier):
     """LLM model voor lokaal verdwenen metselwerk classificatie.
 
     Attributes
