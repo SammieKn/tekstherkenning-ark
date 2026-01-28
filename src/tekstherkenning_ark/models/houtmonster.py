@@ -104,6 +104,6 @@ class Houtmonster(BaseModel):
             diameter_paal_ter_hoogte_houtmonster_mm=row_clean[4],
             hoogte_onder_nap_cm=row_clean[5],
             hoogte_tov_onderzijde_fundering_cm=row_clean[6],
-            is_wankant_aanwezig=utils.parse_ja_nee(row_clean[7]),
+            is_wankant_aanwezig=utils.parse_ja_nee(row_clean[7]) if row_clean[7] else None,
             datum_monstername=row_clean[8],
         )

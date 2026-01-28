@@ -36,6 +36,8 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
 
     if value.strip().lower().startswith("ja"):
         return True
+    if value.strip().lower().startswith("a"):
+        return True  # Maar, geef melding dat dit niet standaard is - Matthias
     if value.strip().lower().startswith("nee"):
         return False
 
