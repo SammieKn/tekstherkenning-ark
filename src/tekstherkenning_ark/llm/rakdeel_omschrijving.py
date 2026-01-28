@@ -1,5 +1,7 @@
 from __future__ import annotations
+import pickle
 
+from tekstherkenning_ark import constants
 from tekstherkenning_ark.llm.llm import AzureOpenAILLM
 from tekstherkenning_ark.enums import (
     MateriaalBovenbouw,
@@ -76,25 +78,35 @@ class RakdeelOmschrijving(BaseModel):
         RakdeelOmschrijving
             Het geclassificeerde RakdeelOmschrijving object.
         """
-        llm = AzureOpenAILLM()
 
-        system_prompt = """Je bent een expert in het analyseren van constructie-omschrijvingen van kademuren.
-            Extraheer de relevante informatie uit de omschrijving en vul de velden in.
-            Laat velden leeg of op NietBeschikbaar.LEEG als de informatie niet beschikbaar is."""
+        cache_file = constants.CACHE_DIR / f"rakdeel_omschrijving_{hash(omschrijving)}.pkl"
 
-        print("Classificeren van rakdeel omschrijving via LLM...")
-        response = llm.client.beta.chat.completions.parse(
-            model=llm.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
-            ],
-            response_format=RakdeelOmschrijving,
-            temperature=0,
-        )
-
-        parsed_result = response.choices[0].message.parsed
-        if parsed_result is None:
-            raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
+        if cache_file.exists():
+            print(f"Loading cached RakdeelOmschrijving from {cache_file}")
+            parsed_result = pickle.loads(cache_file.read_bytes())
         else:
-            return parsed_result
+
+            llm = AzureOpenAILLM()
+
+            system_prompt = """Je bent een expert in het analyseren van constructie-omschrijvingen van kademuren.
+                Extraheer de relevante informatie uit de omschrijving en vul de velden in.
+                Laat velden leeg of op NietBeschikbaar.LEEG als de informatie niet beschikbaar is."""
+
+            print("Classificeren van rakdeel omschrijving via LLM...")
+            response = llm.client.beta.chat.completions.parse(
+                model=llm.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
+                ],
+                response_format=RakdeelOmschrijving,
+                temperature=0,
+            )
+
+            parsed_result = response.choices[0].message.parsed
+            if parsed_result is None:
+                raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
+
+            cache_file.write_bytes(pickle.dumps(parsed_result))
+
+        return parsed_result
