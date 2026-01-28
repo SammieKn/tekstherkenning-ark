@@ -1,4 +1,5 @@
 from __future__ import annotations
+import hashlib
 import pickle
 
 from tekstherkenning_ark import constants
@@ -79,7 +80,8 @@ class RakdeelOmschrijving(BaseModel):
             Het geclassificeerde RakdeelOmschrijving object.
         """
 
-        cache_file = constants.CACHE_DIR / f"rakdeel_omschrijving_{hash(omschrijving)}.pkl"
+        hash_key = hashlib.md5(omschrijving.encode()).hexdigest()
+        cache_file = constants.CACHE_DIR / f"rakdeel_omschrijving_{hash_key}.pkl"
 
         if cache_file.exists():
             print(f"Loading cached RakdeelOmschrijving from {cache_file}")

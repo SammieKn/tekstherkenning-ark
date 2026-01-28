@@ -69,10 +69,10 @@ if __name__ == "__main__":
 
     TEST_PDF_PATH = DATA_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
 
-    llm = AzureOpenAILLM()
-    is_valid, message = llm.validate_api_key()
-    if not is_valid:
-        raise ValueError(f"Azure OpenAI API key is not set or invalid, response: '{message}'.")
+    # llm = AzureOpenAILLM()
+    # is_valid, message = llm.validate_api_key()
+    # if not is_valid:
+    #     print(f"Azure OpenAI API key is not set or invalid, response: '{message}'.")
 
     doc = SmartDocument.from_pdf(TEST_PDF_PATH)
 
