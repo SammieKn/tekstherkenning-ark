@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
+from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
@@ -8,6 +11,7 @@ from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, Grond
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
+
 
 class Rakdeel(BaseModel):
     """Rakdeel.
@@ -23,22 +27,26 @@ class Rakdeel(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over het rakdeel.
     """
 
-    bovenbouw: Bovenbouw
-    # Te vinden in paragraaf 5.x, eerste alinea.
-    constructietype: str
-    gebreken: list[Gebrek] = []
-    # Te vinden in paragraaf 5.x, eerste zin.
-    lengte_m: float | None = None
-    onderbouw: Onderbouw
     # Te vinden in paragraaf 5.x, kopregel of inhoudsopgave.
     rakdeel_id: str
+
+    # De constructie omschrijving
+    omschrijving: str = ""
+
+    # Te vinden in paragraaf 5.x, eerste zin.
+    lengte_m: float | None = None
+
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None
-    # Te vinden in de tekst van de constructiebeschrijving of samenvatting.
-    opmerkingen: str = ""
+
+    bovenbouw: Bovenbouw
+    onderbouw: Onderbouw
+    gebreken: list[Gebrek] = []
 
     @classmethod
-    def from_smartdocument(cls, section: RakdeelSectie) -> Rakdeel:
+    def from_smart_doc_section(
+        cls, section: RakdeelSectie, kespen_dict: dict[str, Kesp], palen_dict: dict[str, Paal]
+    ) -> Rakdeel:
         """Genereer een lijst van Rakdeel modellen vanuit een lijst van RakdeelSectie modellen.
 
         Args:
@@ -47,23 +55,37 @@ class Rakdeel(BaseModel):
         Returns:
             list[Rakdeel]: Lijst van gegenereerde Rakdeel modellen.
         """
-        # TODO: Implementeer de parsing logica hier
-        # stap 1 is de constructie omschrijving parsen
+
+        # Parse constructieomschrijving met LLM
+        # dit is van belang voor paragrafen die aangemaakt worden vanuit de tekeningen (symbolen).
         omschrijving = ""
-        # dit is van belang voor paragrafen die aangemaakt worden vanuit de tekeningen (symbolen). 
         for paragraaf in section.beschrijving:
             if len(paragraaf.content.strip()) > 20:
                 omschrijving += paragraaf.content + "\n"
         rakdeel_omschrijving = RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
-        # stap 2 is de gebrekentabel parsen naar gebreken
+        # Parse gebrekentabel
         gebreken = Rakdeel._parse_gebreken_tabel(tabellen=section.gebreken_tabel)
+
+        # Verkrijg palen en kespen voor dit rakdeel
+        rakdeel_id_lower = section.constructie_naam.lower()
+
+        paal_key = next((key for key in palen_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
+        if not paal_key:
+            print(f"Waarschuwing: Geen palen gevonden voor rakdeel_id {section.constructie_naam}")
+        palen = palen_dict.get(paal_key, [])
+
+        kesp_key = next((key for key in kespen_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
+        if not kesp_key:
+            print(f"Waarschuwing: Geen kespen gevonden voor rakdeel_id {section.constructie_naam}")
+        kespen = kespen_dict.get(kesp_key, [])
+
         # stap 3 is de eigenschappen van onderbouw en bovenbouw te koppelen
         onderbouw = Onderbouw(
-            # kespen=Kesp.from_doctables?
-            onderloopsheidscherm=rakdeel_omschrijving.onderloopsheidscherm,
-            # palen=palen.from_doctables?
-            vloer=rakdeel_omschrijving.materiaal_vloer,
+            palen=palen,
+            kespen=kespen,
+            # onderloopsheidscherm=rakdeel_omschrijving.onderloopsheidscherm, # TODO
+            # vloer=rakdeel_omschrijving.materiaal_vloer,
             materiaal=rakdeel_omschrijving.materiaal_onderbouw,
         )
         bovenbouw = Bovenbouw(
@@ -73,14 +95,16 @@ class Rakdeel(BaseModel):
 
         rakdeel = Rakdeel(
             bovenbouw=bovenbouw,
-            constructietype=omschrijving,  # TODO: Bepaal constructietype op basis van omschrijving en/of tabellen
             gebreken=gebreken,
             lengte_m=rakdeel_omschrijving.lengte_rakdeel,
             onderbouw=onderbouw,
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,
-            opmerkingen=""
+            omschrijving=omschrijving,
         )
+
+        return rakdeel
+
     @classmethod
     def _parse_gebreken_tabel(cls, tabellen: list[DocumentTable]) -> list[Gebrek]:
         # @TAVMWB: Dit is een helper functie voor een specifieke instantie om diens gebrekentabel te parsen.
@@ -94,3 +118,4 @@ class Rakdeel(BaseModel):
             list[Gebrek]: Lijst van gegenereerde Gebrek modellen.
         """
         gebreken: list[Gebrek] = []
+        return gebreken
