@@ -17,6 +17,7 @@ dependencies = [
     "pandas>=3.0.0",
     "openpyxl>=3.1.5",
     "unidecode>=1.4.0",
+    "pytest>=9.0.2",
 ]
 
 [tool.black]

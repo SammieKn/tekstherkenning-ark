@@ -4,6 +4,7 @@ from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -33,7 +34,7 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
     return table_data
 
 
-def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
+def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     """Parse a Ja/Nee string to a boolean value."""
 
     if value.strip().lower().startswith("ja"):
@@ -48,7 +49,11 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
     except:
         pass
 
-    raise ValueError(f"Invalid value for Ja/Nee parsing: `{value}`")
+    return OnverwachtResultaat(
+        waarde=value,
+        onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
+        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`"
+    )
 
 
 def clean_paal_id(value: str) -> str:
