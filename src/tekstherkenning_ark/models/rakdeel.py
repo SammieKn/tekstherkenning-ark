@@ -4,7 +4,9 @@ from typing import Type, TypeVar
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
+from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
@@ -78,8 +80,8 @@ class Rakdeel(BaseModel):
         onderbouw = Onderbouw(
             palen=palen,
             kespen=kespen,
-            # onderloopsheidscherm=rakdeel_omschrijving.onderloopsheidscherm, # TODO
-            # vloer=rakdeel_omschrijving.materiaal_vloer,
+            onderloopsheidscherm=Onderloopsheidscherm.from_rakdeel_omschrijving(rakdeel_omschrijving),
+            vloer=Vloer.from_rakdeel_omschrijving(rakdeel_omschrijving),
             materiaal=rakdeel_omschrijving.materiaal_onderbouw,
         )
         bovenbouw = Bovenbouw(
