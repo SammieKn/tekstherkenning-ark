@@ -36,6 +36,8 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
 
     if value.strip().lower().startswith("ja"):
         return True
+    if value.strip().lower().startswith("a"):
+        return True  # Maar, geef melding dat dit niet standaard is - Matthias
     if value.strip().lower().startswith("nee"):
         return False
 
@@ -59,6 +61,22 @@ def is_kesp_id(value: str) -> bool:
 
     pattern = r"^K\d+$"
     return bool(re.match(pattern, value.strip()))
+
+
+def is_houtmonster_id(value: str) -> bool:
+    """Check if a string represents a valid houtmonsternummer codering,
+    e.g. 'HEG0801/CONSTRUCTIE A/P1.16/HM'"""
+
+    elements = value.strip().split("/")
+    if len(elements) != 4:
+        return False
+
+    doc_id, constructie, paal_id, hm = elements
+
+    if not "CONSTRUCTIE" in constructie or not is_paal_id(paal_id) or not hm.lower().strip() == "hm":
+        return False
+
+    return True
 
 
 def clean_string(value: str) -> str:
