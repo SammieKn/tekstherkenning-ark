@@ -9,6 +9,7 @@ from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
 
+
 class Rakdeel(BaseModel):
     """Rakdeel.
 
@@ -50,7 +51,7 @@ class Rakdeel(BaseModel):
         # TODO: Implementeer de parsing logica hier
         # stap 1 is de constructie omschrijving parsen
         omschrijving = ""
-        # dit is van belang voor paragrafen die aangemaakt worden vanuit de tekeningen (symbolen). 
+        # dit is van belang voor paragrafen die aangemaakt worden vanuit de tekeningen (symbolen).
         for paragraaf in section.beschrijving:
             if len(paragraaf.content.strip()) > 20:
                 omschrijving += paragraaf.content + "\n"
@@ -79,8 +80,9 @@ class Rakdeel(BaseModel):
             onderbouw=onderbouw,
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,
-            opmerkingen=""
+            opmerkingen="",
         )
+
     @classmethod
     def _parse_gebreken_tabel(cls, tabellen: list[DocumentTable]) -> list[Gebrek]:
         # @TAVMWB: Dit is een helper functie voor een specifieke instantie om diens gebrekentabel te parsen.

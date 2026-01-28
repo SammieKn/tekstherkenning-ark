@@ -60,6 +60,14 @@ def contains_kesp_id(value: str) -> bool:
     pattern = r"K\d+"
     return bool(re.search(pattern, value.strip()))
 
+
+def is_algemeen_gebrek(value: str) -> bool:
+    """Check if a string indicates an 'algemeen gebrek'."""
+    pattern = r"^GB\d{1,3}$"
+
+    return bool(re.search(pattern, value.strip().upper())) or value == "Algemeen"
+
+
 def clean_string(value: str) -> str:
     """Clean an input string"""
 
