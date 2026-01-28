@@ -1,5 +1,7 @@
 import re
+import unicodedata
 from azure.ai.documentintelligence.models import DocumentTable
+from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 
@@ -36,6 +38,8 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
 
     if value.strip().lower().startswith("ja"):
         return True
+    if value.strip().lower().startswith("a"):
+        return True  # Maar, geef melding dat dit niet standaard is - Matthias
     if value.strip().lower().startswith("nee"):
         return False
 
@@ -45,6 +49,24 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
         pass
 
     raise ValueError(f"Invalid value for Ja/Nee parsing: `{value}`")
+
+
+def clean_paal_id(value: str) -> str:
+    """Correct for common errors in paal ID's.
+
+    Known and accepted exceptions:
+    - P.2.163
+    - 21.169
+    """
+
+    value = clean_string(value)
+
+    exceptions_dict = {
+        "P.2.163": "P2.163",
+        "21.169": "P2.169",
+    }
+
+    return exceptions_dict.get(value, value)
 
 
 def contains_paal_id(value: str) -> bool:
@@ -68,16 +90,35 @@ def is_algemeen_gebrek(value: str) -> bool:
     return bool(re.search(pattern, value.strip().upper())) or value == "Algemeen"
 
 
+def is_houtmonster_id(value: str) -> bool:
+    """Check if a string represents a valid houtmonsternummer codering,
+    e.g. 'HEG0801/CONSTRUCTIE A/P1.16/HM'"""
+
+    elements = clean_string(value).split("/")
+    if len(elements) != 4:
+        return False
+
+    doc_id, constructie, paal_id, hm = elements
+
+    if not "CONSTRUCTIE" in constructie or not contains_paal_id(paal_id) or not hm.lower().strip() == "hm":
+        return False
+
+    return True
+
+
 def clean_string(value: str) -> str:
     """Clean an input string"""
 
+    # Normalize unicode characters
+    value = unidecode(value)
+
     # Remove leading/trailing quotes
-    cleaned_value = value.strip('"').strip("'").strip("`")
+    value = value.strip('"').strip("'").strip("`")
 
     # Remove anything between two ':' characters
-    cleaned_value = re.sub(r":.*?:", "", cleaned_value)
+    value = re.sub(r":.*?:", "", value)
 
     # Remove leading and trailing whitespace
-    cleaned_value = cleaned_value.strip()
+    value = value.strip()
 
-    return cleaned_value
+    return value

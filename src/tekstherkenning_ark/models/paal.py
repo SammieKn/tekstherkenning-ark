@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
+from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from azure.ai.documentintelligence.models import DocumentTable
@@ -16,14 +16,14 @@ class Paal(BaseModel):
     Attributes:
         gebreken: Lijst van gebreken gevonden in de paal.
         paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
-        paalnummer: Nummer van de paal binnen de paalrij.
+        _: Nummer van de paal binnen de paalrij.
         aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
         is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
         is_onderzocht: Indicatie of de paal is onderzocht.
         opmerkingen: Eventuele opmerkingen over de paal.
         schoorstand_graden: Schoorstand van de paal in graden.
         scheefstand: Indicatie of de paal scheefstand heeft.
-        materiaal: Materiaal van de paal.
+        materiaal: Materiaal van de paal. (MateriaalOnderbouw)
         diameter_haaks: Diameter haaks op de gevel in mm.
         diameter_parallel: Diameter parallel aan de gevel in mm.
         diameter_gemiddeld: Gemiddelde diameter in mm.
@@ -46,7 +46,7 @@ class Paal(BaseModel):
     paalrij_nummer: str = ""
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
-    paalnummer: str
+    paal_nummer: str
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
@@ -54,7 +54,7 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
-    materiaal: Materiaal | None = None
+    materiaal: MateriaalOnderbouw | None = None
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
@@ -87,6 +87,12 @@ class Paal(BaseModel):
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
     houtmonsters: list[Houtmonster] = []
 
+    @property
+    def paal_nummer_main(self) -> int:
+        """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
+
+        return int(self.paal_nummer.split(".")[1])
+
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Paal]]:
         """Parse and return a list of Paal objects from a Azure Doc
@@ -118,9 +124,11 @@ class Paal(BaseModel):
         paal_dict: dict[str, list[Paal]] = {}
         current_constructie_id = ""
 
+        last_main_paal_nummer = 0
+
         for row in paal_rows:
 
-            constructie_id_col_val = row[16].strip()
+            constructie_id_col_val = utils.clean_string(row[16])
 
             if constructie_id_col_val != "":
                 current_constructie_id = constructie_id_col_val
@@ -128,10 +136,19 @@ class Paal(BaseModel):
                 if current_constructie_id not in paal_dict:
                     paal_dict[current_constructie_id] = []
                 else:
-                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                    print(f"Duplicate constructie ID found: {current_constructie_id}")
 
             if current_constructie_id != "":
                 paal = cls.from_paal_table_row(row)
+
+                # Validate paal nummers are sequential
+                if not paal.paal_nummer_main in [last_main_paal_nummer, last_main_paal_nummer + 1]:
+                    print(
+                        f"Paal nummers are not sequential. Expected {last_main_paal_nummer} or {last_main_paal_nummer + 1}, got {paal.paal_nummer_main} for {paal.paal_nummer}. \nLast 5 palen: {[p.paal_nummer for p in paal_dict[current_constructie_id][-5:]]}"
+                    )
+                last_main_paal_nummer = paal.paal_nummer_main
+
+                # Add paal to the correct constructie ID list
                 paal_dict[current_constructie_id].append(paal)
 
         return paal_dict
@@ -155,7 +172,7 @@ class Paal(BaseModel):
         row_clean = [utils.clean_string(val) for val in row]
 
         return cls(
-            paalnummer=row_clean[0],
+            paal_nummer=utils.clean_paal_id(row_clean[0]),
             diameter_haaks=row_clean[1],
             diameter_parallel=row_clean[2],
             diameter_gemiddeld=row_clean[3],
@@ -170,3 +187,18 @@ class Paal(BaseModel):
             aansluiting_status=AansluitingStatus(row_clean[14]),
             positionering_aansluiting_cm=row_clean[15],
         )
+
+
+if __name__ == "__main__":
+
+    from tekstherkenning_ark.smart_document import SmartDocument
+    from tekstherkenning_ark import constants
+
+    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
+
+    paal_tables = doc.get_meettabel_fundering_paal()
+    palen_dict = Paal.from_doc_tables(paal_tables)
+
+    for palen in palen_dict.values():
+        for paal in palen:
+            print(paal.paal_nummer)

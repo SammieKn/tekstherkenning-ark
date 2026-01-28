@@ -1,6 +1,14 @@
+from __future__ import annotations
 from pydantic import BaseModel
 
+from tekstherkenning_ark import constants
+from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.llm.llm import AzureOpenAILLM
+from tekstherkenning_ark.models.houtmonster import Houtmonster
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.smart_document import SmartDocument
 
 
 class Rak(BaseModel):
@@ -21,3 +29,77 @@ class Rak(BaseModel):
     totale_lengte_m: float
     # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
     opmerkingen: str = ""
+
+    @classmethod
+    def from_smart_document(cls, doc: SmartDocument) -> Rak:
+        """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
+
+        # Laad palen, kespen en houtmonsters uit tabellen
+        paal_tables = doc.get_meettabel_fundering_paal()
+        palen_dict = Paal.from_doc_tables(paal_tables)
+
+        kesp_tables = doc.get_meettabel_fundering_kesp()
+        kespen_dict = Kesp.from_doc_tables(kesp_tables)
+
+        houtmonster_tables = doc.get_meettabel_houtmonsters()
+        houtmonsters = Houtmonster.from_doc_tables(houtmonster_tables)
+
+        # Plaats houtmonsters onder juiste palen
+        processed_houtmonsters: set[Houtmonster] = set()
+        for _, palen in palen_dict.items():
+            for paal in palen:
+                paal.houtmonsters = [
+                    hm
+                    for hm in houtmonsters
+                    if paal.paal_nummer == hm.paal_nummer or paal.paal_nummer == hm.codering.split("/")[2]
+                ]
+                if paal.houtmonsters:
+                    processed_houtmonsters.update(set(paal.houtmonsters))
+
+        # Validate that all houtmonsters have been assigned to a paal
+        unprocessed_houtmonsters = set(houtmonsters) - processed_houtmonsters
+        if unprocessed_houtmonsters:
+            raise ValueError(
+                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
+            )
+
+        # Maak rakdelen aan
+        rakdeel_sections = doc.get_rakdeel_secties()
+        rakdelen = [
+            Rakdeel.from_smart_doc_section(
+                section=section,
+                palen_dict=palen_dict,
+                kespen_dict=kespen_dict,
+            )
+            for section in rakdeel_sections
+        ]
+
+        # raknaam = doc.get_raknaam()
+        # totale_lengte_m = doc.get_rak_totale_lengte_m()
+        # opmerkingen = doc.get_rak_opmerkingen()
+
+        return cls(
+            rakdelen=rakdelen,
+            raknaam="",  # TODO
+            totale_lengte_m=0.0,  # TODO
+            opmerkingen="",
+        )
+
+
+if __name__ == "__main__":
+
+    # llm = AzureOpenAILLM()
+    # is_valid, message = llm.validate_api_key()
+    # if not is_valid:
+    #     print(f"Azure OpenAI API key is not set or invalid, response: '{message}'.")
+
+    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
+
+    rak = Rak.from_smart_document(doc)
+
+    for rd in rak.rakdelen:
+        print(rd.rakdeel_id)
+        for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
+            print(f"  Paal: {p.paal_nummer}")
+            for hm in p.houtmonsters:
+                print(f"    Houtmonster: {hm.codering}")
