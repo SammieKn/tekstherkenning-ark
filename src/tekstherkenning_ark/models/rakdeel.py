@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Type, TypeVar
 
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
@@ -11,6 +12,8 @@ from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, Grond
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
+
+T = TypeVar("T", Paal, Kesp)
 
 
 class Rakdeel(BaseModel):
@@ -68,17 +71,8 @@ class Rakdeel(BaseModel):
         gebreken = Rakdeel._parse_gebreken_tabel(tabellen=section.gebreken_tabel)
 
         # Verkrijg palen en kespen voor dit rakdeel
-        rakdeel_id_lower = section.constructie_naam.lower()
-
-        paal_key = next((key for key in palen_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
-        if not paal_key:
-            print(f"Waarschuwing: Geen palen gevonden voor rakdeel_id {section.constructie_naam}")
-        palen = palen_dict.get(paal_key, [])
-
-        kesp_key = next((key for key in kespen_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
-        if not kesp_key:
-            print(f"Waarschuwing: Geen kespen gevonden voor rakdeel_id {section.constructie_naam}")
-        kespen = kespen_dict.get(kesp_key, [])
+        palen = cls.get_for_constructie_naam(section.constructie_naam, palen_dict)
+        kespen = cls.get_for_constructie_naam(section.constructie_naam, kespen_dict)
 
         # stap 3 is de eigenschappen van onderbouw en bovenbouw te koppelen
         onderbouw = Onderbouw(
@@ -104,6 +98,18 @@ class Rakdeel(BaseModel):
         )
 
         return rakdeel
+
+    @staticmethod
+    def get_for_constructie_naam(rakdeel_id: str, obj_dict: dict[str, T]) -> list[T]:
+        """Haalt een lijst van objecten (Paal of Kesp) op voor dit rakdeel op basis van de constructie naam."""
+
+        rakdeel_id_lower = rakdeel_id.lower()
+        key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
+
+        if not key:
+            print(f"Waarschuwing: Geen constructienaam gevonden in {T.__name__} voor rakdeel_id {rakdeel_id}")
+
+        return obj_dict.get(key, [])
 
     @classmethod
     def _parse_gebreken_tabel(cls, tabellen: list[DocumentTable]) -> list[Gebrek]:

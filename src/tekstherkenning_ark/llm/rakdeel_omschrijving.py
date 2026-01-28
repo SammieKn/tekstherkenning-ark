@@ -77,6 +77,7 @@ class RakdeelOmschrijving(BaseModel):
             Extraheer de relevante informatie uit de omschrijving en vul de velden in.
             Laat velden leeg of op NietBeschikbaar.LEEG als de informatie niet beschikbaar is."""
 
+        print("Classificeren van rakdeel omschrijving via LLM...")
         response = llm.client.beta.chat.completions.parse(
             model=llm.model,
             messages=[
