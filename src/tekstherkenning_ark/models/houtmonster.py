@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 from azure.ai.documentintelligence.models import DocumentTable
 
@@ -46,21 +46,6 @@ class Houtmonster(BaseModel):
     is_aangetast: bool | None | OnverwachtResultaat = None
     # Te vinden in bijlage 2, kolom "Stichtingjaar houtmonster:"
     stichtingjaar: int | None | OnverwachtResultaat = None
-
-    @model_validator(mode="before")
-    def validate_attributes(cls, values):
-        """Validate the types of the attributes in the Houtmonster model."""
-        for field, value in values.items():
-            # "Validating field '{field}' with value: {value}")
-            expected_type = cls.model_fields[field].annotation
-            if not isinstance(value, expected_type):
-                # Handle validation errors gracefully
-                values[field] = OnverwachtResultaat(
-                    waarde=value,
-                    onverwacht_resultaat_type=OnverwachtResultaatType.INCORRECT_TYPE,
-                    details=f"Incorrect type for field '{field}'. Expected {expected_type}, got {type(value)}.",
-                )
-        return values
 
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Houtmonster]:
