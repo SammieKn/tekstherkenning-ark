@@ -6,6 +6,14 @@ from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark.utils import get_table_content, contains_kesp_id, contains_paal_id, is_algemeen_gebrek
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.llm.gebrek_classificatie import (
+    ScheurMetselwerkLLM,
+    ScheurHoutLLM,
+    GrondVoerendGatLLM,
+    BuikInWandLLM,
+    ScheefstandLLM,
+    LokaalVerdwenenMetselwerkLLM,
+)
 
 
 class Gebrek(BaseModel):
@@ -81,35 +89,72 @@ class Gebrek(BaseModel):
         Returns
         -------
         Gebrek
-            Een specifiek subtype van Gebrek.
+            Een specifiek subtype van Gebrek met geëxtraheerde attributen.
         """
         omschrijving = gebrek.omschrijving.lower()
 
         # logica voor scheur
         if "scheur" in omschrijving:
             if contains_paal_id(omschrijving) or contains_kesp_id(gebrek.codering):
-                pass
-                # code to classify as ScheurHout based on llm
+                llm_result = ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return ScheurHout(
+                    codering=gebrek.codering,
+                    omschrijving=gebrek.omschrijving,
+                    figuurnummer=gebrek.figuurnummer,
+                    lengte_cm=llm_result.lengte_cm,
+                    scheurwijdte_mm=llm_result.scheurwijdte_mm,
+                    diepte_cm=llm_result.diepte_cm,
+                    orientatie=llm_result.orientatie,
+                )
             elif "metselwerk" in omschrijving:
-                pass
-                # code to classify as ScheurMetselwerk based on llm
+                llm_result = ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return ScheurMetselwerk(
+                    codering=gebrek.codering,
+                    omschrijving=gebrek.omschrijving,
+                    figuurnummer=gebrek.figuurnummer,
+                    lengte_cm=llm_result.lengte_cm,
+                    scheurwijdte_mm=llm_result.scheurwijdte_mm,
+                    afstand_van_startrak_m=llm_result.afstand_van_startrak_m,
+                    afstand_van_waterlijn_cm=llm_result.afstand_van_waterlijn_cm,
+                    afstand_van_deksloof_cm=llm_result.afstand_van_deksloof_cm,
+                    is_inprikbaar=llm_result.is_inprikbaar,
+                    orientatie=llm_result.orientatie,
+                )
 
         # logica voor grondvoerend gat
         if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            pass
-            # code to classify as GrondVoerendGat based on llm
+            llm_result = GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return GrondVoerendGat(
+                codering=gebrek.codering,
+                omschrijving=gebrek.omschrijving,
+                figuurnummer=gebrek.figuurnummer,
+                afstand_van_startrak_m=llm_result.afstand_van_startrak_m,
+                afmetingen_cm=[llm_result.breedte_cm, llm_result.hoogte_cm, llm_result.diepte_cm],
+            )
 
         # logica voor buikinwand
         if "buik" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            pass
-            # code to classify as BuikInWand based on llm
+            llm_result = BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return BuikInWand(
+                codering=gebrek.codering,
+                omschrijving=gebrek.omschrijving,
+                figuurnummer=gebrek.figuurnummer,
+                afstand_van_startrak_m=llm_result.afstand_van_startrak_m,
+                uitbuiking_cm=llm_result.uitbuiking_cm,
+            )
 
+        # logica voor scheefstand
         if "scheefstand" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            pass
-            # code to classify as Scheefstand based on llm
+            llm_result = ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return Scheefstand(
+                codering=gebrek.codering,
+                omschrijving=gebrek.omschrijving,
+                figuurnummer=gebrek.figuurnummer,
+                afstand_van_startrak_m=llm_result.afstand_van_startrak_m,
+                hoek_graden=llm_result.hoek_graden,
+            )
 
         # logica voor lokaal verdwenen metselwerk
-        # TODO: uitbreiden met echte synoniemen
         synonyms = [
             "ontbreekt metselwerk",
             "vermist metselwerk",
@@ -118,8 +163,14 @@ class Gebrek(BaseModel):
             "lokale beschadiging metselwerk",
         ]
         if any(synonym in omschrijving for synonym in synonyms) and is_algemeen_gebrek(gebrek.codering):
-            pass
-            # code to classify as LokaalVerdwenenMetselwerk based on llm\
+            llm_result = LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return LokaalVerdwenenMetselwerk(
+                codering=gebrek.codering,
+                omschrijving=gebrek.omschrijving,
+                figuurnummer=gebrek.figuurnummer,
+                afstand_van_startrak_m=llm_result.afstand_van_startrak_m,
+                afmetingen_cm=[llm_result.breedte_cm, llm_result.hoogte_cm, llm_result.diepte_cm],
+            )
 
         return gebrek  # Retourneer het originele gebrek als geen subtype herkend is
 
