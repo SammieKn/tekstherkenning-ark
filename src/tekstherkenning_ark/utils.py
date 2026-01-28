@@ -1,4 +1,7 @@
+import re
 from azure.ai.documentintelligence.models import DocumentTable
+
+from tekstherkenning_ark.enums import NietBeschikbaar
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -26,3 +29,48 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
                 table_data[row][col] = cell.content if cell.content else ""
 
     return table_data
+
+
+def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
+    """Parse a Ja/Nee string to a boolean value."""
+
+    if value.strip().lower().startswith("ja"):
+        return True
+    if value.strip().lower().startswith("nee"):
+        return False
+
+    try:
+        return NietBeschikbaar(value.strip())
+    except:
+        pass
+
+    raise ValueError(f"Invalid value for Ja/Nee parsing: `{value}`")
+
+
+def is_paal_id(value: str) -> bool:
+    """Check if a string follows the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
+
+    pattern = r"^P\d+\.\d+$"
+    return bool(re.match(pattern, value.strip()))
+
+
+def is_kesp_id(value: str) -> bool:
+    """Check if a string follows the pattern 'K\d+' (e.g., K1, K24)"""
+
+    pattern = r"^K\d+$"
+    return bool(re.match(pattern, value.strip()))
+
+
+def clean_string(value: str) -> str:
+    """Clean an input string"""
+
+    # Remove leading/trailing quotes
+    cleaned_value = value.strip('"').strip("'").strip("`")
+
+    # Remove anything between two ':' characters
+    cleaned_value = re.sub(r":.*?:", "", cleaned_value)
+
+    # Remove leading and trailing whitespace
+    cleaned_value = cleaned_value.strip()
+
+    return cleaned_value

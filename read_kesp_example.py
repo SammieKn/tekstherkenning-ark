@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.tekstherkenning_ark.parsed_pdf import ParsedPDF
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.paal import Paal
 
 TEST_PDF_PATH = DATA_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
@@ -31,13 +32,13 @@ def main():
     # Save full results to PDF
     # parsed_pdf.to_pdf()
 
-    tables = parsed_pdf.result.tables[89:94]
-    paal_dict = Paal.from_doc_tables(tables)
+    tables = parsed_pdf.result.tables[94:100]  # Kespen tables
+    kesp_dict = Kesp.from_doc_tables(tables)
 
-    for constructie, palen in paal_dict.items():
+    for constructie, kespen in kesp_dict.items():
         print(f"\nConstructie ID: {constructie}")
-        for paal in palen:
-            print(paal)
+        for kesp in kespen:
+            print(kesp.kespnummer)
 
 
 if __name__ == "__main__":
