@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.enums import Materiaal, SchoorStand, NietBeschikbaar, AansluitingStatus
+from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from azure.ai.documentintelligence.models import DocumentTable
@@ -23,7 +23,7 @@ class Paal(BaseModel):
         opmerkingen: Eventuele opmerkingen over de paal.
         schoorstand_graden: Schoorstand van de paal in graden.
         scheefstand: Indicatie of de paal scheefstand heeft.
-        materiaal: Materiaal van de paal.
+        materiaal: Materiaal van de paal. (MateriaalOnderbouw)
         diameter_haaks: Diameter haaks op de gevel in mm.
         diameter_parallel: Diameter parallel aan de gevel in mm.
         diameter_gemiddeld: Gemiddelde diameter in mm.
@@ -54,7 +54,7 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
     schoorstand_graden: float | None = None
     scheefstand: bool | None = None
-    materiaal: Materiaal | None = None
+    materiaal: MateriaalOnderbouw | None = None
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
