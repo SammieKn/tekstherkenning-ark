@@ -1,23 +1,30 @@
 from enum import Enum
 
+class MateriaalFundering(Enum):
+    """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+    HOUT = "Hout"
+    STAAL = "Staal"
+    BETON = "Beton"
 
-class Materiaal(Enum):
-    """Materiaaltype"""
+class MateriaalOnderbouw(Enum):
+    """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+    HOUT = "Hout"
+    STAAL = "Staal"
+    BETON = "Beton"
 
-    HOUT = "hout"
-    BETON = "beton"
-    STAAL = "staal"
-
-
-class BovenbouwMateriaal(Enum):
-    """Materiaaltype voor bovenbouw"""
-
-    MESTELWERK = "Metselwerk"
+class MateriaalBovenbouw(Enum):
+    """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+    METSELWERK = "Metselwerk"
     BASALT = "Basalt"
-    BETON_MESTELWERK = "Beton+Metselwerk"
+    BETON_METSELWERK = "Beton+Metselwerk"
     BETON_BASALT = "Beton+Basalt"
     BETON = "Beton"
 
+class MateriaalVloer(Enum):
+    """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+    ONBEKEND = "Onbekend"
+    HOUT = "Hout"
+    BETON = "Beton"
 
 class SchoorStand(Enum):
     POSITIEF = "PNV"
