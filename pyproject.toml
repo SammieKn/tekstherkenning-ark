@@ -13,6 +13,10 @@ dependencies = [
     "azure-ai-documentintelligence>=1.0.0",
     "python-dotenv>=1.0.0",
     "reportlab>=4.0.0",
+    "openai>=2.15.0",
+    "tiktoken>=0.12.0",
+    "pandas>=3.0.0",
+    "openpyxl>=3.1.5",
 ]
 
 [tool.black]
