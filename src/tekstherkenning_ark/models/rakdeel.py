@@ -107,7 +107,10 @@ class Rakdeel(BaseModel):
         key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
 
         if not key:
-            print(f"Waarschuwing: Geen constructienaam gevonden in {T.__name__} voor rakdeel_id {rakdeel_id}")
+            obj_type = next((x[0].__class__.__name__ for x in obj_dict.values() if x))
+            print(
+                f"Waarschuwing: Geen constructienaam gevonden in {obj_type} voor rakdeel_id {rakdeel_id}. Beschikbare keys: {list(obj_dict.keys())}"
+            )
 
         return obj_dict.get(key, [])
 
