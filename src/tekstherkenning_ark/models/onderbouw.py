@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from tekstherkenning_ark.enums import MateriaalVloer, NietBeschikbaar
+from tekstherkenning_ark.enums import MateriaalOnderbouw, MateriaalVloer, NietBeschikbaar
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
@@ -28,4 +28,4 @@ class Onderbouw(BaseModel):
     onderloopsheidscherm: Onderloopsheidscherm | None = None
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
-    materiaal: MateriaalVloer | NietBeschikbaar = NietBeschikbaar.LEEG
+    materiaal: MateriaalOnderbouw | NietBeschikbaar = NietBeschikbaar.LEEG
