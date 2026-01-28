@@ -8,7 +8,7 @@ from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, GrondVoerendGat, BuikInWand
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
@@ -68,7 +68,7 @@ class Rakdeel(BaseModel):
         rakdeel_omschrijving = RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
         # Parse gebrekentabel
-        gebreken = Rakdeel._parse_gebreken_tabel(tabellen=section.gebreken_tabel)
+        gebreken = Gebrek.from_doc_tables(tables=section.gebreken_tabel)
 
         # Verkrijg palen en kespen voor dit rakdeel
         palen = cls.get_for_constructie_naam(section.constructie_naam, palen_dict)
@@ -113,18 +113,3 @@ class Rakdeel(BaseModel):
             )
 
         return obj_dict.get(key, [])
-
-    @classmethod
-    def _parse_gebreken_tabel(cls, tabellen: list[DocumentTable]) -> list[Gebrek]:
-        # @TAVMWB: Dit is een helper functie voor een specifieke instantie om diens gebrekentabel te parsen.
-        # TODO: implementeer de parsing logica hier
-        """Parse de gebrekentabel naar een lijst van Gebrek modellen.
-
-        Args:
-            tabel (DocumentTable): De DocumentTable die de gebrekentabel bevat.
-
-        Returns:
-            list[Gebrek]: Lijst van gegenereerde Gebrek modellen.
-        """
-        gebreken: list[Gebrek] = []
-        return gebreken

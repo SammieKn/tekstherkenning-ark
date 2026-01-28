@@ -1,9 +1,10 @@
 from __future__ import annotations
+import pickle
 from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.llm.llm import AzureOpenAILLM
+from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.paal import Paal
@@ -31,8 +32,14 @@ class Rak(BaseModel):
     opmerkingen: str = ""
 
     @classmethod
-    def from_smart_document(cls, doc: SmartDocument) -> Rak:
+    def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
+
+        cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
+        if cache_file.exists() and use_caching:
+            print(f"Loading cached Rak from {cache_file}")
+            rak_instance = pickle.loads(cache_file.read_bytes())
+            return rak_instance
 
         # Laad palen, kespen en houtmonsters uit tabellen
         paal_tables = doc.get_meettabel_fundering_paal()
@@ -78,12 +85,16 @@ class Rak(BaseModel):
         # totale_lengte_m = doc.get_rak_totale_lengte_m()
         # opmerkingen = doc.get_rak_opmerkingen()
 
-        return cls(
+        rak_instance = cls(
             rakdelen=rakdelen,
             raknaam="",  # TODO
             totale_lengte_m=0.0,  # TODO
             opmerkingen="",
         )
+
+        cache_file.write_bytes(pickle.dumps(rak_instance))
+
+        return rak_instance
 
 
 if __name__ == "__main__":

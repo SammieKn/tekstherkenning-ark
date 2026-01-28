@@ -70,10 +70,16 @@ class Gebrek(BaseModel):
                 break
             try:
                 gebrek_instance = cls(codering=row[0], omschrijving=row[1], figuurnummer=row[2])
+                list_gebreken.append(gebrek_instance)
             except Exception as e:
                 raise ValueError(f"Fout bij parsen van rij {row}: {e}")
 
-            list_gebreken.append(gebrek_instance)
+        # Classificeer elk gebrek naar een specifiek subtype indien mogelijk
+        for gebrek in list_gebreken:
+            specifiek_gebrek = cls.classify_gebrek(gebrek)
+            if specifiek_gebrek != gebrek:
+                index = list_gebreken.index(gebrek)
+                list_gebreken[index] = specifiek_gebrek
 
         return list_gebreken
 
