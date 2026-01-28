@@ -46,9 +46,9 @@ class Rak(BaseModel):
         rakdeel_sections = doc.get_rakdeel_secties()
         rakdelen = [
             Rakdeel.from_smart_doc_section(
-                section,
-                palen_dict,
-                kespen_dict,
+                section=section,
+                palen_dict=palen_dict,
+                kespen_dict=kespen_dict,
             )
             for section in rakdeel_sections
         ]
