@@ -72,6 +72,8 @@ def clean_paal_id(value: str) -> str:
 def contains_paal_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
 
+    value = clean_paal_id(clean_string(value))
+
     pattern = r"P\d+\.\d+"
     return bool(re.search(pattern, value.strip()))
 
