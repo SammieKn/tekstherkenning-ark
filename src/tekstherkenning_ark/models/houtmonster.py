@@ -29,11 +29,11 @@ class Houtmonster(BaseModel):
     # Te vinden in bijlage 1, kolom "Rak code"
     rak_code: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Paal nummer"
-    paal_nummer: str| OnverwachtResultaat
+    paal_nummer: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Houtmonster", of bijlage 2, kolom "Houtmonstercode"
     houtmonster_code: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Diameter paal" of bijlage 2, kolom "Diameter paal ter hoogte van houtmonster:"
-    diameter_paal_ter_hoogte_houtmonster_mm: int | None | OnverwachtResultaat= None
+    diameter_paal_ter_hoogte_houtmonster_mm: int | None | OnverwachtResultaat = None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. NAP" of bijlage 2, kolom "Hoogte monstername onder NAP:"
     hoogte_onder_nap_cm: int | None | OnverwachtResultaat = None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. houtmonster/vloer", of bijlage 2, kolom "Hoogte monstername t.o.v. onderzijde fundering:"
@@ -58,7 +58,7 @@ class Houtmonster(BaseModel):
                 values[field] = OnverwachtResultaat(
                     waarde=value,
                     onverwacht_resultaat_type=OnverwachtResultaatType.INCORRECT_TYPE,
-                    details=f"Incorrect type for field '{field}'. Expected {expected_type}, got {type(value)}."
+                    details=f"Incorrect type for field '{field}'. Expected {expected_type}, got {type(value)}.",
                 )
         return values
 
