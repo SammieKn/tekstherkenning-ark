@@ -47,19 +47,18 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar:
     raise ValueError(f"Invalid value for Ja/Nee parsing: `{value}`")
 
 
-def is_paal_id(value: str) -> bool:
-    """Check if a string follows the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
+def contains_paal_id(value: str) -> bool:
+    r"""Check if a string contains the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
 
-    pattern = r"^P\d+\.\d+$"
-    return bool(re.match(pattern, value.strip()))
+    pattern = r"P\d+\.\d+"
+    return bool(re.search(pattern, value.strip()))
 
 
-def is_kesp_id(value: str) -> bool:
-    """Check if a string follows the pattern 'K\d+' (e.g., K1, K24)"""
+def contains_kesp_id(value: str) -> bool:
+    r"""Check if a string contains the pattern 'K\d+' (e.g., K1, K24)"""
 
-    pattern = r"^K\d+$"
-    return bool(re.match(pattern, value.strip()))
-
+    pattern = r"K\d+"
+    return bool(re.search(pattern, value.strip()))
 
 def clean_string(value: str) -> str:
     """Clean an input string"""

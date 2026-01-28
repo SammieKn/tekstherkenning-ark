@@ -82,7 +82,7 @@ class Kesp(BaseModel):
             table_rows = utils.get_table_content(table)
 
             # Skip header rows and add to paal_rows
-            content_rows = [r for r in table_rows if utils.is_kesp_id(r[0])]
+            content_rows = [r for r in table_rows if utils.contains_kesp_id(r[0])]
             kesp_rows.extend(content_rows)
 
         # Parse each row into a Paal object
