@@ -1,9 +1,10 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark import utils
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaatType, OnverwachtResultaat
 
 
 class Houtmonster(BaseModel):
@@ -24,27 +25,42 @@ class Houtmonster(BaseModel):
     """
 
     # Te vinden in bijlage 1, kolom 'Codering'
-    codering: str
+    codering: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Rak code"
-    rak_code: str
+    rak_code: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Paal nummer"
-    paal_nummer: str
+    paal_nummer: str| OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Houtmonster", of bijlage 2, kolom "Houtmonstercode"
-    houtmonster_code: str
+    houtmonster_code: str | OnverwachtResultaat
     # Te vinden in bijlage 1, kolom "Diameter paal" of bijlage 2, kolom "Diameter paal ter hoogte van houtmonster:"
-    diameter_paal_ter_hoogte_houtmonster_mm: int | None = None
+    diameter_paal_ter_hoogte_houtmonster_mm: int | None | OnverwachtResultaat= None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. NAP" of bijlage 2, kolom "Hoogte monstername onder NAP:"
-    hoogte_onder_nap_cm: int | None = None
+    hoogte_onder_nap_cm: int | None | OnverwachtResultaat = None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. houtmonster/vloer", of bijlage 2, kolom "Hoogte monstername t.o.v. onderzijde fundering:"
-    hoogte_tov_onderzijde_fundering_cm: int | None = None
+    hoogte_tov_onderzijde_fundering_cm: int | None | OnverwachtResultaat = None
     # Te vinden in bijlage 1, kolom "Wankant aanwezig?" of bijlage 2, kolom "Wankant aanwezig:"
-    is_wankant_aanwezig: bool | None = None
+    is_wankant_aanwezig: bool | None | OnverwachtResultaat = None
     # Te vinden in bijlage 1, kolom "Datum monstername"
-    datum_monstername: str | None = None
+    datum_monstername: str | None | OnverwachtResultaat = None
     # Te vinden in bijlage 2, kolom "Monster aangetast"
-    is_aangetast: bool | None = None
+    is_aangetast: bool | None | OnverwachtResultaat = None
     # Te vinden in bijlage 2, kolom "Stichtingjaar houtmonster:"
-    stichtingjaar: int | None = None
+    stichtingjaar: int | None | OnverwachtResultaat = None
+
+    @model_validator(mode="before")
+    def validate_attributes(cls, values):
+        """Validate the types of the attributes in the Houtmonster model."""
+        for field, value in values.items():
+            # "Validating field '{field}' with value: {value}")
+            expected_type = cls.model_fields[field].annotation
+            if not isinstance(value, expected_type):
+                # Handle validation errors gracefully
+                values[field] = OnverwachtResultaat(
+                    waarde=value,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.INCORRECT_TYPE,
+                    details=f"Incorrect type for field '{field}'. Expected {expected_type}, got {type(value)}."
+                )
+        return values
 
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Houtmonster]:
