@@ -21,8 +21,6 @@ class Onderloopsheidscherm(BaseModel):
         opmerkingen: Eventuele aanvullende opmerkingen over het onderloopsheidscherm.
     """
 
-    # Te vinden in de constructiebeschrijving (paragraaf 5.x) of op de archieftekening.
-    is_aanwezig: bool | NietBeschikbaar
     gebreken: list[Gebrek] = []
     # Te vinden in de toestandstabel (figuur 1.11) of als 'algemeen' gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_beschadigd: bool | None = None
@@ -32,15 +30,17 @@ class Onderloopsheidscherm(BaseModel):
     opmerkingen: str = ""
 
     @classmethod
-    def from_rakdeel_omschrijving(cls, omschrijving: RakdeelOmschrijving) -> Onderloopsheidscherm:
+    def from_rakdeel_omschrijving(cls, omschrijving: RakdeelOmschrijving) -> Onderloopsheidscherm | None:
         """Genereer een Onderloopsheidscherm model vanuit een RakdeelOmschrijving model.
 
         Args:
             omschrijving (RakdeelOmschrijving): Het RakdeelOmschrijving model.
 
         Returns:
-            Onderloopsheidscherm: Het gegenereerde Onderloopsheidscherm model.
+            Onderloopsheidscherm | None: Een leeg Onderloopsheidscherm model, of None als er geen onderloopsheidscherm is.
         """
-        return cls(
-            is_aanwezig=omschrijving.onderloopsheidscherm,
-        )
+
+        if not omschrijving.onderloopsheidscherm:
+            return cls()
+
+        return None
