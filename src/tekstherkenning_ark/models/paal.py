@@ -32,7 +32,7 @@ class Paal(BaseModel):
         schoor_richting: Richting van de schoorstand (PNV/PNA/LR).
         afstand_frontwand_cm: Afstand tot de frontwand in cm.
         is_scheefstand: Indicatie of er scheefstand is geconstateerd.
-        is_paalbreak: Indicatie of er paalbreuk is geconstateerd.
+        is_paalbreuk: Indicatie of er paalbreuk is geconstateerd.
         is_aantasting: Indicatie of er aantasting is geconstateerd.
         is_juiste_aansluiting: Indicatie of de aansluiting correct is.
         positionering_aansluiting_cm: Positionering van de aansluiting in cm.
