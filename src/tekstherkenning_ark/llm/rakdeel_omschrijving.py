@@ -2,8 +2,13 @@ from __future__ import annotations
 import hashlib
 import pickle
 
+from typing import ClassVar
+
+from pydantic import Field
+
+from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 from tekstherkenning_ark import constants
-from tekstherkenning_ark.llm.llm import AzureOpenAILLM
+from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.enums import (
     MateriaalBovenbouw,
     MateriaalOnderbouw,
@@ -11,12 +16,42 @@ from tekstherkenning_ark.enums import (
     MateriaalVloer,
     NietBeschikbaar,
 )
-from pydantic import BaseModel, Field
-import os
-from typing import Annotated
 
 
-class RakdeelOmschrijving(BaseModel):
+class RakdeelOmschrijving(LLMClassifier):
+    """Model voor het classificeren van rakdeel omschrijvingen via LLM.
+
+    Attributes
+    ----------
+    bouwjaar : int | None
+        Bouwjaar van het rakdeel.
+    lengte_rakdeel : float | None
+        Lengte van het rakdeel in meters.
+    materiaal_fundering : MateriaalFundering | NietBeschikbaar
+        Het materiaal van de fundering.
+    materiaal_onderbouw : MateriaalOnderbouw | NietBeschikbaar
+        Het materiaal van de onderbouw.
+    materiaal_bovenbouw : MateriaalBovenbouw | NietBeschikbaar
+        Het materiaal van de bovenbouw.
+    materiaal_vloer : MateriaalVloer | NietBeschikbaar
+        Het materiaal van de vloer.
+    onderloopsheidscherm : bool | NietBeschikbaar
+        Indicatie of onderloopsheidscherm aanwezig is.
+    bovenkant_deksteen_cm : float | None
+        Hoogte bovenkant deksteen in cm t.o.v. waterlijn.
+    bovenkant_vloer_cm : float | None
+        Hoogte waterlijn tot bovenkant vloer in cm.
+    """
+
+    _systeem_prompt: ClassVar[
+        str
+    ] = """Je bent een expert in het analyseren van constructie-omschrijvingen van kademuren.
+        Extraheer de relevante informatie uit de omschrijving en vul de velden in.
+        Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
+        NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
+        of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is.
+        """
+
     bouwjaar: int | None = Field(
         gt=1600, lt=2200, default=None, description="Bouwjaar van het rakdeel, houd leeg als onbekend."
     )
@@ -33,7 +68,7 @@ class RakdeelOmschrijving(BaseModel):
     )
     materiaal_onderbouw: MateriaalOnderbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles tussen de fundering en de vloer.",
+        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles boven de fundering onder de kade.",
     )
     materiaal_bovenbouw: MateriaalBovenbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
@@ -61,54 +96,3 @@ class RakdeelOmschrijving(BaseModel):
         default=None,
         description="De hoogte van de waterlijn tot de bovenkant van de funderingsvloer. Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer.",
     )
-
-    @classmethod
-    def classificeer_omschrijving(cls, omschrijving: str) -> RakdeelOmschrijving:
-        """
-        Classificeer een omschrijving naar een RakdeelOmschrijving instance via Azure OpenAI.
-
-        Parameters
-        ----------
-        llm : AzureOpenAILLM
-            De Azure OpenAI LLM instantie.
-        omschrijving : str
-            De omschrijving tekst om te classificeren.
-
-        Returns
-        -------
-        RakdeelOmschrijving
-            Het geclassificeerde RakdeelOmschrijving object.
-        """
-
-        hash_key = hashlib.md5(omschrijving.encode()).hexdigest()
-        cache_file = constants.CACHE_DIR / f"rakdeel_omschrijving_{hash_key}.pkl"
-
-        if cache_file.exists():
-            print(f"Loading cached RakdeelOmschrijving from {cache_file}")
-            parsed_result = pickle.loads(cache_file.read_bytes())
-        else:
-
-            llm = AzureOpenAILLM()
-
-            system_prompt = """Je bent een expert in het analyseren van constructie-omschrijvingen van kademuren.
-                Extraheer de relevante informatie uit de omschrijving en vul de velden in.
-                Laat velden leeg of op NietBeschikbaar.LEEG als de informatie niet beschikbaar is."""
-
-            print("Classificeren van rakdeel omschrijving via LLM...")
-            response = llm.client.beta.chat.completions.parse(
-                model=llm.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
-                ],
-                response_format=RakdeelOmschrijving,
-                temperature=0,
-            )
-
-            parsed_result = response.choices[0].message.parsed
-            if parsed_result is None:
-                raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
-
-            cache_file.write_bytes(pickle.dumps(parsed_result))
-
-        return parsed_result

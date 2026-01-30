@@ -1,82 +1,284 @@
+from __future__ import annotations
+
 from typing import Literal
 from pydantic import BaseModel
+from azure.ai.documentintelligence.models import DocumentTable
+
+from tekstherkenning_ark.utils import get_table_content, contains_kesp_id, contains_paal_id, is_algemeen_gebrek
+from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.llm.gebrek_classificatie import (
+    ScheurMetselwerkLLM,
+    ScheurHoutLLM,
+    GrondVoerendGatLLM,
+    BuikInWandLLM,
+    ScheefstandLLM,
+    LokaalVerdwenenMetselwerkLLM,
+)
 
 
 class Gebrek(BaseModel):
-    """Model representing a 'gebrek' (deficiency or issue).
+    """Model voor een gebrek.
 
-    Attributes:
-        locatie_meter: Locatie van het gebrek in meters.
-        codering: Codering van het gebrek.
-        omschrijving: Omschrijving van het gebrek.
+    Attributes
+    ----------
+    codering : str
+        Codering van het gebrek.
+    omschrijving : str
+        Omschrijving van het gebrek.
+    figuurnummer : str | NietBeschikbaar
+        Figuurnummer behorend bij het gebrek.
     """
 
     codering: str
     omschrijving: str
-    figuurnummer: str
+    figuurnummer: str | NietBeschikbaar
+
+    @classmethod
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Gebrek]:
+        """Maak een lijst van Gebrek instanties uit meerdere document tabellen.
+
+        Parameters
+        ----------
+        tables : list[DocumentTable]
+            Lijst van DocumentTable objecten zoals teruggegeven door Azure Document Intelligence SDK
+            behorend bij de gebreken bijlage
+
+        Returns
+        -------
+        list[Gebrek]
+            Een lijst van Gebrek instanties.
+        """
+        expected_header = ["Gebrekcodering", "Omschrijving", "Figuurnummer"]
+
+        gebrek_rows: list[list[str]] = []
+        for table in tables:
+            # Extraheer tabel inhoud als lijst van rijen
+            table_rows = get_table_content(table)
+
+            # Controleer header van eerste tabel
+            if len(gebrek_rows) == 0 and table_rows[0] != expected_header:
+                raise ValueError(f"Onverwachte tabel header. " f"Verwacht {expected_header}, kreeg {table_rows[0]}")
+
+            # Sla header rijen over en voeg toe aan gebrek_rows
+            content_rows = [r for r in table_rows if r[0] != expected_header[0]]
+            gebrek_rows.extend(content_rows)
+
+        # Parsing logica om Gebrek instanties te maken
+        list_gebreken = []
+        for row in gebrek_rows:
+            if row[0].strip() == "-" or row[0].strip() == "":
+                break
+            gebrek_instance = cls(codering=row[0], omschrijving=row[1], figuurnummer=row[2])
+            list_gebreken.append(gebrek_instance)
+
+        # Classificeer elk gebrek naar een specifiek subtype indien mogelijk
+        for gebrek in list_gebreken:
+            specifiek_gebrek = cls.classify_gebrek(gebrek)
+            if specifiek_gebrek != gebrek:
+                index = list_gebreken.index(gebrek)
+                list_gebreken[index] = specifiek_gebrek
+
+        return list_gebreken
+
+    @staticmethod
+    def classify_gebrek(gebrek: Gebrek) -> Gebrek:
+        """Classificeer een Gebrek instantie naar een specifiek subtype.
+
+        Parameters
+        ----------
+        gebrek : Gebrek
+            Een Gebrek instantie.
+
+        Returns
+        -------
+        Gebrek
+            Een specifiek subtype van Gebrek met geëxtraheerde attributen.
+        """
+        omschrijving = gebrek.omschrijving.lower()
+
+        # logica voor scheur
+        if "scheur" in omschrijving:
+            # Gebruik LLM voor classificatie van scheuren
+            if contains_paal_id(omschrijving) or contains_kesp_id(gebrek.codering):
+                llm_result = ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return ScheurHout(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
+            elif "metselwerk" in omschrijving:
+                llm_result = ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return ScheurMetselwerk(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
+
+        # logica voor grondvoerend gat
+        if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+            llm_result = GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return GrondVoerendGat(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+
+        # logica voor buikinwand
+        if "buik" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+            llm_result = BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return BuikInWand(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+        # logica voor scheefstand
+        if "scheefstand" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+            llm_result = ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return Scheefstand(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+
+        # logica voor lokaal verdwenen metselwerk
+        synonyms = [
+            "ontbreekt metselwerk",
+            "vermist metselwerk",
+            "uitgespoeld metselwerk",
+            "gat in metselwerk",
+            "lokale beschadiging metselwerk",
+        ]
+        if any(synonym in omschrijving for synonym in synonyms) and is_algemeen_gebrek(gebrek.codering):
+            llm_result = LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return LokaalVerdwenenMetselwerk(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+
+        return gebrek  # Retourneer het originele gebrek als geen subtype herkend is
 
 
 class Scheur(Gebrek):
-    """Scheur (crack).
+    """Model voor een scheur.
 
-    Attributes:
-        lengte_cm: Lengte van de scheur in centimeters.
-        scheurwijdte_mm: Maximale scheurwijdte in millimeters.
-        afstand_van_startrak: Afstand van het startrak.
-        orientatie: Orientatie van de scheur (vertikaal of horizontaal).
+    Attributes
+    ----------
+    lengte_cm : float | NietBeschikbaar
+        Lengte van de scheur in centimeters. Te vinden in de omschrijving
+        van de gebrekentabel.
+    scheurwijdte_mm : float | NietBeschikbaar
+        Maximale scheurwijdte in millimeters. Te vinden in de omschrijving
+        van de gebrekentabel, vaak als 'SW'.
     """
 
-    # Te vinden in de omschrijving van de gebrekentabel.
-    lengte_cm: int
-    # Te vinden in de omschrijving van de gebrekentabel, vaak als 'SW'.
-    scheurwijdte_mm: int
+    lengte_cm: float | NietBeschikbaar
+    scheurwijdte_mm: float | NietBeschikbaar
 
-    # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
-    afstand_van_startrak: int | None = None
 
-    # Te vinden in de omschrijving van de gebrekentabel, "Op X meter vanaf start rak is een verticale scheur .."
-    orientatie: Literal["vertikaal", "horizontaal"] | None = None
+class ScheurMetselwerk(Scheur):
+    """Model voor een scheur in metselwerk.
+
+    Attributes
+    ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters. Te vinden in de omschrijving
+        van de gebrekentabel, bijv. "Op X meter vanaf start rak...".
+    afstand_van_waterlijn_cm : float | NietBeschikbaar
+        Afstand van de waterlijn in centimeters.
+    afstand_van_deksloof_cm : float | NietBeschikbaar
+        Afstand van de deksloof in centimeters.
+    is_inprikbaar : bool | NietBeschikbaar
+        Indicatie of de scheur inprikbaar is.
+    orientatie : Literal["verticaal", "horizontaal", "diagonaal"] | NietBeschikbaar
+        Oriëntatie van de scheur.
+    """
+
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    afstand_van_waterlijn_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    afstand_van_deksloof_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    is_inprikbaar: bool | NietBeschikbaar = NietBeschikbaar.LEEG
+    orientatie: Literal["verticaal", "horizontaal", "diagonaal"] | NietBeschikbaar = NietBeschikbaar.LEEG
+
+
+class ScheurHout(Scheur):
+    """Model voor een scheur in hout.
+
+    Attributes
+    ----------
+    diepte_cm : float | NietBeschikbaar
+        Diepte van de scheur in centimeters.
+    orientatie : Literal["verticaal", "horizontaal"] | NietBeschikbaar
+        Oriëntatie van de scheur.
+    """
+
+    diepte_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    orientatie: Literal["verticaal", "horizontaal"] | NietBeschikbaar = NietBeschikbaar.LEEG
 
 
 class GrondVoerendGat(Gebrek):
-    """Grondvoerend gat.
+    """Model voor een grondvoerend gat achter het metselwerk.
 
-    Attributes:
-        afmetingen_cm: Afmetingen van het gat in centimeters (b x h x d).
+    Attributes
+    ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
+    breedte_cm : int | NietBeschikbaar
+        Breedte van het gat in centimeters.
+    hoogte_cm : int | NietBeschikbaar
+        Hoogte van het gat in centimeters.
+    diepte_cm : int | NietBeschikbaar
+        Diepte van het gat in centimeters.
     """
 
-    # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: list[int | None]
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    breedte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+    hoogte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+    diepte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
 
 
 class BuikInWand(Gebrek):
-    """Buik in wand.
+    """Model voor een buik in wand.
 
-    Attributes:
-        uitbuiging_cm: Mate van uitbuiging in centimeters.
+    Attributes
+    ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
+    uitbuiking_cm : int | NietBeschikbaar
+        Mate van uitbuiging in centimeters. Te vinden in de omschrijving
+        van de gebrekentabel.
     """
 
-    # Te vinden in de omschrijving van de gebrekentabel.
-    uitbuiking_cm: int
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    uitbuiking_cm: int | NietBeschikbaar
 
 
 class Scheefstand(Gebrek):
-    """Scheefstand.
+    """Model voor scheefstand.
 
-    Attributes:
-        hoek_graden: Hoek van de scheefstand in graden.
+    Attributes
+    ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
+    hoek_graden : int | NietBeschikbaar
+        Hoek van de scheefstand in graden. Te vinden in de omschrijving
+        van de gebrekentabel indien vermeld.
     """
 
-    # Te vinden in de omschrijving van de gebrekentabel indien vermeld.
-    hoek_graden: int
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    hoek_graden: int | NietBeschikbaar = NietBeschikbaar.LEEG
 
 
 class LokaalVerdwenenMetselwerk(Gebrek):
-    """Lokaal verdwenen metselwerk.
+    """Model voor lokaal verdwenen metselwerk.
 
-    Attributes:
-        afmetingen_cm: Afmetingen van het verdwenen metselwerk in centimeters (b x h x d).
+    Attributes
+    ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
+    breedte_cm : int | NietBeschikbaar
+        Breedte van het verdwenen metselwerk in centimeters.
+    hoogte_cm : int | NietBeschikbaar
+        Hoogte van het verdwenen metselwerk in centimeters.
+    diepte_cm : int | NietBeschikbaar
+        Diepte van het verdwenen metselwerk in centimeters.
     """
 
-    # Te vinden in de omschrijving van de gebrekentabel.
-    afmetingen_cm: list[int | None]
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    breedte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+    hoogte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+    diepte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG

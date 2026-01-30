@@ -74,20 +74,27 @@ def clean_paal_id(value: str) -> str:
     return exceptions_dict.get(value, value)
 
 
-def is_paal_id(value: str) -> bool:
-    """Check if a string follows the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
+def contains_paal_id(value: str) -> bool:
+    r"""Check if a string contains the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
 
     value = clean_paal_id(clean_string(value))
 
-    pattern = r"^P\d+\.\d+$"
-    return bool(re.match(pattern, value))
+    pattern = r"P\d+\.\d+"
+    return bool(re.search(pattern, value.strip()))
 
 
-def is_kesp_id(value: str) -> bool:
-    """Check if a string follows the pattern 'K\d+' (e.g., K1, K24)"""
+def contains_kesp_id(value: str) -> bool:
+    r"""Check if a string contains the pattern 'K\d+' (e.g., K1, K24)"""
 
-    pattern = r"^K\d+$"
-    return bool(re.match(pattern, clean_string(value)))
+    pattern = r"K\d+"
+    return bool(re.search(pattern, value.strip()))
+
+
+def is_algemeen_gebrek(value: str) -> bool:
+    """Check if a string indicates an 'algemeen gebrek'."""
+    pattern = r"^GB\d{1,3}$"
+
+    return bool(re.search(pattern, value.strip().upper())) or value == "Algemeen"
 
 
 def is_houtmonster_id(value: str) -> bool:
@@ -100,7 +107,7 @@ def is_houtmonster_id(value: str) -> bool:
 
     doc_id, constructie, paal_id, hm = elements
 
-    if not "CONSTRUCTIE" in constructie or not is_paal_id(paal_id) or not hm.lower().strip() == "hm":
+    if not "CONSTRUCTIE" in constructie or not contains_paal_id(paal_id) or not hm.lower().strip() == "hm":
         return False
 
     return True

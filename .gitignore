@@ -149,3 +149,10 @@ cython_debug/
 
 # Data files
 /data*
+/.idea/.gitignore
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/tekstherkenning-ark.iml
+/.idea/vcs.xml

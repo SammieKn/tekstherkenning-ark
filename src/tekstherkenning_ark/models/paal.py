@@ -117,7 +117,7 @@ class Paal(BaseModel):
             table_rows = utils.get_table_content(table)
 
             # Skip header rows and add to paal_rows
-            content_rows = [r for r in table_rows if utils.is_paal_id(r[0])]
+            content_rows = [r for r in table_rows if utils.contains_paal_id(r[0])]
             paal_rows.extend(content_rows)
 
         # Parse each row into a Paal object
