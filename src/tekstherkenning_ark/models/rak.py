@@ -1,10 +1,10 @@
 from __future__ import annotations
+import asyncio
 import pickle
 from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.paal import Paal
@@ -32,7 +32,7 @@ class Rak(BaseModel):
     opmerkingen: str = ""
 
     @classmethod
-    def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
+    async def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
 
         cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
@@ -70,9 +70,9 @@ class Rak(BaseModel):
                 f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
             )
 
-        # Maak rakdelen aan
+        # Maak rakdelen aan (parallel)
         rakdeel_sections = doc.get_rakdeel_secties()
-        rakdelen = [
+        rakdeel_taken = [
             Rakdeel.from_smart_doc_section(
                 section=section,
                 palen_dict=palen_dict,
@@ -80,13 +80,14 @@ class Rak(BaseModel):
             )
             for section in rakdeel_sections
         ]
+        rakdelen = await asyncio.gather(*rakdeel_taken)
 
         # raknaam = doc.get_raknaam()
         # totale_lengte_m = doc.get_rak_totale_lengte_m()
         # opmerkingen = doc.get_rak_opmerkingen()
 
         rak_instance = cls(
-            rakdelen=rakdelen,
+            rakdelen=list(rakdelen),
             raknaam="",  # TODO
             totale_lengte_m=0.0,  # TODO
             opmerkingen="",
@@ -99,18 +100,16 @@ class Rak(BaseModel):
 
 if __name__ == "__main__":
 
-    # llm = AzureOpenAILLM()
-    # is_valid, message = llm.validate_api_key()
-    # if not is_valid:
-    #     print(f"Azure OpenAI API key is not set or invalid, response: '{message}'.")
+    async def main():
+        doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 
-    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
+        rak = await Rak.from_smart_document(doc)
 
-    rak = Rak.from_smart_document(doc)
+        for rd in rak.rakdelen:
+            print(rd.rakdeel_id)
+            for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
+                print(f"  Paal: {p.paal_nummer}")
+                for hm in p.houtmonsters:
+                    print(f"    Houtmonster: {hm.codering}")
 
-    for rd in rak.rakdelen:
-        print(rd.rakdeel_id)
-        for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
-            print(f"  Paal: {p.paal_nummer}")
-            for hm in p.houtmonsters:
-                print(f"    Houtmonster: {hm.codering}")
+    asyncio.run(main())
