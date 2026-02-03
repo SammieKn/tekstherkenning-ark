@@ -4,6 +4,7 @@ from typing import Type, TypeVar
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
+from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.vloer import Vloer
@@ -133,7 +134,9 @@ class Rakdeel(BaseModel):
             paal_id = get_paal_id(gebrek.codering)
 
             # Match gebreken to o
-            if isinstance(ScheurMetselwerk):
+            if isinstance(gebrek, ScheurMetselwerk):
+                if self.bovenbouw.metselwerk is None:
+                    self.bovenbouw.metselwerk = Metselwerk()
                 self.bovenbouw.metselwerk.gebreken.append(gebrek)
 
             # Match kesp

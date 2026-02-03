@@ -120,7 +120,7 @@ if __name__ == "__main__":
             for gebrek in kesp.gebreken:
                 print(f"    Gebrek: {gebrek.codering}")
 
-        if rd.bovenbouw.metselwerk.gebreken:
+        if rd.bovenbouw.metselwerk and rd.bovenbouw.metselwerk.gebreken:
             print(f"  Metselwerk gebreken:")
             for gebrek in rd.bovenbouw.metselwerk.gebreken:
                 print(f"    Gebrek: {gebrek.codering}")
