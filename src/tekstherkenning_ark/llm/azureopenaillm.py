@@ -51,12 +51,18 @@ class AzureOpenAILLM:
         if not azure_endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
 
-        self.model = model_name
+        azure_openai_version = os.environ.get("AZURE_OPENAI_API_VERSION", None)
+        azure_encoding_name = os.environ.get("AZURE_OPENAI_ENCODING_NAME", None)
+        azure_model_name = os.environ.get("AZURE_MODEL_NAME", None)
+
+        self.model = azure_model_name or model_name
         self.model_params = self.get_model_params(self.model)
         self.client = AzureOpenAI(
-            api_key=input_api_key, azure_endpoint=azure_endpoint, api_version=self.model_params["api_version"]
+            api_key=input_api_key,
+            azure_endpoint=azure_endpoint,
+            api_version=azure_openai_version or self.model_params["api_version"],
         )
-        self.encoding = tiktoken.get_encoding(self.model_params["encoding_name"])
+        self.encoding = tiktoken.get_encoding(azure_encoding_name or self.model_params["encoding_name"])
 
     def get_model_params(self, model: str) -> dict[str, str]:
         """Get the model parameters for the Azure OpenAI API.
