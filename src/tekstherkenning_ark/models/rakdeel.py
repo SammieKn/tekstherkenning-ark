@@ -51,7 +51,7 @@ class Rakdeel(BaseModel):
 
     @classmethod
     def from_smart_doc_section(
-        cls, section: RakdeelSectie, kespen_dict: dict[str, Kesp], palen_dict: dict[str, Paal]
+        cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]
     ) -> Rakdeel:
         """Genereer een lijst van Rakdeel modellen vanuit een lijst van RakdeelSectie modellen.
 
@@ -105,17 +105,11 @@ class Rakdeel(BaseModel):
         return rakdeel
 
     @staticmethod
-    def get_for_constructie_naam(rakdeel_id: str, obj_dict: dict[str, T]) -> list[T]:
+    def get_for_constructie_naam(rakdeel_id: str, obj_dict: dict[str, list[T]]) -> list[T]:
         """Haalt een lijst van objecten (Paal of Kesp) op voor dit rakdeel op basis van de constructie naam."""
 
         rakdeel_id_lower = rakdeel_id.lower()
         key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
-
-        if not key:
-            obj_type = next((x[0].__class__.__name__ for x in obj_dict.values() if x))
-            print(
-                f"Waarschuwing: Geen constructienaam gevonden in {obj_type} voor rakdeel_id {rakdeel_id}. Beschikbare keys: {list(obj_dict.keys())}"
-            )
 
         return obj_dict.get(key, [])
 
