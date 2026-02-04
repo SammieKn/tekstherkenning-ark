@@ -10,6 +10,9 @@ from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class LLMClassifier(BaseModel):
@@ -49,10 +52,10 @@ class LLMClassifier(BaseModel):
         cache_file = constants.CACHE_DIR / f"{cls.__name__.lower()}_{hash_key}.pkl"
 
         if cache_file.exists() and use_cache:
-            print(f"Loading cached {cls.__name__} from {cache_file}")
+            logger.info(f"Loading cached {cls.__name__} from {cache_file}")
             parsed_result = pickle.loads(cache_file.read_bytes())
         else:
-            print(f"Classifying description into {cls.__name__} via LLM...")
+            logger.info(f"Classifying description into {cls.__name__} via LLM...")
 
             llm = AzureOpenAILLM()
 
@@ -68,7 +71,9 @@ class LLMClassifier(BaseModel):
 
             parsed_result = response.choices[0].message.parsed
             if parsed_result is None:
-                raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
+                error_msg = "Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             cache_file.write_bytes(pickle.dumps(parsed_result))
 

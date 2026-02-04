@@ -8,6 +8,9 @@ from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBesch
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from azure.ai.documentintelligence.models import DocumentTable
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Paal(BaseModel):
@@ -136,14 +139,14 @@ class Paal(BaseModel):
                 if current_constructie_id not in paal_dict:
                     paal_dict[current_constructie_id] = []
                 else:
-                    print(f"Duplicate constructie ID found: {current_constructie_id}")
+                    logger.warning(f"Duplicate constructie ID found: {current_constructie_id}")
 
             if current_constructie_id != "":
                 paal = cls.from_paal_table_row(row)
 
                 # Validate paal nummers are sequential
                 if not paal.paal_nummer_main in [last_main_paal_nummer, last_main_paal_nummer + 1]:
-                    print(
+                    logger.warning(
                         f"Paal nummers are not sequential. Expected {last_main_paal_nummer} or {last_main_paal_nummer + 1}, got {paal.paal_nummer_main} for {paal.paal_nummer}. \nLast 5 palen: {[p.paal_nummer for p in paal_dict[current_constructie_id][-5:]]}"
                     )
                 last_main_paal_nummer = paal.paal_nummer_main

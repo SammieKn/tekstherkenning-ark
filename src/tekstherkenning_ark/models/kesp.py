@@ -6,6 +6,9 @@ from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from azure.ai.documentintelligence.models import DocumentTable
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Kesp(BaseModel):
@@ -99,7 +102,9 @@ class Kesp(BaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 else:
-                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                    error_msg = f"Duplicate constructie ID found: {current_constructie_id}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
 
             if current_constructie_id != "":
                 paal = cls.from_kesp_table_row(row)
