@@ -1,14 +1,22 @@
 from __future__ import annotations
 import asyncio
+from datetime import datetime
+from pathlib import Path
 import pickle
+from typing import TYPE_CHECKING
+
+import pandas as pd
 from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
 
@@ -33,6 +41,166 @@ class Rak(BaseModel):
     totale_lengte_m: float
     # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
     opmerkingen: str = ""
+
+    @property
+    def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
+        """Verzamel alle gebreken uit alle rakdelen.
+
+        Returns
+        -------
+        list[tuple[str, Gebrek]]
+            Lijst van tuples met (rakdeel_id, gebrek).
+        """
+        resultaat: list[tuple[str, Gebrek]] = []
+        for rakdeel in self.rakdelen:
+            for gebrek in rakdeel.gebreken:
+                resultaat.append((rakdeel.rakdeel_id, gebrek))
+        return resultaat
+
+    @property
+    def alle_palen(self) -> list[tuple[str, Paal]]:
+        """Verzamel alle palen uit alle rakdelen.
+
+        Returns
+        -------
+        list[tuple[str, Paal]]
+            Lijst van tuples met (rakdeel_id, paal).
+        """
+        resultaat: list[tuple[str, Paal]] = []
+        for rakdeel in self.rakdelen:
+            for paal in rakdeel.onderbouw.palen:
+                resultaat.append((rakdeel.rakdeel_id, paal))
+        return resultaat
+
+    @property
+    def alle_kespen(self) -> list[tuple[str, Kesp]]:
+        """Verzamel alle kespen uit alle rakdelen.
+
+        Returns
+        -------
+        list[tuple[str, Kesp]]
+            Lijst van tuples met (rakdeel_id, kesp).
+        """
+        resultaat: list[tuple[str, Kesp]] = []
+        for rakdeel in self.rakdelen:
+            for kesp in rakdeel.onderbouw.kespen:
+                resultaat.append((rakdeel.rakdeel_id, kesp))
+        return resultaat
+
+    @property
+    def alle_houtmonsters(self) -> list[tuple[str, str, Houtmonster]]:
+        """Verzamel alle houtmonsters uit alle palen in alle rakdelen.
+
+        Returns
+        -------
+        list[tuple[str, str, Houtmonster]]
+            Lijst van tuples met (rakdeel_id, paal_nummer, houtmonster).
+        """
+        resultaat: list[tuple[str, str, Houtmonster]] = []
+        for rakdeel in self.rakdelen:
+            for paal in rakdeel.onderbouw.palen:
+                for houtmonster in paal.houtmonsters:
+                    resultaat.append((rakdeel.rakdeel_id, paal.paal_nummer, houtmonster))
+        return resultaat
+
+    def to_excel(self, export_dir: Path | None = None) -> Path:
+        """Exporteer alle data van dit Rak naar een Excel-bestand.
+
+        Maakt de volgende sheets:
+        - Per gebrek-type een sheet met alle gebreken van dat type
+        - Onderdeel_Aantasting: toestandsbepaling per rakdeel
+        - Kespen: alle kespen met rakdeel referentie
+        - Palen: alle palen met rakdeel referentie
+        - Houtmonsters: alle houtmonsters met paal en rakdeel referentie
+
+        Parameters
+        ----------
+        export_dir : Path, optioneel
+            Directory voor export. Standaard DATA_DIR / 'excel_exports'.
+
+        Returns
+        -------
+        Path
+            Pad naar het gegenereerde Excel-bestand.
+        """
+        if export_dir is None:
+            export_dir = DATA_DIR / "excel_exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+        raknaam_safe = self.raknaam.replace("/", "_").replace("\\", "_") or "onbekend_rak"
+        bestandsnaam = f"{raknaam_safe}_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+        export_pad = export_dir / bestandsnaam
+
+        with pd.ExcelWriter(export_pad, engine="openpyxl") as writer:
+            # Sheet: Gebreken per type
+            gebreken_per_type: dict[str, list[dict]] = {}
+            for rakdeel_id, gebrek in self.alle_gebreken:
+                type_naam = type(gebrek).__name__
+                if type_naam not in gebreken_per_type:
+                    gebreken_per_type[type_naam] = []
+                gebrek_dict = gebrek.model_dump()
+                gebrek_dict["rakdeel_id"] = rakdeel_id
+                gebreken_per_type[type_naam].append(gebrek_dict)
+
+            for type_naam, gebreken_list in gebreken_per_type.items():
+                df = pd.DataFrame(gebreken_list)
+                # Zet rakdeel_id als eerste kolom
+                kolommen = ["rakdeel_id"] + [k for k in df.columns if k != "rakdeel_id"]
+                df = df[kolommen]
+                sheet_naam = f"Gebreken_{type_naam}"[:31]  # Excel max 31 chars
+                df.to_excel(writer, sheet_name=sheet_naam, index=False)
+
+            # Sheet: Onderdeel Aantasting
+            aantasting_rows = []
+            for rakdeel in self.rakdelen:
+                row: dict[str, str | bool | NietBeschikbaar | OnverwachtResultaat] = {"rakdeel_id": rakdeel.rakdeel_id}
+                row.update(rakdeel.onderdeel_is_aangetast)
+                aantasting_rows.append(row)
+            if aantasting_rows:
+                df_aantasting = pd.DataFrame(aantasting_rows)
+                df_aantasting.to_excel(writer, sheet_name="Onderdeel_Aantasting", index=False)
+
+            # Sheet: Kespen
+            kespen_rows = []
+            for rakdeel_id, kesp in self.alle_kespen:
+                kesp_dict = kesp.model_dump(exclude={"gebreken"})
+                kesp_dict["rakdeel_id"] = rakdeel_id
+                kespen_rows.append(kesp_dict)
+            if kespen_rows:
+                df_kespen = pd.DataFrame(kespen_rows)
+                kolommen = ["rakdeel_id"] + [k for k in df_kespen.columns if k != "rakdeel_id"]
+                df_kespen = df_kespen[kolommen]
+                df_kespen.to_excel(writer, sheet_name="Kespen", index=False)
+
+            # Sheet: Palen
+            palen_rows = []
+            for rakdeel_id, paal in self.alle_palen:
+                paal_dict = paal.model_dump(exclude={"gebreken", "houtmonsters"})
+                paal_dict["rakdeel_id"] = rakdeel_id
+                palen_rows.append(paal_dict)
+            if palen_rows:
+                df_palen = pd.DataFrame(palen_rows)
+                kolommen = ["rakdeel_id"] + [k for k in df_palen.columns if k != "rakdeel_id"]
+                df_palen = df_palen[kolommen]
+                df_palen.to_excel(writer, sheet_name="Palen", index=False)
+
+            # Sheet: Houtmonsters
+            houtmonster_rows = []
+            for rakdeel_id, paal_nummer, houtmonster in self.alle_houtmonsters:
+                hm_dict = houtmonster.model_dump()
+                hm_dict["rakdeel_id"] = rakdeel_id
+                hm_dict["paal_nummer_ref"] = paal_nummer
+                houtmonster_rows.append(hm_dict)
+            if houtmonster_rows:
+                df_houtmonsters = pd.DataFrame(houtmonster_rows)
+                kolommen = ["rakdeel_id", "paal_nummer_ref"] + [
+                    k for k in df_houtmonsters.columns if k not in ["rakdeel_id", "paal_nummer_ref"]
+                ]
+                df_houtmonsters = df_houtmonsters[kolommen]
+                df_houtmonsters.to_excel(writer, sheet_name="Houtmonsters", index=False)
+
+        print(f"Excel geëxporteerd naar: {export_pad}")
+        return export_pad
 
     @classmethod
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
