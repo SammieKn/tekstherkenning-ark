@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import get_args, get_origin, Union
 from pydantic import BaseModel
 
 from tekstherkenning_ark.models.gebrek import Gebrek
@@ -10,6 +11,35 @@ class RakBaseModel(BaseModel):
 
     gebreken: list[Gebrek] = []
     opmerkingen: str = ""
+
+    def __init_subclass__(cls, **kwargs):
+        """Automatically add OnverwachtResultaat to non-collection attributes in subclasses."""
+        super().__init_subclass__(**kwargs)
+
+        # Get annotations from this class only (not inherited)
+        if hasattr(cls, "__annotations__"):
+            new_annotations = {}
+            for attr_name, attr_type in cls.__annotations__.items():
+                # Check if the attribute is a collection type
+                origin = get_origin(attr_type)
+                is_collection = origin in (list, tuple, set, frozenset, dict)
+
+                # If not a collection, add OnverwachtResultaat as a union type
+                if not is_collection:
+                    # Check if OnverwachtResultaat is already in the type
+                    if get_origin(attr_type) is Union:
+                        args = get_args(attr_type)
+                        if OnverwachtResultaat not in args:
+                            new_annotations[attr_name] = Union[attr_type, OnverwachtResultaat]
+                        else:
+                            new_annotations[attr_name] = attr_type
+                    else:
+                        # Add OnverwachtResultaat to the type
+                        new_annotations[attr_name] = Union[attr_type, OnverwachtResultaat]
+                else:
+                    new_annotations[attr_name] = attr_type
+
+            cls.__annotations__ = new_annotations
 
     @property
     def children(self) -> list[RakBaseModel]:
