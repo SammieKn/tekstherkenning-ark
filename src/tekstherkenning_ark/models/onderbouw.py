@@ -1,13 +1,12 @@
-from pydantic import BaseModel
-
 from tekstherkenning_ark.enums import MateriaalOnderbouw, MateriaalVloer, NietBeschikbaar
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
 
 
-class Onderbouw(BaseModel):
+class Onderbouw(RakBaseModel):
     """Object met alle eigenschappen van de onderbouw van het rakdeel.
 
     Attributes:

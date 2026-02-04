@@ -1,12 +1,12 @@
 from __future__ import annotations
 from typing import Type, TypeVar
 
-from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
 from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
@@ -30,18 +30,18 @@ logger = get_logger(__name__)
 T = TypeVar("T", Paal, Kesp)
 
 
-class Rakdeel(BaseModel):
+class Rakdeel(RakBaseModel):
     """Rakdeel.
 
     Attributes:
         bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
         constructietype: Type constructie van het rakdeel (bijvoorbeeld houten paalfundering, betonnen L-wand, etc.).
-        gebreken: Lijst van gebreken in het rakdeel.
         lengte_m: Lengte van het rakdeel in meters.
         onderbouw: Object met alle eigenschappen van de onderbouw van het rakdeel.
         rakdeel_id: Unieke identificatie van het rakdeel, bijvoorbeeld 'Constructie A' of 'Constructie B'.
         bouwjaar: Bouwjaar van het rakdeel.
-        opmerkingen: Eventuele aanvullende opmerkingen over het rakdeel.
+        gebreken: Lijst van gebreken (inherited from RakBaseModel).
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     # Te vinden in paragraaf 5.x, kopregel of inhoudsopgave.
@@ -58,7 +58,6 @@ class Rakdeel(BaseModel):
 
     bovenbouw: Bovenbouw
     onderbouw: Onderbouw
-    gebreken: list[Gebrek] = []
 
     @classmethod
     async def from_smart_doc_section(

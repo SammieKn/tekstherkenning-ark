@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Kesp(BaseModel):
+class Kesp(RakBaseModel):
     """Kesp.
 
     Attributes:
@@ -26,9 +25,9 @@ class Kesp(BaseModel):
         is_opsluitklos_aangetast: Indicatie of de opsluitklos aangetast is.
         is_vervormd: Indicatie of er vervorming van de kesp is vastgesteld.
         is_aangetast: Indicatie of er aantasting van de kesp is vastgesteld.
-        opmerkingen: Eventuele aanvullende opmerkingen over de kesp.
         paalrij_nr: Nummer van de paalrij waartoe de kesp behoort.
-        gebreken: Lijst van gebreken in de kesp.
+        gebreken: Lijst van gebreken (inherited from RakBaseModel).
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.
@@ -53,13 +52,9 @@ class Kesp(BaseModel):
     is_vervormd: bool | None = None
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
     is_aangetast: bool | None = None
-    # Te vinden in Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str = ""
 
     # TBD waar te vinden
     paalrij_nr: str | None = None
-
-    gebreken: list[Gebrek] = []
 
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Kesp]]:

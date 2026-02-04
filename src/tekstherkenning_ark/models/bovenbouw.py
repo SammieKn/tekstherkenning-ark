@@ -1,11 +1,10 @@
-from pydantic import BaseModel
-
 from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.metselwerk import Metselwerk
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 
-class Bovenbouw(BaseModel):
+class Bovenbouw(RakBaseModel):
     """Object met alle eigenschappen van de bovenbouw van het rakdeel.
 
     Attributes:
@@ -16,10 +15,11 @@ class Bovenbouw(BaseModel):
         materiaal: Materiaal van de bovenbouw (bijvoorbeeld metselwerk, beton, natuursteen).
         maximaal_aantal_scheuren_per_10_m: Maximaal aantal scheuren per 10 meter in het metselwerk.
         maximale_scheurwijdte_mm: Maximale scheurwijdte in het metselwerk, in millimeters.
-        opmerkingen: Eventuele aanvullende opmerkingen over de bovenbouw.
         percentage_niet_functionerend_schuifhout: Percentage van het schuifhout dat niet functioneert.
         is_scheefstand_aanwezig: Indicatie of er scheefstand van de wand aanwezig is.
         bovenkant_deksteen_cm_tov_nap: Hoogte van de bovenkant van de deksteen ten opzichte van NAP, in centimeters.
+        gebreken: Lijst van gebreken (inherited from RakBaseModel).
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     metselwerk: Metselwerk | None = None
@@ -43,5 +43,3 @@ class Bovenbouw(BaseModel):
     is_scheefstand_aanwezig: bool | None = None
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
-
-    gebreken: list[Gebrek] = []

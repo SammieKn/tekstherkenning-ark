@@ -1,29 +1,26 @@
 from __future__ import annotations
 from typing import Any
 
-from pydantic import BaseModel
-
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Paal(BaseModel):
+class Paal(RakBaseModel):
     """Paal (Foundation Pile).
 
     Attributes:
-        gebreken: Lijst van gebreken gevonden in de paal.
         paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
-        _: Nummer van de paal binnen de paalrij.
+        paal_nummer: Nummer van de paal binnen de paalrij.
         aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
         is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
         is_onderzocht: Indicatie of de paal is onderzocht.
-        opmerkingen: Eventuele opmerkingen over de paal.
         schoorstand_graden: Schoorstand van de paal in graden.
         scheefstand: Indicatie of de paal scheefstand heeft.
         materiaal: Materiaal van de paal. (MateriaalOnderbouw)
@@ -40,6 +37,8 @@ class Paal(BaseModel):
         is_juiste_aansluiting: Indicatie of de aansluiting correct is.
         positionering_aansluiting_cm: Positionering van de aansluiting in cm.
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
+        gebreken: Lijst van gebreken (inherited from RakBaseModel).
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
@@ -83,8 +82,6 @@ class Paal(BaseModel):
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
     aansluiting_status: AansluitingStatus
     positionering_aansluiting_cm: str | NietBeschikbaar
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
-    opmerkingen: str = ""
 
     # Te vinden in bijlage 2 en houtmonsters csv.
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?

@@ -1,13 +1,13 @@
 from __future__ import annotations
 import asyncio
 import pickle
-from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
@@ -15,14 +15,14 @@ from tekstherkenning_ark.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Rak(BaseModel):
+class Rak(RakBaseModel):
     """Rak.
 
     Attributes:
         rakdelen: Lijst van rakdelen waaruit het rak is opgebouwd.
         raknaam: Naam of code van het rak.
         totale_lengte_m: Totale lengte van het rak in meters.
-        opmerkingen: Eventuele aanvullende opmerkingen over het gehele rak.
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     # Elk rakdeel heeft een eigen constructietype.
@@ -31,8 +31,6 @@ class Rak(BaseModel):
     raknaam: str
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
     totale_lengte_m: float
-    # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
-    opmerkingen: str = ""
 
     @classmethod
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
