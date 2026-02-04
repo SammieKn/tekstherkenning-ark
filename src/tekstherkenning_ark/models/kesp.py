@@ -102,7 +102,8 @@ class Kesp(BaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 else:
-                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                    logger.critical(f"Duplicate constructie ID found: {current_constructie_id}")
+                    # raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
 
             if current_constructie_id != "":
                 paal = cls.from_kesp_table_row(row)

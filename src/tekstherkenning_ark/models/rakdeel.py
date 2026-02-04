@@ -147,15 +147,16 @@ class Rakdeel(BaseModel):
             constructieonderdeel_rows.extend(content_rows)
 
         dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
-        for constructieonderdeel, aangetast in constructieonderdeel_rows:
-            constructieonderdeel_clean = utils.clean_string(constructieonderdeel)
-            aangetast_clean = utils.parse_ja_nee(utils.clean_string(aangetast))
-            if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
-                dict_toestandsbepaling[constructieonderdeel_clean] = aangetast_clean
-            else:
-                print(
-                    f"Waarschuwing: Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel_clean}', wordt overgeslagen."
-                )
+        if len(constructieonderdeel_rows) == 2:
+            for constructieonderdeel, aangetast in constructieonderdeel_rows:
+                constructieonderdeel_clean = utils.clean_string(constructieonderdeel)
+                aangetast_clean = utils.parse_ja_nee(utils.clean_string(aangetast))
+                if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
+                    dict_toestandsbepaling[constructieonderdeel_clean] = aangetast_clean
+                else:
+                    print(
+                        f"Waarschuwing: Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel_clean}', wordt overgeslagen."
+                    )
 
         return dict_toestandsbepaling
 

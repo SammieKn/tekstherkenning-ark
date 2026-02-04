@@ -19,6 +19,7 @@ from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.utils import get_rak_id
 
 logger = get_logger(__name__)
 
@@ -53,7 +54,7 @@ class Rak(BaseModel):
         """
         resultaat: list[tuple[str, Gebrek]] = []
         for rakdeel in self.rakdelen:
-            for gebrek in rakdeel.gebreken:
+            for gebrek in rakdeel.alle_gebreken:
                 resultaat.append((rakdeel.rakdeel_id, gebrek))
         return resultaat
 
@@ -128,10 +129,12 @@ class Rak(BaseModel):
         export_dir.mkdir(parents=True, exist_ok=True)
 
         raknaam_safe = self.raknaam.replace("/", "_").replace("\\", "_") or "onbekend_rak"
-        bestandsnaam = f"{raknaam_safe}_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+        bestandsnaam = f"{raknaam_safe}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         export_pad = export_dir / bestandsnaam
 
         with pd.ExcelWriter(export_pad, engine="openpyxl") as writer:
+            sheets_geschreven = 0
+
             # Sheet: Gebreken per type
             gebreken_per_type: dict[str, list[dict]] = {}
             for rakdeel_id, gebrek in self.alle_gebreken:
@@ -149,6 +152,7 @@ class Rak(BaseModel):
                 df = df[kolommen]
                 sheet_naam = f"Gebreken_{type_naam}"[:31]  # Excel max 31 chars
                 df.to_excel(writer, sheet_name=sheet_naam, index=False)
+                sheets_geschreven += 1
 
             # Sheet: Onderdeel Aantasting
             aantasting_rows = []
@@ -159,6 +163,7 @@ class Rak(BaseModel):
             if aantasting_rows:
                 df_aantasting = pd.DataFrame(aantasting_rows)
                 df_aantasting.to_excel(writer, sheet_name="Onderdeel_Aantasting", index=False)
+                sheets_geschreven += 1
 
             # Sheet: Kespen
             kespen_rows = []
@@ -171,6 +176,7 @@ class Rak(BaseModel):
                 kolommen = ["rakdeel_id"] + [k for k in df_kespen.columns if k != "rakdeel_id"]
                 df_kespen = df_kespen[kolommen]
                 df_kespen.to_excel(writer, sheet_name="Kespen", index=False)
+                sheets_geschreven += 1
 
             # Sheet: Palen
             palen_rows = []
@@ -183,6 +189,7 @@ class Rak(BaseModel):
                 kolommen = ["rakdeel_id"] + [k for k in df_palen.columns if k != "rakdeel_id"]
                 df_palen = df_palen[kolommen]
                 df_palen.to_excel(writer, sheet_name="Palen", index=False)
+                sheets_geschreven += 1
 
             # Sheet: Houtmonsters
             houtmonster_rows = []
@@ -198,6 +205,21 @@ class Rak(BaseModel):
                 ]
                 df_houtmonsters = df_houtmonsters[kolommen]
                 df_houtmonsters.to_excel(writer, sheet_name="Houtmonsters", index=False)
+                sheets_geschreven += 1
+
+            # Fallback: als er geen data is, maak een lege info sheet
+            if sheets_geschreven == 0:
+                df_info = pd.DataFrame(
+                    {
+                        "info": [
+                            f"Rak: {self.raknaam}",
+                            f"Totale lengte: {self.totale_lengte_m} m",
+                            f"Aantal rakdelen: {len(self.rakdelen)}",
+                            "Geen gedetailleerde data beschikbaar.",
+                        ]
+                    }
+                )
+                df_info.to_excel(writer, sheet_name="Info", index=False)
 
         print(f"Excel geëxporteerd naar: {export_pad}")
         return export_pad
@@ -239,8 +261,8 @@ class Rak(BaseModel):
         # Validate that all houtmonsters have been assigned to a paal
         unprocessed_houtmonsters = set(houtmonsters) - processed_houtmonsters
         if unprocessed_houtmonsters:
-            raise ValueError(
-                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
+            logger.warning(
+                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}"
             )
 
         # Maak rakdelen aan (parallel via async)

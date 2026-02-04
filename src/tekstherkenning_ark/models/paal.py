@@ -131,7 +131,9 @@ class Paal(BaseModel):
         last_main_paal_nummer = 0
 
         for row in paal_rows:
-
+            if len(row) != 17:
+                logger.warning(f"Onverwacht aantal kolommen in paal rij: verwacht 17, kreeg {len(row)}. Rij: {row}")
+                continue
             constructie_id_col_val = utils.clean_string(row[16])
 
             if constructie_id_col_val != "":
@@ -174,7 +176,6 @@ class Paal(BaseModel):
         """
 
         row_clean = [utils.clean_string(val) for val in row]
-
         return cls(
             paal_nummer=utils.clean_paal_id(row_clean[0]),
             diameter_haaks=row_clean[1],
