@@ -3,8 +3,11 @@ from typing import Type, TypeVar
 
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
+from tekstherkenning_ark import utils
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
@@ -50,6 +53,7 @@ class Rakdeel(RakBaseModel):
 
     # De constructie omschrijving
     omschrijving: str = ""
+    onderdeel_is_aangetast: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
 
     # Te vinden in paragraaf 5.x, eerste zin.
     lengte_m: float | None = None
@@ -86,6 +90,8 @@ class Rakdeel(RakBaseModel):
                 omschrijving += paragraaf.content + "\n"
         rakdeel_omschrijving = await RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
+        onderdeel_is_aangetast = cls.from_toestandbepaling_table(section.toestand_tabel)
+
         # Parse gebrekentabel
         gebreken = await Gebrek.from_doc_tables(tables=section.gebreken_tabel)
 
@@ -113,6 +119,7 @@ class Rakdeel(RakBaseModel):
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,
             omschrijving=omschrijving,
+            onderdeel_is_aangetast=onderdeel_is_aangetast,
         )
 
         # Add gebreken to rakdeel and subcomponents
@@ -128,6 +135,35 @@ class Rakdeel(RakBaseModel):
         key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
 
         return obj_dict.get(key, [])
+
+    @staticmethod
+    def from_toestandbepaling_table(
+        tables: list[DocumentTable],
+    ) -> dict[str, bool | NietBeschikbaar | OnverwachtResultaat]:
+        expected_headers = ["Constructieonderdeel", "Aangetast"]
+        constructieonderdeel_rows: list[list[str]] = []
+        for table in tables:
+
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
+
+            # Skip header rows and add to paal_rows
+            content_rows = [r for r in table_rows if r[0] != expected_headers[0]]
+            constructieonderdeel_rows.extend(content_rows)
+
+        dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
+        if len(constructieonderdeel_rows) == 2:
+            for constructieonderdeel, aangetast in constructieonderdeel_rows:
+                constructieonderdeel_clean = utils.clean_string(constructieonderdeel)
+                aangetast_clean = utils.parse_ja_nee(utils.clean_string(aangetast))
+                if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
+                    dict_toestandsbepaling[constructieonderdeel_clean] = aangetast_clean
+                else:
+                    print(
+                        f"Waarschuwing: Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel_clean}', wordt overgeslagen."
+                    )
+
+        return dict_toestandsbepaling
 
     def add_gebreken(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken

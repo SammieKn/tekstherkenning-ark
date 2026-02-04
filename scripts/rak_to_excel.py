@@ -1,0 +1,37 @@
+"""
+In dit script, converteren we `Rak` objects naar Excel-bestanden.
+
+Gebruik:
+    python scripts/rak_to_excel.py [--pdf PAD_NAAR_PDF] [--output OUTPUT_DIR]
+
+Het script laadt een Rak uit een PDF en exporteert de data naar Excel met:
+- Per gebrek-type een sheet met alle gebreken van dat type
+- Onderdeel_Aantasting: toestandsbepaling per rakdeel
+- Kespen: alle kespen met rakdeel referentie
+- Palen: alle palen met rakdeel referentie
+- Houtmonsters: alle houtmonsters met paal en rakdeel referentie
+"""
+
+import argparse
+from pathlib import Path
+
+from tekstherkenning_ark import constants
+from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark.smart_document import SmartDocument
+
+
+def main():
+    """Hoofdfunctie voor het exporteren van Rak data naar Excel."""
+    pdf_rapporten = [file for file in (constants.DATA_DIR / "duikrapporten").glob("*.pdf")]
+    docs = [SmartDocument.from_pdf(file) for file in pdf_rapporten[1:4]]
+    for doc in docs:
+        if not "boor" in doc.pdf_path.stem.lower():
+            print(f"Genereren van Rak object voor {doc.pdf_path.name}...")
+            rak = Rak.from_smart_document(doc)
+            print("Exporteren naar Excel...")
+            export_pad = rak.to_excel()
+            print(f"Klaar! Bestand opgeslagen: {export_pad}")
+
+
+if __name__ == "__main__":
+    main()

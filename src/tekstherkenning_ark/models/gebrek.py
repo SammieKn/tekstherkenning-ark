@@ -66,8 +66,13 @@ class Gebrek(BaseModel):
             table_rows = get_table_content(table)
 
             # Controleer header van eerste tabel
-            if len(gebrek_rows) == 0 and table_rows[0] != expected_header:
-                raise ValueError(f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}")
+            if (len(gebrek_rows) == 0 and table_rows[0] != expected_header) or len(table_rows[0]) < len(
+                expected_header
+            ):
+                logger.warning(
+                    f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}, door naar volgende tabel..."
+                )
+                continue  # Ga door naar volgende tabel in plaats van een fout te gooien
 
             # Sla header rijen over en voeg toe aan gebrek_rows
             content_rows = [r for r in table_rows if r[0] != expected_header[0]]
@@ -119,6 +124,7 @@ class Gebrek(BaseModel):
                     **gebrek.model_dump(),
                     **llm_result.model_dump(),
                 )
+            # TODO: Implementeer een algemene scheur classificatie indien nodig
 
         # logica voor grondvoerend gat
         if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
