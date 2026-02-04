@@ -71,9 +71,7 @@ class LLMClassifier(BaseModel):
 
             parsed_result = response.choices[0].message.parsed
             if parsed_result is None:
-                error_msg = "Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
+                raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
 
             cache_file.write_bytes(pickle.dumps(parsed_result))
 
