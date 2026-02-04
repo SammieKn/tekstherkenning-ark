@@ -64,6 +64,10 @@ class Rakdeel(BaseModel):
     onderbouw: Onderbouw
     gebreken: list[Gebrek] = []
 
+    @property
+    def alle_gebreken(self) -> list[Gebrek]:
+        return self.gebreken + self.bovenbouw.alle_gebreken + self.onderbouw.alle_gebreken
+
     @classmethod
     async def from_smart_doc_section(
         cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]

@@ -45,3 +45,15 @@ class Bovenbouw(BaseModel):
     bovenkant_deksteen_cm_tov_nap: float | None = None
 
     gebreken: list[Gebrek] = []
+
+    @property
+    def alle_gebreken(self) -> list[Gebrek]:
+        """Geef een lijst van alle gebreken in de bovenbouw, inclusief die in het metselwerk.
+
+        Returns:
+            list[Gebrek]: Lijst van alle gebreken in de bovenbouw.
+        """
+        alle_gebreken = self.gebreken.copy()
+        if self.metselwerk:
+            alle_gebreken.extend(self.metselwerk.gebreken)
+        return alle_gebreken
