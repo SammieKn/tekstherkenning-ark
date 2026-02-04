@@ -8,6 +8,7 @@ This module provides a centralized logging configuration that:
 
 import logging
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from tekstherkenning_ark.constants import DATA_DIR
@@ -17,8 +18,9 @@ from tekstherkenning_ark.constants import DATA_DIR
 LOG_DIR = DATA_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# Log file path
-LOG_FILE = LOG_DIR / "tekstherkenning_ark.log"
+# Log file path with timestamp
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_FILE = LOG_DIR / f"log_{timestamp}.log"
 
 # Log format
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
