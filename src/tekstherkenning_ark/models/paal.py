@@ -9,6 +9,7 @@ from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 logger = get_logger(__name__)
 
@@ -81,7 +82,7 @@ class Paal(BaseModel):
     is_aantasting: bool | NietBeschikbaar
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Aansluiting'.
-    aansluiting_status: AansluitingStatus
+    aansluiting_status: AansluitingStatus | OnverwachtResultaat
     positionering_aansluiting_cm: str | NietBeschikbaar
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Opmerkingen'.
     opmerkingen: str = ""
@@ -130,7 +131,9 @@ class Paal(BaseModel):
         last_main_paal_nummer = 0
 
         for row in paal_rows:
-
+            if len(row) != 17:
+                logger.warning(f"Onverwacht aantal kolommen in paal rij: verwacht 17, kreeg {len(row)}. Rij: {row}")
+                continue
             constructie_id_col_val = utils.clean_string(row[16])
 
             if constructie_id_col_val != "":
@@ -173,7 +176,6 @@ class Paal(BaseModel):
         """
 
         row_clean = [utils.clean_string(val) for val in row]
-
         return cls(
             paal_nummer=utils.clean_paal_id(row_clean[0]),
             diameter_haaks=row_clean[1],
@@ -187,7 +189,7 @@ class Paal(BaseModel):
             is_scheefstand=utils.parse_ja_nee(row_clean[11]),
             is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
             is_aantasting=utils.parse_ja_nee(row_clean[13]),
-            aansluiting_status=AansluitingStatus(row_clean[14]),
+            aansluiting_status=row_clean[14],
             positionering_aansluiting_cm=row_clean[15],
         )
 

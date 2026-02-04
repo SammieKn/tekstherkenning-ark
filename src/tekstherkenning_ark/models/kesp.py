@@ -34,25 +34,25 @@ class Kesp(BaseModel):
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.
     kesp_nummer: str
     # Te vinden in Bijlage 3, kolom 'Hoogte'.
-    hoogte_cm: int
+    hoogte_cm: int | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Breedte'.
-    breedte_cm: int
+    breedte_cm: int | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Hoek t.o.v. lengte-as frontwand'.
-    hoek_tov_lengte_as_graden: int | None = None
+    hoek_tov_lengte_as_graden: int | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Lengte uitstekende deel t.o.v. voorzijde frontwand'.
     lengte_uitstekend_deel_cm: int | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Mate van inknijping t.o.v. oorspronkelijke staat'.
-    mate_inknijping_cm: int | None = None
+    mate_inknijping_cm: int | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Indrukking van de funderingspaal in de kesp'.
-    indrukking_paal_in_kesp: bool | None = None
+    indrukking_paal_in_kesp: bool | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Opsluitklos aanwezig?'.
-    is_opsluitklos_aanwezig: bool | None = None
+    is_opsluitklos_aanwezig: bool | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Opsluitklos aantasting'.
     is_opsluitklos_aangetast: bool | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Schades Vervormingen'.
-    is_vervormd: bool | None = None
+    is_vervormd: bool | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
-    is_aangetast: bool | None = None
+    is_aangetast: bool | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Opmerkingen'.
     opmerkingen: str = ""
 
@@ -102,7 +102,8 @@ class Kesp(BaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 else:
-                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                    logger.critical(f"Duplicate constructie ID found: {current_constructie_id}")
+                    # raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
 
             if current_constructie_id != "":
                 paal = cls.from_kesp_table_row(row)

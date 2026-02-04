@@ -1,44 +1,54 @@
-from enum import Enum
+from tekstherkenning_ark.flexibele_enum import FlexibeleEnum
 
-class MateriaalFundering(Enum):
+
+class MateriaalFundering(FlexibeleEnum):
     """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+
     HOUT = "Hout"
     STAAL = "Staal"
     BETON = "Beton"
 
-class MateriaalOnderbouw(Enum):
+
+class MateriaalOnderbouw(FlexibeleEnum):
     """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+
     HOUT = "Hout"
     STAAL = "Staal"
     BETON = "Beton"
 
-class MateriaalBovenbouw(Enum):
+
+class MateriaalBovenbouw(FlexibeleEnum):
     """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+
     METSELWERK = "Metselwerk"
     BASALT = "Basalt"
     BETON_METSELWERK = "Beton+Metselwerk"
     BETON_BASALT = "Beton+Basalt"
     BETON = "Beton"
 
-class MateriaalVloer(Enum):
+
+class MateriaalVloer(FlexibeleEnum):
     """Afkomstig uit `ark-automatiseren/app/Segment/segment_parametrization.py`"""
+
     ONBEKEND = "Onbekend"
     HOUT = "Hout"
     BETON = "Beton"
 
-class SchoorStand(Enum):
+
+class SchoorStand(FlexibeleEnum):
     POSITIEF = "PNV"
     NEGATIEF = "PNA"
     NEUTRAAL = "LR"
+    TO_DO_REMOVE_PNL = "PNL"  # TODO Verwijderen indien niet meer gebruikt
 
 
-class NietBeschikbaar(Enum):
+class NietBeschikbaar(FlexibeleEnum):
     NIET_VAN_TOEPASSING = "NVT"
     NIET_MEETBAAR = "NM"
     LEEG = ""
 
 
-class AansluitingStatus(Enum):
+class AansluitingStatus(FlexibeleEnum):
     """Status van de aansluiting paal-kesp of paal-vloer. Te vinden in de meettabel
     funderingspalen, Bijlage 3, kolom 'Aansluiting'.
     """
