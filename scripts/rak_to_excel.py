@@ -23,7 +23,7 @@ from tekstherkenning_ark.smart_document import SmartDocument
 def main():
     """Hoofdfunctie voor het exporteren van Rak data naar Excel."""
     pdf_rapporten = [file for file in (constants.DATA_DIR / "duikrapporten").glob("*.pdf")]
-    docs = [SmartDocument.from_pdf(file) for file in pdf_rapporten]
+    docs = [SmartDocument.from_pdf(file) for file in pdf_rapporten[1:4]]
     for doc in docs:
         if not "boor" in doc.pdf_path.stem.lower():
             print(f"Genereren van Rak object voor {doc.pdf_path.name}...")

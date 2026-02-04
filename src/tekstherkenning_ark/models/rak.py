@@ -3,10 +3,8 @@ import asyncio
 from datetime import datetime
 from pathlib import Path
 import pickle
-from typing import TYPE_CHECKING
 
 import pandas as pd
-from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
@@ -15,6 +13,7 @@ from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.smart_document import SmartDocument
@@ -24,14 +23,14 @@ from tekstherkenning_ark.utils import get_rak_id
 logger = get_logger(__name__)
 
 
-class Rak(BaseModel):
+class Rak(RakBaseModel):
     """Rak.
 
     Attributes:
         rakdelen: Lijst van rakdelen waaruit het rak is opgebouwd.
         raknaam: Naam of code van het rak.
         totale_lengte_m: Totale lengte van het rak in meters.
-        opmerkingen: Eventuele aanvullende opmerkingen over het gehele rak.
+        opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
     # Elk rakdeel heeft een eigen constructietype.
@@ -40,23 +39,11 @@ class Rak(BaseModel):
     raknaam: str
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
     totale_lengte_m: float
-    # Te vinden in de samenvatting, inleiding of slotbeschouwing van het rapport.
-    opmerkingen: str = ""
 
     @property
-    def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
-        """Verzamel alle gebreken uit alle rakdelen.
-
-        Returns
-        -------
-        list[tuple[str, Gebrek]]
-            Lijst van tuples met (rakdeel_id, gebrek).
-        """
-        resultaat: list[tuple[str, Gebrek]] = []
-        for rakdeel in self.rakdelen:
-            for gebrek in rakdeel.alle_gebreken:
-                resultaat.append((rakdeel.rakdeel_id, gebrek))
-        return resultaat
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Rak instance."""
+        return str(self.raknaam)
 
     @property
     def alle_palen(self) -> list[tuple[str, Paal]]:
