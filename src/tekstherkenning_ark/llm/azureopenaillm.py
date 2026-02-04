@@ -42,54 +42,30 @@ class AzureOpenAILLM:
             if not input_api_key:
                 raise ValueError("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
 
-        if model_name is None:
-            model_name = os.environ.get("DEPLOYMENT_NAME_GPT41")
-            if not model_name:
-                raise ValueError("DEPLOYMENT_NAME_GPT41 environment variabele is niet ingesteld.")
-
         azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
         if not azure_endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
 
-        azure_openai_version = os.environ.get("AZURE_OPENAI_API_VERSION", None)
-        azure_encoding_name = os.environ.get("AZURE_OPENAI_ENCODING_NAME", None)
-        azure_model_name = os.environ.get("AZURE_MODEL_NAME", None)
+        azure_openai_version = os.environ.get("AZURE_OPENAI_API_VERSION")
+        if not azure_openai_version:
+            raise ValueError("AZURE_OPENAI_API_VERSION environment variabele is niet ingesteld.")
+
+        azure_encoding_name = os.environ.get("AZURE_OPENAI_ENCODING_NAME")
+        if not azure_encoding_name:
+            raise ValueError("AZURE_OPENAI_ENCODING_NAME environment variabele is niet ingesteld.")
+
+        azure_model_name = os.environ.get("AZURE_MODEL_NAME")
+        if model_name is None and not azure_model_name:
+            raise ValueError("AZURE_MODEL_NAME environment variabele is niet ingesteld.")
 
         self.model = azure_model_name or model_name
-        self.model_params = self.get_model_params(self.model)
 
         self.client = AsyncAzureOpenAI(
             api_key=input_api_key,
             azure_endpoint=azure_endpoint,
-            api_version=azure_openai_version or self.model_params["api_version"],
+            api_version=azure_openai_version,
         )
-        self.encoding = tiktoken.get_encoding(azure_encoding_name or self.model_params["encoding_name"])
-
-    def get_model_params(self, model: str) -> dict[str, str]:
-        """Get the model parameters for the Azure OpenAI API.
-        Update as required."""
-        model_params = {}
-        if model == "arcadisgpt-gpt35-0125":
-            model_params["api_version"] = "2023-05-15"
-            model_params["encoding_name"] = "cl100k_base"
-        elif model == "gpt-4o":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-41":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-41-mini":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-5":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-5-mini":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        else:
-            raise ValueError(f"Model name {model} is not supported.")
-        return model_params
+        self.encoding = tiktoken.get_encoding(azure_encoding_name)
 
     async def chat_completion(
         self,
