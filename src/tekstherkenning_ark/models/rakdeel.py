@@ -23,6 +23,9 @@ from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.utils import contains_kesp_id, get_kesp_id, get_paal_id
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 T = TypeVar("T", Paal, Kesp)
 
@@ -153,8 +156,8 @@ class Rakdeel(BaseModel):
                 if kesp:
                     kesp.gebreken.append(gebrek)
                 else:
-                    print(
-                        f"Waarschuwing: Kesp ID {kesp_id} gevonden in gebrek codering, maar geen overeenkomende Kesp in rakdeel {self.rakdeel_id}"
+                    logger.warning(
+                        f"Kesp ID {kesp_id} gevonden in gebrek codering, maar geen overeenkomende Kesp in rakdeel {self.rakdeel_id}"
                     )
 
             # Match paal
@@ -163,8 +166,8 @@ class Rakdeel(BaseModel):
                 if paal:
                     paal.gebreken.append(gebrek)
                 else:
-                    print(
-                        f"Waarschuwing: Paal ID {paal_id} gevonden in gebrek codering, maar geen overeenkomende Paal in rakdeel {self.rakdeel_id}"
+                    logger.warning(
+                        f"Paal ID {paal_id} gevonden in gebrek codering, maar geen overeenkomende Paal in rakdeel {self.rakdeel_id}"
                     )
 
             else:

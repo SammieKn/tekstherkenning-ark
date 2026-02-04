@@ -13,8 +13,11 @@ from azure.core.credentials import AzureKeyCredential
 from io import BytesIO
 
 from dotenv import load_dotenv
+from tekstherkenning_ark.logger import get_logger
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -103,7 +106,7 @@ class SmartDocument:
 
         # Try to load from cache
         if use_cache and cache_file.exists():
-            print(f"  Loading from cache: {cache_file.name}")
+            logger.info(f"Loading from cache: {cache_file.name}")
             result = pickle.loads(cache_file.read_bytes())
         else:
             # Load environment variables
@@ -111,13 +114,14 @@ class SmartDocument:
             doc_ai_key = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY")
 
             if not doc_ai_endpoint or not doc_ai_key:
+                logger.error("Azure credentials not found in .env file")
                 raise ValueError("Azure credentials not found in .env file")
 
             # Initialize Azure Document Intelligence client
             client = DocumentIntelligenceClient(endpoint=doc_ai_endpoint, credential=AzureKeyCredential(doc_ai_key))
 
             # Read and analyze the document
-            print(f"  Analyzing document with Azure Document Intelligence...")
+            logger.info(f"Analyzing document with Azure Document Intelligence...")
             document_bytes = BytesIO(pdf_path.read_bytes())
 
             poller = client.begin_analyze_document("prebuilt-layout", document_bytes, content_type="application/pdf")
@@ -125,7 +129,7 @@ class SmartDocument:
 
             # Cache the result
             cache_file.write_bytes(pickle.dumps(result))
-            print(f"  Results cached to: {cache_file.name}")
+            logger.info(f"Results cached to: {cache_file.name}")
 
         doc = cls(analyze_result=result, pdf_path=pdf_path)
         doc._parse_document()
