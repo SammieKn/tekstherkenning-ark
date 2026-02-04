@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TypeVar, get_args, get_origin, Union
+from typing import Type, TypeVar, get_args, get_origin, Union
 from pydantic import BaseModel
 
 from tekstherkenning_ark.models.gebrek import Gebrek
@@ -68,7 +68,7 @@ class RakBaseModel(BaseModel):
 
         return children
 
-    def _get_all_with_path(self, obj_type: T, prefix: str = "") -> list[tuple[str, T]]:
+    def _get_all_with_path(self, obj_type: Type[T], prefix: str = "") -> list[tuple[str, T]]:
         """Helper method to recursively collect gebreken with their identifier paths.
 
         Args:
