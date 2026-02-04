@@ -184,7 +184,7 @@ class Paal(RakBaseModel):
             is_scheefstand=utils.parse_ja_nee(row_clean[11]),
             is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
             is_aantasting=utils.parse_ja_nee(row_clean[13]),
-            aansluiting_status=AansluitingStatus(row_clean[14]),
+            aansluiting_status=row_clean[14],
             positionering_aansluiting_cm=row_clean[15],
         )
 

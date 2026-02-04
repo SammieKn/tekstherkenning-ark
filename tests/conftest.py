@@ -4,7 +4,33 @@ test fixtures for module tests
 tests work only local -with data dir for now- what do we want?
 """
 
+import json
+from pathlib import Path
+
 import pytest
+
+from tekstherkenning_ark.models.rak import Rak
+
+# Test directory constants
+TEST_DIR = Path(__file__).parent
+TEST_DATA_DIR = TEST_DIR / "data"
+
+
+@pytest.fixture(scope="session")
+def mock_rak_with_gebreken() -> Rak:
+    """Fixture to provide a complete mock Rak object with gebreken at various levels."""
+    json_path = TEST_DATA_DIR / "mock_rak_with_gebreken.json"
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    return Rak.model_validate(data)
+
+
+@pytest.fixture(scope="session")
+def mock_rak_with_onverwachte_resultaten() -> Rak:
+    """Fixture to provide a complete mock Rak object with OnverwachtResultaat at various levels."""
+    json_path = TEST_DATA_DIR / "mock_rak_with_onverwachte_resultaten.json"
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    return Rak.model_validate(data)
+
 
 # from tekstherkenning_ark.parsed_pdf import ParsedPDF
 # from tekstherkenning_ark.constants import DATA_DIR

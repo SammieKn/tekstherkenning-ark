@@ -1,0 +1,95 @@
+{
+    "raknaam": "Test Rak",
+    "totale_lengte_m": 50.0,
+    "rakdelen": [
+        {
+            "rakdeel_id": "Constructie A",
+            "omschrijving": "Houten paalfundering",
+            "lengte_m": 50.0,
+            "bovenbouw": {
+                "maximale_scheurwijdte_mm": 2.5,
+                "metselwerk": {
+                    "dikte_cm": 30.0,
+                    "hoogte_cm": 250.0,
+                    "gebreken": [
+                        {
+                            "codering": "GM1",
+                            "omschrijving": "Scheur in metselwerk",
+                            "figuurnummer": "F1"
+                        }
+                    ]
+                }
+            },
+            "onderbouw": {
+                "palen": [
+                    {
+                        "paal_nummer": "P1.1",
+                        "diameter_haaks": 150,
+                        "diameter_parallel": 150,
+                        "diameter_gemiddeld": 150,
+                        "hoh_afstand_cm": 100,
+                        "hoh_paalnummer": "P1.2",
+                        "schoor_graden": 5,
+                        "schoor_richting": "PNV",
+                        "afstand_frontwand_cm": 25,
+                        "is_scheefstand": false,
+                        "is_paalbreuk": false,
+                        "is_aantasting": false,
+                        "aansluiting_status": "G",
+                        "positionering_aansluiting_cm": "0",
+                        "gebreken": [
+                            {
+                                "codering": "GP1",
+                                "omschrijving": "Aantasting paal",
+                                "figuurnummer": "F2"
+                            }
+                        ]
+                    },
+                    {
+                        "paal_nummer": "P1.2",
+                        "diameter_haaks": 150,
+                        "diameter_parallel": 150,
+                        "diameter_gemiddeld": 150,
+                        "hoh_afstand_cm": 100,
+                        "hoh_paalnummer": "P1.3",
+                        "schoor_graden": 5,
+                        "schoor_richting": "PNV",
+                        "afstand_frontwand_cm": 25,
+                        "is_scheefstand": false,
+                        "is_paalbreuk": false,
+                        "is_aantasting": false,
+                        "aansluiting_status": "G",
+                        "positionering_aansluiting_cm": "0"
+                    }
+                ],
+                "kespen": [
+                    {
+                        "kesp_nummer": "K1",
+                        "hoogte_cm": 20,
+                        "breedte_cm": 15,
+                        "lengte_uitstekend_deel_cm": 10,
+                        "is_opsluitklos_aangetast": false,
+                        "gebreken": [
+                            {
+                                "codering": "GK1",
+                                "omschrijving": "Vervorming kesp",
+                                "figuurnummer": "F3"
+                            }
+                        ]
+                    }
+                ],
+                "vloer": {
+                    "materiaal": "Hout",
+                    "bovenkant_vloer_cm_tov_nap": -120.5
+                }
+            },
+            "gebreken": [
+                {
+                    "codering": "GR1",
+                    "omschrijving": "Algemeen gebrek rakdeel",
+                    "figuurnummer": "NVT"
+                }
+            ]
+        }
+    ]
+}
