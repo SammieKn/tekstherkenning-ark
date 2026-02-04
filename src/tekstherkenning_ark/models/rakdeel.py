@@ -51,7 +51,7 @@ class Rakdeel(BaseModel):
     gebreken: list[Gebrek] = []
 
     @classmethod
-    def from_smart_doc_section(
+    async def from_smart_doc_section(
         cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]
     ) -> Rakdeel:
         """Genereer een lijst van Rakdeel modellen vanuit een lijst van RakdeelSectie modellen.
@@ -69,10 +69,10 @@ class Rakdeel(BaseModel):
         for paragraaf in section.beschrijving:
             if len(paragraaf.content.strip()) > 20:
                 omschrijving += paragraaf.content + "\n"
-        rakdeel_omschrijving = RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
+        rakdeel_omschrijving = await RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
         # Parse gebrekentabel
-        gebreken = Gebrek.from_doc_tables(tables=section.gebreken_tabel)
+        gebreken = await Gebrek.from_doc_tables(tables=section.gebreken_tabel)
 
         # Verkrijg palen en kespen voor dit rakdeel
         palen = cls.get_for_constructie_naam(section.constructie_naam, palen_dict)

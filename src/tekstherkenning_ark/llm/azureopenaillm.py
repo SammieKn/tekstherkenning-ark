@@ -2,7 +2,7 @@
 This module originates from Arcadis and is used to interact with the Azure OpenAI API.
 """
 
-from openai import AzureOpenAI
+from openai import AsyncAzureOpenAI
 from openai.types.completion_usage import CompletionUsage
 from dotenv import load_dotenv
 import os
@@ -57,7 +57,8 @@ class AzureOpenAILLM:
 
         self.model = azure_model_name or model_name
         self.model_params = self.get_model_params(self.model)
-        self.client = AzureOpenAI(
+
+        self.client = AsyncAzureOpenAI(
             api_key=input_api_key,
             azure_endpoint=azure_endpoint,
             api_version=azure_openai_version or self.model_params["api_version"],
@@ -90,7 +91,7 @@ class AzureOpenAILLM:
             raise ValueError(f"Model name {model} is not supported.")
         return model_params
 
-    def chat_completion(
+    async def chat_completion(
         self,
         prompt: str,
         max_tokens: int = 4096,
@@ -103,7 +104,7 @@ class AzureOpenAILLM:
         of tokens used in the request as reported by the model resource if
         get_tokens is set to True."""
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system},  # Describes the role the assistant should take.
@@ -126,13 +127,13 @@ class AzureOpenAILLM:
             return ""
         return response.choices[0].message.content
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    async def validate_api_key(self) -> tuple[bool, str]:
         """Validate the API key with a minimal request."""
 
         print("Validating Azure OpenAI API key...")
 
         test_prompt = "Hello, world!"
-        response = self.chat_completion(test_prompt)
+        response = await self.chat_completion(test_prompt)
         if not response is None and len(response) > 0 and not "error" in response.lower():
             return True, response
         return False, response
