@@ -27,6 +27,41 @@ LOG_FILE = LOG_DIR / f"log_{timestamp}.log"
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# Track if we've initialized the root logger
+_root_logger_initialized = False
+
+
+def _ensure_root_logger_configured():
+    """Ensure the root logger has handlers for exception logging."""
+    global _root_logger_initialized
+
+    if not _root_logger_initialized:
+        root_logger = logging.getLogger()
+
+        # Only configure if it doesn't have our handlers yet
+        if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
+            root_logger.setLevel(logging.DEBUG)
+
+            # File handler - DEBUG level and above
+            file_handler = RotatingFileHandler(
+                LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 10 MB
+            )
+            file_handler.setLevel(logging.DEBUG)
+            file_formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
+            file_handler.setFormatter(file_formatter)
+
+            # Console handler - INFO level and above
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(logging.INFO)
+            console_formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
+            console_handler.setFormatter(console_formatter)
+
+            # Add handlers to root logger
+            root_logger.addHandler(file_handler)
+            root_logger.addHandler(console_handler)
+
+        _root_logger_initialized = True
+
 
 def get_logger(name: str) -> logging.Logger:
     """Get a configured logger instance.
@@ -37,6 +72,9 @@ def get_logger(name: str) -> logging.Logger:
     Returns:
         Configured logger instance
     """
+    # Ensure root logger is configured for exception handling
+    _ensure_root_logger_configured()
+
     logger = logging.getLogger(name)
 
     # Only configure if not already configured
@@ -76,6 +114,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
+
+    # Ensure root logger is configured
+    _ensure_root_logger_configured()
 
     # Get the root logger and log the exception
     logger = logging.getLogger()
