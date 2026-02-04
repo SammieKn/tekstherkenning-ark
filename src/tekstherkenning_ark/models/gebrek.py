@@ -67,9 +67,7 @@ class Gebrek(BaseModel):
 
             # Controleer header van eerste tabel
             if len(gebrek_rows) == 0 and table_rows[0] != expected_header:
-                error_msg = f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
+                raise ValueError(f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}")
 
             # Sla header rijen over en voeg toe aan gebrek_rows
             content_rows = [r for r in table_rows if r[0] != expected_header[0]]

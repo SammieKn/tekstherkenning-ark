@@ -114,7 +114,6 @@ class SmartDocument:
             doc_ai_key = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY")
 
             if not doc_ai_endpoint or not doc_ai_key:
-                logger.error("Azure credentials not found in .env file")
                 raise ValueError("Azure credentials not found in .env file")
 
             # Initialize Azure Document Intelligence client
