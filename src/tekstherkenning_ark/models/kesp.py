@@ -29,7 +29,7 @@ class Kesp(BaseModel):
     """
 
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.
-    kespnummer: str
+    kesp_nummer: str
     # Te vinden in Bijlage 3, kolom 'Hoogte'.
     hoogte_cm: int
     # Te vinden in Bijlage 3, kolom 'Breedte'.
@@ -126,7 +126,7 @@ class Kesp(BaseModel):
         row_clean = [utils.clean_string(val) for val in row]
 
         return cls(
-            kespnummer=row_clean[0],
+            kesp_nummer=row_clean[0],
             hoogte_cm=row_clean[1],
             breedte_cm=row_clean[2],
             hoek_tov_lengte_as_graden=row_clean[3],

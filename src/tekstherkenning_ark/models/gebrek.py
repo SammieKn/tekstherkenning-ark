@@ -5,7 +5,13 @@ from typing import Literal
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentTable
 
-from tekstherkenning_ark.utils import get_table_content, contains_kesp_id, contains_paal_id, is_algemeen_gebrek
+from tekstherkenning_ark.utils import (
+    get_paal_id,
+    get_table_content,
+    contains_kesp_id,
+    contains_paal_id,
+    is_algemeen_gebrek,
+)
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.gebrek_classificatie import (
     ScheurMetselwerkLLM,

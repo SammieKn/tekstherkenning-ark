@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.metselwerk import Metselwerk
 
 
@@ -42,3 +43,5 @@ class Bovenbouw(BaseModel):
     is_scheefstand_aanwezig: bool | None = None
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
+
+    gebreken: list[Gebrek] = []

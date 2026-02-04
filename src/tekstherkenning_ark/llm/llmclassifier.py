@@ -52,6 +52,7 @@ class LLMClassifier(BaseModel):
             print(f"Loading cached {cls.__name__} from {cache_file}")
             parsed_result = pickle.loads(cache_file.read_bytes())
         else:
+            print(f"Classifying description into {cls.__name__} via LLM...")
 
             llm = AzureOpenAILLM()
 

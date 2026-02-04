@@ -4,16 +4,25 @@ from typing import Type, TypeVar
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
 
+from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import (
+    BuikInWand,
+    Gebrek,
+    GrondVoerendGat,
+    LokaalVerdwenenMetselwerk,
+    ScheurHout,
+    ScheurMetselwerk,
+)
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
+from tekstherkenning_ark.utils import contains_kesp_id, get_kesp_id, get_paal_id
 
 T = TypeVar("T", Paal, Kesp)
 
@@ -50,7 +59,7 @@ class Rakdeel(BaseModel):
 
     @classmethod
     async def from_smart_doc_section(
-        cls, section: RakdeelSectie, kespen_dict: dict[str, Kesp], palen_dict: dict[str, Paal]
+        cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]
     ) -> Rakdeel:
         """Genereer een lijst van Rakdeel modellen vanuit een lijst van RakdeelSectie modellen.
 
@@ -91,7 +100,6 @@ class Rakdeel(BaseModel):
 
         rakdeel = Rakdeel(
             bovenbouw=bovenbouw,
-            gebreken=gebreken,
             lengte_m=rakdeel_omschrijving.lengte_rakdeel,
             onderbouw=onderbouw,
             rakdeel_id=section.constructie_naam,
@@ -99,19 +107,66 @@ class Rakdeel(BaseModel):
             omschrijving=omschrijving,
         )
 
+        # Add gebreken to rakdeel and subcomponents
+        rakdeel.add_gebreken(gebreken)
+
         return rakdeel
 
     @staticmethod
-    def get_for_constructie_naam(rakdeel_id: str, obj_dict: dict[str, T]) -> list[T]:
+    def get_for_constructie_naam(rakdeel_id: str, obj_dict: dict[str, list[T]]) -> list[T]:
         """Haalt een lijst van objecten (Paal of Kesp) op voor dit rakdeel op basis van de constructie naam."""
 
         rakdeel_id_lower = rakdeel_id.lower()
         key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
 
-        if not key:
-            obj_type = next((x[0].__class__.__name__ for x in obj_dict.values() if x))
-            print(
-                f"Waarschuwing: Geen constructienaam gevonden in {obj_type} voor rakdeel_id {rakdeel_id}. Beschikbare keys: {list(obj_dict.keys())}"
-            )
-
         return obj_dict.get(key, [])
+
+    def add_gebreken(self, gebreken: list[Gebrek]) -> None:
+        """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken
+        verdeeld over onderliggende componenten (kespen, palen, etc). Algemene
+        gebreken worden opgeslagen in het Rakdeel model zelf.
+
+        Parameters
+        ----------
+        gebreken : list[Gebrek]
+            Lijst van gebreken onttrokken uit de gebreken tabel in het duikrapport.
+        """
+
+        for gebrek in gebreken:
+
+            # Try to extract kesp or paal id
+            kesp_id = get_kesp_id(gebrek.codering)
+            paal_id = get_paal_id(gebrek.codering)
+
+            # Match gebreken to o
+            if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
+                if self.bovenbouw.metselwerk is None:
+                    self.bovenbouw.metselwerk = Metselwerk()
+                self.bovenbouw.metselwerk.gebreken.append(gebrek)
+
+            elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):
+                self.bovenbouw.gebreken.append(gebrek)
+
+            # Match kesp
+            elif not kesp_id is None:
+                kesp = next((k for k in self.onderbouw.kespen if k.kesp_nummer == kesp_id), None)
+                if kesp:
+                    kesp.gebreken.append(gebrek)
+                else:
+                    print(
+                        f"Waarschuwing: Kesp ID {kesp_id} gevonden in gebrek codering, maar geen overeenkomende Kesp in rakdeel {self.rakdeel_id}"
+                    )
+
+            # Match paal
+            elif not paal_id is None:
+                paal = next((p for p in self.onderbouw.palen if p.paal_nummer == paal_id), None)
+                if paal:
+                    paal.gebreken.append(gebrek)
+                else:
+                    print(
+                        f"Waarschuwing: Paal ID {paal_id} gevonden in gebrek codering, maar geen overeenkomende Paal in rakdeel {self.rakdeel_id}"
+                    )
+
+            else:
+                # If it doesnt belong to metselwerk, paal or kesp add to rakdeel itself
+                self.gebreken.append(gebrek)

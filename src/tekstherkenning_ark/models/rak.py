@@ -110,7 +110,20 @@ if __name__ == "__main__":
 
     for rd in rak.rakdelen:
         print(rd.rakdeel_id)
-        for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
+        for p in [p for p in rd.onderbouw.palen if p.gebreken]:
             print(f"  Paal: {p.paal_nummer}")
-            for hm in p.houtmonsters:
-                print(f"    Houtmonster: {hm.codering}")
+            for gebrek in p.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        for kesp in [k for k in rd.onderbouw.kespen if k.gebreken]:
+            print(f"  Kesp: {kesp.kesp_nummer}")
+            for gebrek in kesp.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        if rd.bovenbouw.metselwerk and rd.bovenbouw.metselwerk.gebreken:
+            print(f"  Metselwerk gebreken:")
+            for gebrek in rd.bovenbouw.metselwerk.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        for gebrek in rd.gebreken:
+            print(f"  Rakdeel gebrek: {gebrek.codering}")

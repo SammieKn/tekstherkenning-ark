@@ -1,10 +1,15 @@
 import re
-import unicodedata
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+
+
+# Regex patterns for ID extraction and validation
+PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
+KESP_ID_PATTERN = r"\bK\d+\b"
+ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -52,7 +57,7 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     return OnverwachtResultaat(
         waarde=value,
         onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
-        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`"
+        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
     )
 
 
@@ -79,22 +84,59 @@ def contains_paal_id(value: str) -> bool:
 
     value = clean_paal_id(clean_string(value))
 
-    pattern = r"P\d+\.\d+"
-    return bool(re.search(pattern, value.strip()))
+    return bool(re.search(PAAL_ID_PATTERN, value.strip()))
 
 
 def contains_kesp_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'K\d+' (e.g., K1, K24)"""
 
-    pattern = r"K\d+"
-    return bool(re.search(pattern, value.strip()))
+    return bool(re.search(KESP_ID_PATTERN, value.strip()))
+
+
+def get_paal_id(value: str) -> str | None:
+    r"""Extract paal ID from a string (e.g., P1.1, P2.10, P2.163).
+
+    Parameters
+    ----------
+    value : str
+        Input string that may contain a paal ID
+
+    Returns
+    -------
+    str | None
+        The extracted paal ID or None if not found
+    """
+    value = clean_paal_id(clean_string(value))
+
+    match = re.search(PAAL_ID_PATTERN, value.strip())
+
+    return match.group(0) if match else None
+
+
+def get_kesp_id(value: str) -> str | None:
+    r"""Extract kesp ID from a string (e.g., K1, K24).
+
+    Parameters
+    ----------
+    value : str
+        Input string that may contain a kesp ID
+
+    Returns
+    -------
+    str | None
+        The extracted kesp ID or None if not found
+    """
+    value = clean_string(value)
+
+    match = re.search(KESP_ID_PATTERN, value.strip())
+
+    return match.group(0) if match else None
 
 
 def is_algemeen_gebrek(value: str) -> bool:
     """Check if a string indicates an 'algemeen gebrek'."""
-    pattern = r"^GB\d{1,3}$"
 
-    return bool(re.search(pattern, value.strip().upper())) or value == "Algemeen"
+    return bool(re.search(ALGEMEEN_GEBREK_PATTERN, value.strip().upper())) or value == "Algemeen"
 
 
 def is_houtmonster_id(value: str) -> bool:
@@ -120,7 +162,7 @@ def clean_string(value: str) -> str:
     value = unidecode(value)
 
     # Remove leading/trailing quotes
-    value = value.strip('"').strip("'").strip("`")
+    value = value.strip().strip('"').strip("'").strip("`")
 
     # Remove anything between two ':' characters
     value = re.sub(r":.*?:", "", value)
