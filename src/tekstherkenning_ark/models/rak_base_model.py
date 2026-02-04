@@ -62,30 +62,30 @@ class RakBaseModel(BaseModel):
 
     def _get_alle_gebreken_with_path(self, prefix: str = "") -> list[tuple[str, Gebrek]]:
         """Helper method to recursively collect gebreken with their identifier paths.
-        
+
         Args:
             prefix: The parent path prefix to prepend to this object's identifier.
-            
+
         Returns:
             List of tuples containing (full_path, gebrek) for all gebreken in this model and its children.
         """
-        current_path = f"{prefix}.{self.identifier}" if prefix else self.identifier
-        
+        current_path = f"{prefix}/{self.identifier}" if prefix else self.identifier
+
         # Add gebreken from this model
         result = [(current_path, gebrek) for gebrek in self.gebreken]
-        
+
         # Recursively collect from children
         for child in self.children:
             result.extend(child._get_alle_gebreken_with_path(current_path))
-        
+
         return result
 
     @property
     def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
         """Return a list of tuples (path, gebrek) for all Gebrek objects in this model and its children.
-        
-        The path is a dot-separated string of identifiers showing the hierarchy,
-        e.g., 'raknaam.rakdeel_id.onderbouw.paal_nummer'.
+
+        The path is a slash-separated string of identifiers showing the hierarchy,
+        e.g., 'raknaam/rakdeel_id/onderbouw/paal_nummer'.
         """
         return self._get_alle_gebreken_with_path()
 
@@ -97,29 +97,29 @@ class RakBaseModel(BaseModel):
 
     def _get_alle_onverwachte_resultaten_with_path(self, prefix: str = "") -> list[tuple[str, OnverwachtResultaat]]:
         """Helper method to recursively collect onverwachte resultaten with their identifier paths.
-        
+
         Args:
             prefix: The parent path prefix to prepend to this object's identifier.
-            
+
         Returns:
             List of tuples containing (full_path, onverwacht_resultaat) for all onverwachte resultaten.
         """
-        current_path = f"{prefix}.{self.identifier}" if prefix else self.identifier
-        
+        current_path = f"{prefix}/{self.identifier}" if prefix else self.identifier
+
         # Add onverwachte resultaten from this model
         result = [(current_path, onverwacht) for onverwacht in self.onverwachte_resultaten]
-        
+
         # Recursively collect from children
         for child in self.children:
             result.extend(child._get_alle_onverwachte_resultaten_with_path(current_path))
-        
+
         return result
 
     @property
     def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
         """Return a list of tuples (path, onverwacht_resultaat) for all OnverwachtResultaat objects.
-        
-        The path is a dot-separated string of identifiers showing the hierarchy,
-        e.g., 'raknaam.rakdeel_id.bovenbouw.metselwerk'.
+
+        The path is a slash-separated string of identifiers showing the hierarchy,
+        e.g., 'raknaam/rakdeel_id/bovenbouw/metselwerk'.
         """
         return self._get_alle_onverwachte_resultaten_with_path()
