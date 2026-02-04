@@ -11,7 +11,14 @@ from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.gebrek import Gebrek, ScheurHout, ScheurMetselwerk
+from tekstherkenning_ark.models.gebrek import (
+    BuikInWand,
+    Gebrek,
+    GrondVoerendGat,
+    LokaalVerdwenenMetselwerk,
+    ScheurHout,
+    ScheurMetselwerk,
+)
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.smart_document import RakdeelSectie
@@ -125,8 +132,6 @@ class Rakdeel(BaseModel):
             Lijst van gebreken onttrokken uit de gebreken tabel in het duikrapport.
         """
 
-        # Kesp, Paal, Onderloopsheidscherm, Vloer, Metselwerk
-
         for gebrek in gebreken:
 
             # Try to extract kesp or paal id
@@ -134,10 +139,13 @@ class Rakdeel(BaseModel):
             paal_id = get_paal_id(gebrek.codering)
 
             # Match gebreken to o
-            if isinstance(gebrek, (ScheurMetselwerk, LokaalverdwenenMetselwerk):
+            if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
                 if self.bovenbouw.metselwerk is None:
                     self.bovenbouw.metselwerk = Metselwerk()
                 self.bovenbouw.metselwerk.gebreken.append(gebrek)
+
+            elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):
+                self.bovenbouw.gebreken.append(gebrek)
 
             # Match kesp
             elif not kesp_id is None:
