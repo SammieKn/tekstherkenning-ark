@@ -9,6 +9,7 @@ from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat,
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
 KESP_ID_PATTERN = r"\bK\d+\b"
+RAK_ID_PATTERN = r"([A-Z]{3}\d{4})(-\d{2})?"
 ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
 
 
@@ -129,6 +130,26 @@ def get_kesp_id(value: str) -> str | None:
     value = clean_string(value)
 
     match = re.search(KESP_ID_PATTERN, value.strip())
+
+    return match.group(0) if match else None
+
+
+def get_rak_id(value: str) -> str | None:
+    r"""Extract rak ID from a string (e.g., ABC1234, DEF5678-01).
+
+    Parameters
+    ----------
+    value : str
+        Input string that may contain a rak ID
+
+    Returns
+    -------
+    str | None
+        The extracted rak ID or None if not found
+    """
+    value = clean_string(value)
+
+    match = re.search(RAK_ID_PATTERN, value.strip())
 
     return match.group(0) if match else None
 

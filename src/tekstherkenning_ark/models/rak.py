@@ -212,6 +212,8 @@ class Rak(BaseModel):
             rak_instance = pickle.loads(cache_file.read_bytes())
             return rak_instance
 
+        raknaam = get_rak_id(doc.pdf_path.stem) or "onbekend_rak"
+
         # Laad palen, kespen en houtmonsters uit tabellen
         paal_tables = doc.get_meettabel_fundering_paal()
         palen_dict = Paal.from_doc_tables(paal_tables)
@@ -263,7 +265,7 @@ class Rak(BaseModel):
 
         rak_instance = cls(
             rakdelen=list(rakdelen),
-            raknaam="",  # TODO
+            raknaam=raknaam,
             totale_lengte_m=0.0,  # TODO
             opmerkingen="",
         )
