@@ -69,9 +69,9 @@ class Rak(BaseModel):
         # Validate that all houtmonsters have been assigned to a paal
         unprocessed_houtmonsters = set(houtmonsters) - processed_houtmonsters
         if unprocessed_houtmonsters:
-            error_msg = f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(
+                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
+            )
 
         # Maak rakdelen aan (parallel via async)
         rakdeel_sections = doc.get_rakdeel_secties()

@@ -4,6 +4,7 @@ This module provides a centralized logging configuration that:
 - Writes DEBUG level and above to rotating log files
 - Writes INFO level and above to stdout (console)
 - Uses a consistent format across the application
+- Automatically logs uncaught exceptions
 """
 
 import logging
@@ -61,3 +62,25 @@ def get_logger(name: str) -> logging.Logger:
         logger.addHandler(console_handler)
 
     return logger
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    """Handle uncaught exceptions by logging them.
+
+    Args:
+        exc_type: Exception type
+        exc_value: Exception value
+        exc_traceback: Exception traceback
+    """
+    # Don't log KeyboardInterrupt (Ctrl+C)
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    # Get the root logger and log the exception
+    logger = logging.getLogger()
+    logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+
+# Set the exception hook to automatically log uncaught exceptions
+sys.excepthook = handle_exception

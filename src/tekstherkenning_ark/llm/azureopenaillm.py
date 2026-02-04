@@ -43,27 +43,22 @@ class AzureOpenAILLM:
         if input_api_key is None:
             input_api_key = os.environ.get("AZURE_OPENAI_KEY")
             if not input_api_key:
-                logger.error("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
                 raise ValueError("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
 
         azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
         if not azure_endpoint:
-            logger.error("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
 
         azure_openai_version = os.environ.get("AZURE_OPENAI_API_VERSION")
         if not azure_openai_version:
-            logger.error("AZURE_OPENAI_API_VERSION environment variabele is niet ingesteld.")
             raise ValueError("AZURE_OPENAI_API_VERSION environment variabele is niet ingesteld.")
 
         azure_encoding_name = os.environ.get("AZURE_OPENAI_ENCODING_NAME")
         if not azure_encoding_name:
-            logger.error("AZURE_OPENAI_ENCODING_NAME environment variabele is niet ingesteld.")
             raise ValueError("AZURE_OPENAI_ENCODING_NAME environment variabele is niet ingesteld.")
 
         azure_model_name = os.environ.get("AZURE_MODEL_NAME")
         if model_name is None and not azure_model_name:
-            logger.error("AZURE_MODEL_NAME environment variabele is niet ingesteld.")
             raise ValueError("AZURE_MODEL_NAME environment variabele is niet ingesteld.")
 
         self.model = azure_model_name or model_name
