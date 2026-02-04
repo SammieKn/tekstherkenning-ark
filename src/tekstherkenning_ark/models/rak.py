@@ -32,7 +32,7 @@ class Rak(BaseModel):
     opmerkingen: str = ""
 
     @classmethod
-    async def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
+    def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
 
         cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
@@ -70,17 +70,21 @@ class Rak(BaseModel):
                 f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
             )
 
-        # Maak rakdelen aan (parallel)
+        # Maak rakdelen aan (parallel via async)
         rakdeel_sections = doc.get_rakdeel_secties()
-        rakdeel_taken = [
-            Rakdeel.from_smart_doc_section(
-                section=section,
-                palen_dict=palen_dict,
-                kespen_dict=kespen_dict,
-            )
-            for section in rakdeel_sections
-        ]
-        rakdelen = await asyncio.gather(*rakdeel_taken)
+
+        async def maak_rakdelen_async():
+            rakdeel_taken = [
+                Rakdeel.from_smart_doc_section(
+                    section=section,
+                    palen_dict=palen_dict,
+                    kespen_dict=kespen_dict,
+                )
+                for section in rakdeel_sections
+            ]
+            return await asyncio.gather(*rakdeel_taken)
+
+        rakdelen = asyncio.run(maak_rakdelen_async())
 
         # raknaam = doc.get_raknaam()
         # totale_lengte_m = doc.get_rak_totale_lengte_m()
@@ -100,16 +104,13 @@ class Rak(BaseModel):
 
 if __name__ == "__main__":
 
-    async def main():
-        doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
+    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 
-        rak = await Rak.from_smart_document(doc)
+    rak = Rak.from_smart_document(doc)
 
-        for rd in rak.rakdelen:
-            print(rd.rakdeel_id)
-            for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
-                print(f"  Paal: {p.paal_nummer}")
-                for hm in p.houtmonsters:
-                    print(f"    Houtmonster: {hm.codering}")
-
-    asyncio.run(main())
+    for rd in rak.rakdelen:
+        print(rd.rakdeel_id)
+        for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
+            print(f"  Paal: {p.paal_nummer}")
+            for hm in p.houtmonsters:
+                print(f"    Houtmonster: {hm.codering}")
