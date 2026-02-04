@@ -33,6 +33,11 @@ class Vloer(RakBaseModel):
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None
 
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Vloer instance."""
+        return "vloer"
+
     @classmethod
     def from_rakdeel_omschrijving(cls, omschrijving: RakdeelOmschrijving) -> Vloer:
         """Genereer een Vloer model vanuit een RakdeelOmschrijving model.

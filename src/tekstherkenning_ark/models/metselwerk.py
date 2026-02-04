@@ -18,3 +18,8 @@ class Metselwerk(RakBaseModel):
     dikte_cm: float | None = None
     # Te vinden in de constructiebeschrijving of doorsnedetekening.
     hoogte_cm: float | None = None
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Metselwerk instance."""
+        return "metselwerk"

@@ -25,6 +25,11 @@ class Onderloopsheidscherm(RakBaseModel):
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None  # TODO
 
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Onderloopsheidscherm instance."""
+        return "onderloopsheidscherm"
+
     @classmethod
     def from_rakdeel_omschrijving(cls, omschrijving: RakdeelOmschrijving) -> Onderloopsheidscherm | None:
         """Genereer een Onderloopsheidscherm model vanuit een RakdeelOmschrijving model.

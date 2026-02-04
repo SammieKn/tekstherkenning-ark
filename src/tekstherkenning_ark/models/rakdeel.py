@@ -34,6 +34,7 @@ class Rakdeel(RakBaseModel):
     """Rakdeel.
 
     Attributes:
+        rakdeel_id: Unieke identificatie van het rakdeel.
         bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
         constructietype: Type constructie van het rakdeel (bijvoorbeeld houten paalfundering, betonnen L-wand, etc.).
         lengte_m: Lengte van het rakdeel in meters.
@@ -58,6 +59,11 @@ class Rakdeel(RakBaseModel):
 
     bovenbouw: Bovenbouw
     onderbouw: Onderbouw
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Rakdeel instance."""
+        return str(self.rakdeel_id)
 
     @classmethod
     async def from_smart_doc_section(

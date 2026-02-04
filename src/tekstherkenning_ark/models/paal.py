@@ -58,6 +58,11 @@ class Paal(RakBaseModel):
     scheefstand: bool | None = None
     materiaal: MateriaalOnderbouw | None = None
 
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Paal instance."""
+        return str(self.paal_nummer)
+
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
     diameter_parallel: int | NietBeschikbaar

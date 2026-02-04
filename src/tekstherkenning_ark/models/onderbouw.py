@@ -27,3 +27,8 @@ class Onderbouw(RakBaseModel):
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: MateriaalOnderbouw | NietBeschikbaar = NietBeschikbaar.LEEG
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Onderbouw instance."""
+        return "onderbouw"

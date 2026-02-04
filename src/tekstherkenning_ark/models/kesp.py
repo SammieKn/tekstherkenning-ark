@@ -38,6 +38,7 @@ class Kesp(RakBaseModel):
     breedte_cm: int
     # Te vinden in Bijlage 3, kolom 'Hoek t.o.v. lengte-as frontwand'.
     hoek_tov_lengte_as_graden: int | None = None
+
     # Te vinden in Bijlage 3, kolom 'Lengte uitstekende deel t.o.v. voorzijde frontwand'.
     lengte_uitstekend_deel_cm: int | NietBeschikbaar
     # Te vinden in Bijlage 3, kolom 'Mate van inknijping t.o.v. oorspronkelijke staat'.
@@ -55,6 +56,11 @@ class Kesp(RakBaseModel):
 
     # TBD waar te vinden
     paalrij_nr: str | None = None
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Kesp instance."""
+        return self.kesp_nummer
 
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Kesp]]:

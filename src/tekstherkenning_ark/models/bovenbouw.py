@@ -38,6 +38,12 @@ class Bovenbouw(RakBaseModel):
     # Te vinden in de tekst van de constructiebeschrijving of de gebrekentabel.
     opmerkingen: str = ""
     # Af te leiden uit de doorsnedetekening en de toestandstabel (figuur 1.11) en de gebrekentabel (paragraaf 2.3 of 5.3.3).
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Bovenbouw instance."""
+        return "bovenbouw"
+
     percentage_niet_functionerend_schuifhout: float | None = None
     # Te vinden in de gebrekentabel (paragraaf 2.3 of 5.3.3) als 'algemeen' gebrek.
     is_scheefstand_aanwezig: bool | None = None

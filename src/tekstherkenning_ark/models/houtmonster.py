@@ -50,6 +50,11 @@ class Houtmonster(RakBaseModel):
     # Te vinden in bijlage 2, kolom "Stichtingjaar houtmonster:"
     stichtingjaar: int | None = None
 
+    @property
+    def identifier(self) -> str:
+        """Return the codering as unique identifier for this houtmonster."""
+        return str(self.codering)
+
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Houtmonster]:
         """Parse and return a list of Houtmonster objects from a Azure Document

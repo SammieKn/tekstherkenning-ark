@@ -32,6 +32,11 @@ class Rak(RakBaseModel):
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
     totale_lengte_m: float
 
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Rak instance."""
+        return str(self.raknaam)
+
     @classmethod
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
