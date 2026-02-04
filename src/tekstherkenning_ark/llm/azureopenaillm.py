@@ -7,8 +7,11 @@ from openai.types.completion_usage import CompletionUsage
 from dotenv import load_dotenv
 import os
 import tiktoken
+from tekstherkenning_ark.logger import get_logger
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 
 class AzureOpenAILLM:
@@ -40,49 +43,37 @@ class AzureOpenAILLM:
         if input_api_key is None:
             input_api_key = os.environ.get("AZURE_OPENAI_KEY")
             if not input_api_key:
+                logger.error("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
                 raise ValueError("AZURE_OPENAI_KEY environment variabele is niet ingesteld.")
-
-        if model_name is None:
-            model_name = os.environ.get("DEPLOYMENT_NAME_GPT41")
-            if not model_name:
-                raise ValueError("DEPLOYMENT_NAME_GPT41 environment variabele is niet ingesteld.")
 
         azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
         if not azure_endpoint:
+            logger.error("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variabele is niet ingesteld.")
 
-        self.model = model_name
-        self.model_params = self.get_model_params(self.model)
-        self.client = AsyncAzureOpenAI(
-            api_key=input_api_key, azure_endpoint=azure_endpoint, api_version=self.model_params["api_version"]
-        )
-        self.encoding = tiktoken.get_encoding(self.model_params["encoding_name"])
+        azure_openai_version = os.environ.get("AZURE_OPENAI_API_VERSION")
+        if not azure_openai_version:
+            logger.error("AZURE_OPENAI_API_VERSION environment variabele is niet ingesteld.")
+            raise ValueError("AZURE_OPENAI_API_VERSION environment variabele is niet ingesteld.")
 
-    def get_model_params(self, model: str) -> dict[str, str]:
-        """Get the model parameters for the Azure OpenAI API.
-        Update as required."""
-        model_params = {}
-        if model == "arcadisgpt-gpt35-0125":
-            model_params["api_version"] = "2023-05-15"
-            model_params["encoding_name"] = "cl100k_base"
-        elif model == "gpt-4o":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-41":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-41-mini":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-5":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        elif model == "gpt-5-mini":
-            model_params["api_version"] = "2024-06-01"
-            model_params["encoding_name"] = "o200k_base"
-        else:
-            raise ValueError(f"Model name {model} is not supported.")
-        return model_params
+        azure_encoding_name = os.environ.get("AZURE_OPENAI_ENCODING_NAME")
+        if not azure_encoding_name:
+            logger.error("AZURE_OPENAI_ENCODING_NAME environment variabele is niet ingesteld.")
+            raise ValueError("AZURE_OPENAI_ENCODING_NAME environment variabele is niet ingesteld.")
+
+        azure_model_name = os.environ.get("AZURE_MODEL_NAME")
+        if model_name is None and not azure_model_name:
+            logger.error("AZURE_MODEL_NAME environment variabele is niet ingesteld.")
+            raise ValueError("AZURE_MODEL_NAME environment variabele is niet ingesteld.")
+
+        self.model = azure_model_name or model_name
+
+        self.client = AsyncAzureOpenAI(
+            api_key=input_api_key,
+            azure_endpoint=azure_endpoint,
+            api_version=azure_openai_version,
+        )
+        self.encoding = tiktoken.get_encoding(azure_encoding_name)
 
     async def chat_completion(
         self,
@@ -110,20 +101,20 @@ class AzureOpenAILLM:
             if get_tokens:
                 usage: CompletionUsage = response.usage
                 usage_dict = usage.to_dict()
-                print("==============================================")
-                print("Token usage details:")
+                logger.debug("==============================================")
+                logger.debug("Token usage details:")
                 for key, value in usage_dict.items():
-                    print(f"{key}: {value}")
-                print("==============================================")
+                    logger.debug(f"{key}: {value}")
+                logger.debug("==============================================")
         except Exception as e:
-            print(f"OpenAI error: {e}\nInput: {prompt}")
+            logger.error(f"OpenAI error: {e}\nInput: {prompt}")
             return ""
         return response.choices[0].message.content
 
     async def validate_api_key(self) -> tuple[bool, str]:
         """Validate the API key with a minimal request."""
 
-        print("Validating Azure OpenAI API key...")
+        logger.info("Validating Azure OpenAI API key...")
 
         test_prompt = "Hello, world!"
         response = await self.chat_completion(test_prompt)
@@ -143,7 +134,7 @@ class AzureOpenAILLM:
         tokens = self.encoding.encode(text)
         tokens_number = len(tokens)  # system and user prompts tokens
         tokens_number += 6  # 3 tokens per message (system and user)
-        print(
-            f"The number of tokens corresponding to the combined text '{text[0:300]}[...]' is:", f" {tokens_number}."
+        logger.debug(
+            f"The number of tokens corresponding to the combined text '{text[0:300]}[...]' is: {tokens_number}."
         )
         return tokens

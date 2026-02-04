@@ -5,7 +5,13 @@ from typing import Literal
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentTable
 
-from tekstherkenning_ark.utils import get_table_content, contains_kesp_id, contains_paal_id, is_algemeen_gebrek
+from tekstherkenning_ark.utils import (
+    get_paal_id,
+    get_table_content,
+    contains_kesp_id,
+    contains_paal_id,
+    is_algemeen_gebrek,
+)
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.gebrek_classificatie import (
     ScheurMetselwerkLLM,
@@ -15,6 +21,9 @@ from tekstherkenning_ark.llm.gebrek_classificatie import (
     ScheefstandLLM,
     LokaalVerdwenenMetselwerkLLM,
 )
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Gebrek(BaseModel):
@@ -58,7 +67,9 @@ class Gebrek(BaseModel):
 
             # Controleer header van eerste tabel
             if len(gebrek_rows) == 0 and table_rows[0] != expected_header:
-                raise ValueError(f"Onverwachte tabel header. " f"Verwacht {expected_header}, kreeg {table_rows[0]}")
+                error_msg = f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             # Sla header rijen over en voeg toe aan gebrek_rows
             content_rows = [r for r in table_rows if r[0] != expected_header[0]]

@@ -4,9 +4,12 @@ Module defining the UnexpectedResult for handling unexpected results in the teks
 
 from enum import Enum
 from typing import Any
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, model_validator
 from pydantic_core import core_schema
 from typing import Any as AnyType
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 # OnverwachtResultaat types
@@ -36,6 +39,15 @@ class OnverwachtResultaat(BaseModel):
     waarde: Any
     onverwacht_resultaat_type: OnverwachtResultaatType = OnverwachtResultaatType.ONBEKEND
     details: str = ""
+
+    @model_validator(mode="after")
+    def log_unexpected_result(self):
+        """Log a warning whenever an OnverwachtResultaat is created."""
+        logger.debug(
+            f"OnverwachtResultaat created - Type: {self.onverwacht_resultaat_type.value}, "
+            f"Value: {self.waarde}, Details: {self.details}"
+        )
+        return self
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: AnyType, handler):

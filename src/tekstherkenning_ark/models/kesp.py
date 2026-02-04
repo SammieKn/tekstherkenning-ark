@@ -6,6 +6,9 @@ from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from azure.ai.documentintelligence.models import DocumentTable
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Kesp(BaseModel):
@@ -29,7 +32,7 @@ class Kesp(BaseModel):
     """
 
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.
-    kespnummer: str
+    kesp_nummer: str
     # Te vinden in Bijlage 3, kolom 'Hoogte'.
     hoogte_cm: int
     # Te vinden in Bijlage 3, kolom 'Breedte'.
@@ -99,7 +102,9 @@ class Kesp(BaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 else:
-                    raise ValueError(f"Duplicate constructie ID found: {current_constructie_id}")
+                    error_msg = f"Duplicate constructie ID found: {current_constructie_id}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
 
             if current_constructie_id != "":
                 paal = cls.from_kesp_table_row(row)
@@ -126,7 +131,7 @@ class Kesp(BaseModel):
         row_clean = [utils.clean_string(val) for val in row]
 
         return cls(
-            kespnummer=row_clean[0],
+            kesp_nummer=row_clean[0],
             hoogte_cm=row_clean[1],
             breedte_cm=row_clean[2],
             hoek_tov_lengte_as_graden=row_clean[3],

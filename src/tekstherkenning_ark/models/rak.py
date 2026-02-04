@@ -10,6 +10,9 @@ from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.smart_document import SmartDocument
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Rak(BaseModel):
@@ -37,7 +40,7 @@ class Rak(BaseModel):
 
         cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
         if cache_file.exists() and use_caching:
-            print(f"Loading cached Rak from {cache_file}")
+            logger.info(f"Loading cached Rak from {cache_file}")
             rak_instance = pickle.loads(cache_file.read_bytes())
             return rak_instance
 
@@ -66,9 +69,9 @@ class Rak(BaseModel):
         # Validate that all houtmonsters have been assigned to a paal
         unprocessed_houtmonsters = set(houtmonsters) - processed_houtmonsters
         if unprocessed_houtmonsters:
-            raise ValueError(
-                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
-            )
+            error_msg = f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}\n for paal_nummers {[[paal.paal_nummer for paal in palen] for palen in palen_dict.values()]}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         # Maak rakdelen aan (parallel via async)
         rakdeel_sections = doc.get_rakdeel_secties()
@@ -110,7 +113,20 @@ if __name__ == "__main__":
 
     for rd in rak.rakdelen:
         print(rd.rakdeel_id)
-        for p in [p for p in rd.onderbouw.palen if p.houtmonsters]:
+        for p in [p for p in rd.onderbouw.palen if p.gebreken]:
             print(f"  Paal: {p.paal_nummer}")
-            for hm in p.houtmonsters:
-                print(f"    Houtmonster: {hm.codering}")
+            for gebrek in p.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        for kesp in [k for k in rd.onderbouw.kespen if k.gebreken]:
+            print(f"  Kesp: {kesp.kesp_nummer}")
+            for gebrek in kesp.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        if rd.bovenbouw.metselwerk and rd.bovenbouw.metselwerk.gebreken:
+            print(f"  Metselwerk gebreken:")
+            for gebrek in rd.bovenbouw.metselwerk.gebreken:
+                print(f"    Gebrek: {gebrek.codering}")
+
+        for gebrek in rd.gebreken:
+            print(f"  Rakdeel gebrek: {gebrek.codering}")

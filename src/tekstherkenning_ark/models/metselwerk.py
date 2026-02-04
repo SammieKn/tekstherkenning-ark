@@ -1,5 +1,7 @@
 from pydantic import BaseModel
-from tekstherkenning_ark.models.gebrek import Gebrek, Scheur, GrondVoerendGat, BuikInWand
+
+
+from tekstherkenning_ark.models.gebrek import Gebrek
 
 
 class Metselwerk(BaseModel):
