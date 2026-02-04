@@ -134,7 +134,7 @@ class Rakdeel(BaseModel):
             paal_id = get_paal_id(gebrek.codering)
 
             # Match gebreken to o
-            if isinstance(gebrek, ScheurMetselwerk):
+            if isinstance(gebrek, (ScheurMetselwerk, LokaalverdwenenMetselwerk):
                 if self.bovenbouw.metselwerk is None:
                     self.bovenbouw.metselwerk = Metselwerk()
                 self.bovenbouw.metselwerk.gebreken.append(gebrek)
