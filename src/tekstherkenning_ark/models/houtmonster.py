@@ -5,9 +5,10 @@ from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaatType, OnverwachtResultaat
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 
-class Houtmonster(BaseModel):
+class Houtmonster(RakBaseModel):
     """Houtmonster.
 
     Attributes:
@@ -22,30 +23,32 @@ class Houtmonster(BaseModel):
         datum_monstername: Datum waarop het monster is genomen.
         is_aangetast: Indicatie of het hout is aangetast.
         stichtingjaar: Stichtingjaar van het hout.
+        gebreken: Inherited from RakBaseModel.
+        opmerkingen: Inherited from RakBaseModel.
     """
 
     # Te vinden in bijlage 1, kolom 'Codering'
-    codering: str | OnverwachtResultaat
+    codering: str
     # Te vinden in bijlage 1, kolom "Rak code"
-    rak_code: str | OnverwachtResultaat
+    rak_code: str
     # Te vinden in bijlage 1, kolom "Paal nummer"
-    paal_nummer: str | OnverwachtResultaat
+    paal_nummer: str
     # Te vinden in bijlage 1, kolom "Houtmonster", of bijlage 2, kolom "Houtmonstercode"
-    houtmonster_code: str | OnverwachtResultaat
+    houtmonster_code: str
     # Te vinden in bijlage 1, kolom "Diameter paal" of bijlage 2, kolom "Diameter paal ter hoogte van houtmonster:"
-    diameter_paal_ter_hoogte_houtmonster_mm: int | None | OnverwachtResultaat = None
+    diameter_paal_ter_hoogte_houtmonster_mm: int | None = None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. NAP" of bijlage 2, kolom "Hoogte monstername onder NAP:"
-    hoogte_onder_nap_cm: int | None | OnverwachtResultaat = None
+    hoogte_onder_nap_cm: int | None = None
     # Te vinden in bijlage 1, kolom "Hoogte t.o.v. houtmonster/vloer", of bijlage 2, kolom "Hoogte monstername t.o.v. onderzijde fundering:"
-    hoogte_tov_onderzijde_fundering_cm: int | None | OnverwachtResultaat = None
+    hoogte_tov_onderzijde_fundering_cm: int | None = None
     # Te vinden in bijlage 1, kolom "Wankant aanwezig?" of bijlage 2, kolom "Wankant aanwezig:"
-    is_wankant_aanwezig: bool | None | OnverwachtResultaat = None
+    is_wankant_aanwezig: bool | None = None
     # Te vinden in bijlage 1, kolom "Datum monstername"
-    datum_monstername: str | None | OnverwachtResultaat = None
+    datum_monstername: str | None = None
     # Te vinden in bijlage 2, kolom "Monster aangetast"
-    is_aangetast: bool | None | OnverwachtResultaat = None
+    is_aangetast: bool | None = None
     # Te vinden in bijlage 2, kolom "Stichtingjaar houtmonster:"
-    stichtingjaar: int | None | OnverwachtResultaat = None
+    stichtingjaar: int | None = None
 
     @classmethod
     def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Houtmonster]:
