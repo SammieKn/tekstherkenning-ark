@@ -22,34 +22,15 @@ from tekstherkenning_ark.smart_document import SmartDocument
 
 def main():
     """Hoofdfunctie voor het exporteren van Rak data naar Excel."""
-    doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
-
-    rak = Rak.from_smart_document(doc)
-    # parser = argparse.ArgumentParser(description="Exporteer Rak data naar Excel")
-    # parser.add_argument(
-    #     "--pdf",
-    #     type=Path,
-    #     default=constants.TEST_PDF_PATH,
-    #     help="Pad naar de PDF om te verwerken",
-    # )
-    # parser.add_argument(
-    #     "--output",
-    #     type=Path,
-    #     default=None,
-    #     help="Output directory voor Excel-bestanden (standaard: data/excel_exports)",
-    # )
-    # args = parser.parse_args()
-
-    # print(f"Laden van PDF: {args.pdf}")
-    # doc = SmartDocument.from_pdf(args.pdf)
-
-    # print("Genereren van Rak object...")
-    # rak = Rak.from_smart_document(doc)
-
-    print("Exporteren naar Excel...")
-    export_pad = rak.to_excel()
-
-    print(f"Klaar! Bestand opgeslagen: {export_pad}")
+    pdf_rapporten = [file for file in (constants.DATA_DIR / "duikrapporten").glob("*.pdf")]
+    docs = [SmartDocument.from_pdf(file) for file in pdf_rapporten]
+    for doc in docs:
+        if not "boor" in doc.pdf_path.stem.lower():
+            print(f"Genereren van Rak object voor {doc.pdf_path.name}...")
+            rak = Rak.from_smart_document(doc)
+            print("Exporteren naar Excel...")
+            export_pad = rak.to_excel()
+            print(f"Klaar! Bestand opgeslagen: {export_pad}")
 
 
 if __name__ == "__main__":
