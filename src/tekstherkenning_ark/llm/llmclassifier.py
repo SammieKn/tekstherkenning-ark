@@ -26,7 +26,7 @@ class LLMClassifier(BaseModel):
     _systeem_prompt: ClassVar[str]
 
     @classmethod
-    def classificeer_omschrijving(cls, omschrijving: str, use_cache: bool = True) -> Self:
+    async def classificeer_omschrijving(cls, omschrijving: str, use_cache: bool = True) -> Self:
         """Classificeer een omschrijving naar een instantie van dit model via Azure OpenAI.
 
         Parameters
@@ -55,7 +55,7 @@ class LLMClassifier(BaseModel):
 
             llm = AzureOpenAILLM()
 
-            response = llm.client.beta.chat.completions.parse(
+            response = await llm.client.beta.chat.completions.parse(
                 model=llm.model,
                 messages=[
                     {"role": "system", "content": cls._systeem_prompt},

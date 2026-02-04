@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Literal
 from pydantic import BaseModel
 from azure.ai.documentintelligence.models import DocumentTable
@@ -34,7 +35,7 @@ class Gebrek(BaseModel):
     figuurnummer: str | NietBeschikbaar
 
     @classmethod
-    def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Gebrek]:
+    async def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Gebrek]:
         """Maak een lijst van Gebrek instanties uit meerdere document tabellen.
 
         Parameters
@@ -71,17 +72,15 @@ class Gebrek(BaseModel):
             gebrek_instance = cls(codering=row[0], omschrijving=row[1], figuurnummer=row[2])
             list_gebreken.append(gebrek_instance)
 
-        # Classificeer elk gebrek naar een specifiek subtype indien mogelijk
-        for gebrek in list_gebreken:
-            specifiek_gebrek = cls.classify_gebrek(gebrek)
-            if specifiek_gebrek != gebrek:
-                index = list_gebreken.index(gebrek)
-                list_gebreken[index] = specifiek_gebrek
+        # Classificeer elk gebrek naar een specifiek subtype indien mogelijk (parallel)
+        classificatie_taken = [cls.classify_gebrek(gebrek) for gebrek in list_gebreken]
+        geclassificeerde_gebreken = await asyncio.gather(*classificatie_taken)
+        list_gebreken = list(geclassificeerde_gebreken)
 
         return list_gebreken
 
     @staticmethod
-    def classify_gebrek(gebrek: Gebrek) -> Gebrek:
+    async def classify_gebrek(gebrek: Gebrek) -> Gebrek:
         """Classificeer een Gebrek instantie naar een specifiek subtype.
 
         Parameters
@@ -100,13 +99,13 @@ class Gebrek(BaseModel):
         if "scheur" in omschrijving:
             # Gebruik LLM voor classificatie van scheuren
             if contains_paal_id(omschrijving) or contains_kesp_id(gebrek.codering):
-                llm_result = ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
+                llm_result = await ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
                 return ScheurHout(
                     **gebrek.model_dump(),
                     **llm_result.model_dump(),
                 )
             elif "metselwerk" in omschrijving:
-                llm_result = ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+                llm_result = await ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
                 return ScheurMetselwerk(
                     **gebrek.model_dump(),
                     **llm_result.model_dump(),
@@ -114,7 +113,7 @@ class Gebrek(BaseModel):
 
         # logica voor grondvoerend gat
         if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
+            llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
             return GrondVoerendGat(
                 **gebrek.model_dump(),
                 **llm_result.model_dump(),
@@ -122,14 +121,14 @@ class Gebrek(BaseModel):
 
         # logica voor buikinwand
         if "buik" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
             return BuikInWand(
                 **gebrek.model_dump(),
                 **llm_result.model_dump(),
             )
         # logica voor scheefstand
         if "scheefstand" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
             return Scheefstand(
                 **gebrek.model_dump(),
                 **llm_result.model_dump(),
@@ -144,7 +143,7 @@ class Gebrek(BaseModel):
             "lokale beschadiging metselwerk",
         ]
         if any(synonym in omschrijving for synonym in synonyms) and is_algemeen_gebrek(gebrek.codering):
-            llm_result = LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+            llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
             return LokaalVerdwenenMetselwerk(
                 **gebrek.model_dump(),
                 **llm_result.model_dump(),
