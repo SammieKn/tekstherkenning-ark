@@ -1,9 +1,30 @@
 from __future__ import annotations
-from typing import get_args, get_origin, Union
-from pydantic import BaseModel
+from typing import get_args, get_origin, Union, Annotated, Any
+from pydantic import BaseModel, ValidationError, field_validator
+from pydantic.functional_validators import WrapValidator
 
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+
+
+def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
+    """Validator that wraps values in OnverwachtResultaat if validation fails."""
+    # If already an OnverwachtResultaat, return it
+    if isinstance(value, OnverwachtResultaat):
+        return value
+
+    # Try normal validation
+    try:
+        return handler(value)
+    except ValidationError as e:
+        # If validation fails, wrap in OnverwachtResultaat
+        from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaatType
+
+        return OnverwachtResultaat(
+            waarde=value,
+            onverwacht_resultaat_type=OnverwachtResultaatType.INCORRECT_TYPE,
+            details=f"Validation error: {str(e)}",
+        )
 
 
 class RakBaseModel(BaseModel):
@@ -29,18 +50,23 @@ class RakBaseModel(BaseModel):
                 origin = get_origin(attr_type)
                 is_collection = origin in (list, tuple, set, frozenset, dict)
 
-                # If not a collection, add OnverwachtResultaat as a union type
+                # If not a collection, add OnverwachtResultaat as a union type with validator
                 if not is_collection:
                     # Check if OnverwachtResultaat is already in the type
                     if get_origin(attr_type) is Union:
                         args = get_args(attr_type)
                         if OnverwachtResultaat not in args:
-                            new_annotations[attr_name] = Union[attr_type, OnverwachtResultaat]
+                            # Add as Annotated with wrap validator
+                            new_annotations[attr_name] = Annotated[
+                                Union[attr_type, OnverwachtResultaat], WrapValidator(validate_with_onverwacht_fallback)
+                            ]
                         else:
                             new_annotations[attr_name] = attr_type
                     else:
-                        # Add OnverwachtResultaat to the type
-                        new_annotations[attr_name] = Union[attr_type, OnverwachtResultaat]
+                        # Add OnverwachtResultaat to the type with wrap validator
+                        new_annotations[attr_name] = Annotated[
+                            Union[attr_type, OnverwachtResultaat], WrapValidator(validate_with_onverwacht_fallback)
+                        ]
                 else:
                     new_annotations[attr_name] = attr_type
 
