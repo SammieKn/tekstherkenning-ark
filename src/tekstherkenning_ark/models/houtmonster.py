@@ -1,10 +1,8 @@
 from __future__ import annotations
-from pydantic import BaseModel
 
 from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaatType, OnverwachtResultaat
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 

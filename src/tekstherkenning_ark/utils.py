@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
@@ -42,6 +47,7 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
 
 def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     """Parse a Ja/Nee string to a boolean value."""
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 
     if value.strip().lower().startswith("ja"):
         return True
@@ -53,13 +59,11 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     try:
         return NietBeschikbaar(value.strip())
     except:
-        pass
-
-    return OnverwachtResultaat(
-        waarde=value,
-        onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
-        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
-    )
+        return OnverwachtResultaat(
+            waarde=value,
+            onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
+            details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
+        )
 
 
 def clean_paal_id(value: str) -> str:
