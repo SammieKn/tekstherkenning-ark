@@ -198,7 +198,7 @@ class Paal(RakBaseModel):
 
 if __name__ == "__main__":
 
-    from tekstherkenning_ark.smart_document import SmartDocument
+    from tekstherkenning_ark.document.smart_document import SmartDocument
     from tekstherkenning_ark import constants
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)

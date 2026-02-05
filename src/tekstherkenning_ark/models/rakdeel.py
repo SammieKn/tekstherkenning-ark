@@ -11,7 +11,7 @@ from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
-from tekstherkenning_ark.smart_document import RakdeelSectie
+from tekstherkenning_ark.document.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import (
@@ -24,7 +24,6 @@ from tekstherkenning_ark.models.gebrek import (
 )
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.smart_document import RakdeelSectie
 from tekstherkenning_ark.utils import contains_kesp_id, get_kesp_id, get_paal_id
 from tekstherkenning_ark.logger import get_logger
 

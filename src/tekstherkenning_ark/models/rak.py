@@ -16,7 +16,7 @@ from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
-from tekstherkenning_ark.smart_document import SmartDocument
+from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import get_rak_id
 
