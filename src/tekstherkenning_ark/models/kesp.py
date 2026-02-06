@@ -4,6 +4,7 @@ from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.logger import get_logger
 
 logger = get_logger(__name__)
@@ -61,13 +62,15 @@ class Kesp(RakBaseModel):
         return self.kesp_nummer
 
     @classmethod
-    def from_doc_tables(cls, rows: list[list[str]]) -> dict[str, list[Kesp]]:
-        """Parse and return a list of Kesp objects from table rows.
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Kesp]]:
+        """Parse and return a list of Kesp objects from a Azure Doc
+        Intelligence DocumentTable object
 
         Parameters
         ----------
-        rows : list[list[str]]
-            List of table rows as lists of strings.
+        tables : list[DocumentTable]
+            List of DocumentTable objects as returned by Azure Document Intelligence SDK
+            belonging to the `Kespen` bijlage
 
         Returns
         -------
@@ -75,10 +78,17 @@ class Kesp(RakBaseModel):
             A dictionary mapping constructie ID's to lists of Kesp objects containing information from the table
         """
 
-        # Skip header rows and filter to kesp rows
-        kesp_rows = [r for r in rows if utils.contains_kesp_id(r[0])]
+        kesp_rows: list[list[str]] = []
+        for table in tables:
 
-        # Parse each row into a Kesp object
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
+
+            # Skip header rows and add to paal_rows
+            content_rows = [r for r in table_rows if utils.contains_kesp_id(r[0])]
+            kesp_rows.extend(content_rows)
+
+        # Parse each row into a Paal object
         kesp_dict: dict[str, list[Kesp]] = {}
         current_constructie_id = ""
 

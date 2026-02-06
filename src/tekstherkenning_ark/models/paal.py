@@ -6,6 +6,7 @@ from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBesch
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
@@ -99,13 +100,15 @@ class Paal(RakBaseModel):
         return int(self.paal_nummer.split(".")[1])
 
     @classmethod
-    def from_doc_tables(cls, rows: list[list[str]]) -> dict[str, list[Paal]]:
-        """Parse and return a list of Paal objects from table rows.
+    def from_doc_tables(cls, tables: list[DocumentTable]) -> dict[str, list[Paal]]:
+        """Parse and return a list of Paal objects from a Azure Doc
+        Intelligence DocumentTable object
 
         Parameters
         ----------
-        rows : list[list[str]]
-            List of table rows as lists of strings.
+        tables : list[DocumentTable]
+            List of DocumentTable objects as returned by Azure Document Intelligence SDK
+            belonging to the `Palen` bijlage
 
         Returns
         -------
@@ -113,8 +116,15 @@ class Paal(RakBaseModel):
             A dictionary mapping constructie ID's to lists of Paal objects containing information from the table
         """
 
-        # Skip header rows and filter to paal rows
-        paal_rows = [r for r in rows if utils.contains_paal_id(r[0])]
+        paal_rows: list[list[str]] = []
+        for table in tables:
+
+            # Extract table content as list of rows
+            table_rows = utils.get_table_content(table)
+
+            # Skip header rows and add to paal_rows
+            content_rows = [r for r in table_rows if utils.contains_paal_id(r[0])]
+            paal_rows.extend(content_rows)
 
         # Parse each row into a Paal object
         paal_dict: dict[str, list[Paal]] = {}
@@ -129,7 +139,7 @@ class Paal(RakBaseModel):
             constructie_id_col_val = utils.clean_string(row[16])
 
             if constructie_id_col_val != "":
-                current_constructie_id = constructie_id_col_val  # TODO: dit gaat niet goed bij palen waar de rakdeelnaam boven de palen staat
+                current_constructie_id = constructie_id_col_val
 
                 if current_constructie_id not in paal_dict:
                     paal_dict[current_constructie_id] = []
@@ -188,7 +198,7 @@ class Paal(RakBaseModel):
 
 if __name__ == "__main__":
 
-    from tekstherkenning_ark.document.smart_document import SmartDocument
+    from tekstherkenning_ark.smart_document import SmartDocument
     from tekstherkenning_ark import constants
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)

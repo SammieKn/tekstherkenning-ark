@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 from typing import Literal
 from pydantic import BaseModel
+from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark.utils import (
     get_paal_id,
+    get_table_content,
     contains_kesp_id,
     contains_paal_id,
     is_algemeen_gebrek,
@@ -42,13 +44,14 @@ class Gebrek(BaseModel):
     figuurnummer: str | NietBeschikbaar
 
     @classmethod
-    async def from_doc_tables(cls, rows: list[list[str]]) -> list[Gebrek]:
-        """Maak een lijst van Gebrek instanties uit tabel rijen.
+    async def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Gebrek]:
+        """Maak een lijst van Gebrek instanties uit meerdere document tabellen.
 
         Parameters
         ----------
-        rows : list[list[str]]
-            Lijst van tabel rijen als lijsten van strings.
+        tables : list[DocumentTable]
+            Lijst van DocumentTable objecten zoals teruggegeven door Azure Document Intelligence SDK
+            behorend bij de gebreken bijlage
 
         Returns
         -------
@@ -57,15 +60,23 @@ class Gebrek(BaseModel):
         """
         expected_header = ["Gebrekcodering", "Omschrijving", "Figuurnummer"]
 
-        # Check header and filter content rows
-        if rows and rows[0] != expected_header:
-            logger.warning(
-                f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {rows[0] if rows else 'leeg'}..."
-            )
-            return []
+        gebrek_rows: list[list[str]] = []
+        for table in tables:
+            # Extraheer tabel inhoud als lijst van rijen
+            table_rows = get_table_content(table)
 
-        # Skip header row
-        gebrek_rows = [r for r in rows if r[0] != expected_header[0]]
+            # Controleer header van eerste tabel
+            if (len(gebrek_rows) == 0 and table_rows[0] != expected_header) or len(table_rows[0]) < len(
+                expected_header
+            ):
+                logger.warning(
+                    f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}, door naar volgende tabel..."
+                )
+                continue  # Ga door naar volgende tabel in plaats van een fout te gooien
+
+            # Sla header rijen over en voeg toe aan gebrek_rows
+            content_rows = [r for r in table_rows if r[0] != expected_header[0]]
+            gebrek_rows.extend(content_rows)
 
         # Parsing logica om Gebrek instanties te maken
         list_gebreken = []
