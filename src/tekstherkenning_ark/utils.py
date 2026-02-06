@@ -170,7 +170,7 @@ def get_constructienaam(value: str) -> str | None:
     """
     value = clean_string(value)
 
-    match = re.search(CONSTRUCTIE_PATTERN, value.strip().lower())
+    match = re.search(CONSTRUCTIE_PATTERN, value.lower())
     if match:
         naam = match.group(0)
         if len(naam) > 1:
@@ -201,6 +201,27 @@ def is_houtmonster_id(value: str) -> bool:
         return False
 
     return True
+
+
+def remove_titel_rows(
+    table_rows: list[list[str]], titel_keywords: list[str] = ["Titel", "Rapportnummer"]
+) -> list[list[str]]:
+    """Remove rows from a table that contain any of the specified titel keywords."""
+
+    return [
+        row
+        for row in table_rows
+        if not any(keyword.lower() in cell.lower() for cell in row for keyword in titel_keywords)
+    ]
+
+
+def remove_invalid_rows(table_rows: list[list[str]]) -> list[list[str]]:
+    if not table_rows:
+        return table_rows
+
+    max_kolommen = max(len(row) for row in table_rows)
+
+    return [row for row in table_rows if len(row) == max_kolommen]
 
 
 def clean_string(value: str) -> str:

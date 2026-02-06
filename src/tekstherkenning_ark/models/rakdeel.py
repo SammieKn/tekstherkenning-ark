@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Type, TypeVar
 
-from azure.ai.documentintelligence.models import DocumentParagraph, DocumentTable
+from azure.ai.documentintelligence.models import DocumentParagraph
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -92,7 +92,7 @@ class Rakdeel(RakBaseModel):
         onderdeel_is_aangetast = cls.from_toestandbepaling_table(section.toestand_tabel)
 
         # Parse gebrekentabel
-        gebreken = await Gebrek.from_doc_tables(tables=section.gebreken_tabel)
+        gebreken = await Gebrek.from_doc_tables(rows=section.gebreken_tabel)
 
         # Verkrijg palen en kespen voor dit rakdeel
         palen = cls.get_for_constructie_naam(section.constructie_naam, palen_dict)
@@ -137,18 +137,12 @@ class Rakdeel(RakBaseModel):
 
     @staticmethod
     def from_toestandbepaling_table(
-        tables: list[DocumentTable],
+        rows: list[list[str]],
     ) -> dict[str, bool | NietBeschikbaar | OnverwachtResultaat]:
         expected_headers = ["Constructieonderdeel", "Aangetast"]
-        constructieonderdeel_rows: list[list[str]] = []
-        for table in tables:
 
-            # Extract table content as list of rows
-            table_rows = utils.get_table_content(table)
-
-            # Skip header rows and add to paal_rows
-            content_rows = [r for r in table_rows if r[0] != expected_headers[0]]
-            constructieonderdeel_rows.extend(content_rows)
+        # Skip header rows
+        constructieonderdeel_rows = [r for r in rows if r and r[0] != expected_headers[0]]
 
         dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
         if len(constructieonderdeel_rows) == 2:

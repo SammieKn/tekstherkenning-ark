@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from azure.ai.documentintelligence.models import DocumentTable, DocumentParagraph
 
 from tekstherkenning_ark.document.sectie import Sectie
-from tekstherkenning_ark.utils import get_constructienaam
+from tekstherkenning_ark.utils import get_constructienaam, get_table_content, remove_titel_rows, remove_invalid_rows
 
 
 @dataclass
@@ -17,16 +17,16 @@ class RakdeelSectie:
         Naam van de constructie.
     beschrijving : list[DocumentParagraph]
         Beschrijvende paragrafen.
-    toestand_tabel : list[DocumentTable]
-        Tabellen met toestandsinformatie.
-    gebreken_tabel : list[DocumentTable]
-        Tabellen met gebrekeninformatie.
+    toestand_tabel : list[list[str]]
+        Tabelinhoud met toestandsinformatie.
+    gebreken_tabel : list[list[str]]
+        Tabelinhoud met gebrekeninformatie.
     """
 
     constructie_naam: str
     beschrijving: list[DocumentParagraph]
-    toestand_tabel: list[DocumentTable]
-    gebreken_tabel: list[DocumentTable]
+    toestand_tabel: list[list[str]]
+    gebreken_tabel: list[list[str]]
 
     @classmethod
     def from_smart_document(cls, secties: list[Sectie], index: int) -> RakdeelSectie:
@@ -72,22 +72,24 @@ class RakdeelSectie:
         )
 
     @staticmethod
-    def _get_toestand_tabel(list_of_tables: list[DocumentTable]) -> list[DocumentTable]:
+    def _get_toestand_tabel(list_of_tables: list[DocumentTable]) -> list[list[str]]:
         """Helper om de juiste toestand tabel te vinden uit een lijst van tabellen."""
-        expected_headers = {"constructieonderdeel", "aangetast"}
-        tabels = []
+        rows: list[list[str]] = []
+
         for tabel in list_of_tables:
             if tabel.cells:
-                first_row_cells = [cell.content.lower() for cell in tabel.cells if cell.row_index == 0]
-                if set(first_row_cells) == expected_headers:
-                    tabels.append(tabel)
-        return tabels
+                rows.extend(get_table_content(tabel))
+        rows_wo_header = remove_titel_rows(rows)
+        rows_cleaned = remove_invalid_rows(rows_wo_header)
+        return rows_cleaned
 
     @staticmethod
-    def _get_gebreken_tabel(list_of_tables: list[DocumentTable]) -> list[DocumentTable]:
+    def _get_gebreken_tabel(list_of_tables: list[DocumentTable]) -> list[list[str]]:
         """Helper om de juiste gebreken tabel te vinden uit een lijst van tabellen."""
-        tabels = []
+        rows: list[list[str]] = []
         for tabel in list_of_tables:
             if tabel.column_count == 3 and tabel.cells:
-                tabels.append(tabel)
-        return tabels
+                rows.extend(get_table_content(tabel))
+        rows_wo_header = remove_titel_rows(rows)
+        rows_cleaned = remove_invalid_rows(rows_wo_header)
+        return rows_cleaned

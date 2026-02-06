@@ -8,7 +8,15 @@ from typing import Callable
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.utils import get_constructienaam, get_paal_id, get_kesp_id
+from tekstherkenning_ark.utils import (
+    get_constructienaam,
+    get_paal_id,
+    get_kesp_id,
+    get_rak_id,
+    get_table_content,
+    remove_titel_rows,
+    remove_invalid_rows,
+)
 from tekstherkenning_ark.document.sectie import Sectie
 from tekstherkenning_ark.document.rakdeelsectie import RakdeelSectie
 from azure.ai.documentintelligence.models import AnalyzeResult, DocumentTable, DocumentParagraph
@@ -113,43 +121,66 @@ class SmartDocument:
                 rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections, i))
         return rakdeel_secties
 
-    def get_meettabel_houtmonsters(self) -> list[DocumentTable]:
+    def get_meettabel_houtmonsters(self) -> list[list[str]]:
         """Haal de meettabel voor houtmonsters op.
 
         Returns
         -------
-        list[DocumentTable]
-            Lijst van tabellen met houtmonster metingen.
+        list[list[str]]
+            Tabelinhoud met houtmonster metingen.
         """
         for sectie in self.sections:
             if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                return [tabel for tabel in sectie.tabellen if self._is_table_type_by_id_func(tabel, get_paal_id)]
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_valid = remove_invalid_rows(rows_wo_header)
+                rows_cleaned = [
+                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
+                ]
+                return rows_cleaned
         return []
 
-    def get_meettabel_fundering_paal(self) -> list[DocumentTable]:
+    def get_meettabel_fundering_paal(self) -> list[list[str]]:
         """Haal de meettabel voor palen op.
 
         Returns
         -------
-        list[DocumentTable]
-            Tabellen waar >50% van eerste kolom een geldig paal ID bevat.
+        list[list[str]]
+            Tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return [tabel for tabel in sectie.tabellen if self._is_table_type_by_id_func(tabel, get_paal_id)]
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    if self._is_table_type_by_id_func(tabel, get_paal_id):
+                        rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_valid = remove_invalid_rows(rows_wo_header)
+                rows_cleaned = [
+                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
+                ]
+                return rows_cleaned
         return []
 
-    def get_meettabel_fundering_kesp(self) -> list[DocumentTable]:
+    def get_meettabel_fundering_kesp(self) -> list[list[str]]:
         """Haal de meettabel voor kespen op.
 
         Returns
         -------
-        list[DocumentTable]
-            Tabellen waar >50% van eerste kolom een geldig kesp ID bevat.
+        list[list[str]]
+            Tabelinhoud waar >50% van eerste kolom een geldig kesp ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return [tabel for tabel in sectie.tabellen if self._is_table_type_by_id_func(tabel, get_kesp_id)]
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    if self._is_table_type_by_id_func(tabel, get_kesp_id):
+                        rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_cleaned = remove_invalid_rows(rows_wo_header)
+                return rows_cleaned
         return []
 
     def get_raknaam(self) -> str:
