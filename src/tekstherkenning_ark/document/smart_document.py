@@ -152,6 +152,14 @@ class SmartDocument:
                 return [tabel for tabel in sectie.tabellen if self._is_table_type_by_id_func(tabel, get_kesp_id)]
         return []
 
+    def get_raknaam(self) -> str:
+        for tabel in self.sections[0].tabellen:
+            if tabel.column_count == 2:
+                for cell in tabel.cells:
+                    if get_rak_id(cell.content):
+                        return get_rak_id(cell.content) or cell.content.strip()
+        return "Onbekend Rak"
+
     def _parse_document(self) -> None:
         """Parse het AnalyzeResult en splits het op in secties."""
 
