@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from azure.ai.documentintelligence.models import DocumentTable
-
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
@@ -54,31 +52,22 @@ class Houtmonster(RakBaseModel):
         return str(self.codering)
 
     @classmethod
-    def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Houtmonster]:
-        """Parse and return a list of Houtmonster objects from a Azure Document
-        Intelligence DocumentTable object
+    def from_doc_tables(cls, rows: list[list[str]]) -> list[Houtmonster]:
+        """Parse and return a list of Houtmonster objects from table rows.
 
         Parameters
         ----------
-        tables : list[DocumentTable]
-            List of DocumentTable objects as returned by Azure Document Intelligence SDK
-            belonging to the `Houtmonster` bijlage
+        rows : list[list[str]]
+            List of table rows as lists of strings.
 
         Returns
         -------
-        dict[str, list[Houtmonster]]
-            A dictionary mapping constructie ID's to lists of Houtmonster objects containing information from the table
+        list[Houtmonster]
+            A list of Houtmonster objects containing information from the table.
         """
 
-        houtmonster_rows: list[list[str]] = []
-        for table in tables:
-
-            # Extract table content as list of rows
-            table_rows = utils.get_table_content(table)
-
-            # Skip header rows and add to paal_rows
-            content_rows = [r for r in table_rows if utils.is_houtmonster_id(r[0])]
-            houtmonster_rows.extend(content_rows)
+        # Skip header rows and filter to houtmonster rows
+        houtmonster_rows = [r for r in rows if utils.is_houtmonster_id(r[0])]
 
         # Parse each row into a Houtmonster object
         houtmonster_list = [cls.from_houtmonster_table_row(row) for row in houtmonster_rows]
@@ -121,7 +110,7 @@ class Houtmonster(RakBaseModel):
 
 if __name__ == "__main__":
 
-    from tekstherkenning_ark.smart_document import SmartDocument
+    from tekstherkenning_ark.document.smart_document import SmartDocument
     from tekstherkenning_ark import constants
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
