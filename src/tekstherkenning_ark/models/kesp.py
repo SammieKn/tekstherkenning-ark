@@ -78,11 +78,15 @@ class Kesp(RakBaseModel):
 
         # Get the kespnummer column to identify valid kesp rows
         kesp_nummer_col = structured_table.get_column(header_in="Kespnummer", unit_in="[Ky]")
-        constructie_id_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")
+        opmerkingen_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")
 
         # Special case: constructie id staat niet in de opmerkingen maar in de kesp id kolom
-        if not any("constructie" in str(val).lower() for val in constructie_id_col.values):
-            constructie_id_col = kesp_nummer_col
+        if opmerkingen_col is None or not any("constructie" in str(val).lower() for val in opmerkingen_col.values):
+            if opmerkingen_col is None:
+                logger.warning("Could not find constructie ID column in table based on header 'Opmerkingen'. ")
+            else:
+                logger.warning("Could not find any constructie ID values in column with header 'Opmerkingen'.")
+            opmerkingen_col = kesp_nummer_col
 
         if not kesp_nummer_col:
             logger.error("Could not find kespnummer column in table")
@@ -96,7 +100,7 @@ class Kesp(RakBaseModel):
 
         for row_idx in range(num_rows):
 
-            constructie_id_col_val = utils.clean_string(constructie_id_col.values[row_idx])
+            constructie_id_col_val = utils.clean_string(opmerkingen_col.values[row_idx])
 
             if "constructie" in constructie_id_col_val.lower():
                 current_constructie_id = constructie_id_col_val

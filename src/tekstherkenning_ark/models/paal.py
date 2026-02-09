@@ -116,11 +116,14 @@ class Paal(RakBaseModel):
 
         # Get the paalnummer column to identify valid paal rows
         paal_nummer_col = structured_table.get_column(header_in="Paalnummer", unit_in="[Px.y]")
-        constructie_id_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")
+        opmerkingen_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")
 
-        # Special case: constructie id staat niet in de opmerkingen maar in de paal id kolom
-        if not any("constructie" in str(val).lower() for val in constructie_id_col.values):
-            constructie_id_col = paal_nummer_col
+        if opmerkingen_col is None or not any("constructie" in str(val).lower() for val in opmerkingen_col.values):
+            if opmerkingen_col is None:
+                logger.warning("Could not find constructie ID column in table based on header 'Opmerkingen'. ")
+            else:
+                logger.warning("Could not find any constructie ID values in column with header 'Opmerkingen'.")
+            opmerkingen_col = paal_nummer_col
 
         if not paal_nummer_col:
             logger.error("Could not find paalnummer column in table")
@@ -134,14 +137,12 @@ class Paal(RakBaseModel):
 
         for row_idx in range(num_rows):
 
-            constructie_id_col_val = utils.clean_string(constructie_id_col.values[row_idx])
+            constructie_id_col_val = utils.clean_string(opmerkingen_col.values[row_idx])
 
             if "constructie" in constructie_id_col_val.lower():
                 current_constructie_id = constructie_id_col_val
 
-                if current_constructie_id not in paal_dict:
-                    paal_dict[current_constructie_id] = []
-                else:
+                if current_constructie_id in paal_dict:
                     logger.warning(f"Duplicate constructie ID found: {current_constructie_id}")
 
             paal_nummer_val = paal_nummer_col.values[row_idx]
@@ -150,6 +151,8 @@ class Paal(RakBaseModel):
                 paal = cls.from_paal_table_row(structured_table, row_idx)
 
                 # Add paal to the correct constructie ID list
+                if current_constructie_id not in paal_dict:
+                    paal_dict[current_constructie_id] = []
                 paal_dict[current_constructie_id].append(paal)
 
         # Validate paal nummers are sequential within each constructie ID
