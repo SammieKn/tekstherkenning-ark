@@ -45,24 +45,11 @@ class Paal(RakBaseModel):
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
     gebreken: list[Gebrek] = []
 
-    # TODO Waar te vinden? - MT
-    paalrij_nummer: str = ""
-
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paal_nummer: str
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
-
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
-    schoorstand_graden: float | None = None
-    scheefstand: bool | None = None
-    materiaal: MateriaalOnderbouw | None = None
-
-    @property
-    def identifier(self) -> str:
-        """Return a string that uniquely identifies this Paal instance."""
-        return str(self.paal_nummer)
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
@@ -92,6 +79,11 @@ class Paal(RakBaseModel):
     # Te vinden in bijlage 2 en houtmonsters csv.
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
     houtmonsters: list[Houtmonster] = []
+
+    @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Paal instance."""
+        return str(self.paal_nummer)
 
     @property
     def paal_nummer_main(self) -> int:

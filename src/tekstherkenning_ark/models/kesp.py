@@ -53,9 +53,6 @@ class Kesp(RakBaseModel):
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
     is_aangetast: bool | NietBeschikbaar | None = None
 
-    # TBD waar te vinden
-    paalrij_nr: str | None = None
-
     @property
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Kesp instance."""
