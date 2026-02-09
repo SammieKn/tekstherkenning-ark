@@ -3,10 +3,22 @@ from dataclasses import dataclass, field
 import os
 from pathlib import Path
 import pickle
+from typing import Callable
 
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.utils import (
+    get_constructienaam,
+    get_paal_id,
+    get_kesp_id,
+    get_rak_id,
+    get_table_content,
+    remove_titel_rows,
+    remove_invalid_rows,
+)
+from tekstherkenning_ark.document.sectie import Sectie
+from tekstherkenning_ark.document.rakdeelsectie import RakdeelSectie
 from azure.ai.documentintelligence.models import AnalyzeResult, DocumentTable, DocumentParagraph
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.core.credentials import AzureKeyCredential
@@ -14,58 +26,11 @@ from io import BytesIO
 
 from dotenv import load_dotenv
 from tekstherkenning_ark.logger import get_logger
+import re
 
 load_dotenv()
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class Sectie:
-    """Een sectie in het document met titel, paragrafen en tabellen.
-
-    Attributes
-    ----------
-    titel : str
-        De titel van de sectie (section heading).
-    inhoud : list[DocumentParagraph]
-        Lijst van paragrafen in de sectie.
-    tabellen : list[DocumentTable]
-        Lijst van tabellen die bij deze sectie horen.
-    heading_offset : int
-        Offset van de section heading in het originele document.
-    """
-
-    titel: str
-    inhoud: list[DocumentParagraph] = field(default_factory=list)
-    tabellen: list[DocumentTable] = field(default_factory=list)
-    heading_offset: int = 0
-
-    def full_text(self) -> str:
-        """Combineert alle tekstuele inhoud van de sectie."""
-        return "\n".join(p.content for p in self.inhoud)
-
-
-@dataclass
-class RakdeelSectie:
-    """Representeert een rakdeel sectie met constructie informatie.
-
-    Attributes
-    ----------
-    constructie_naam : str
-        Naam van de constructie.
-    beschrijving : list[DocumentParagraph]
-        Beschrijvende paragrafen.
-    toestand_tabel : list[DocumentTable]
-        Tabellen met toestandsinformatie.
-    gebreken_tabel : list[DocumentTable]
-        Tabellen met gebrekeninformatie.
-    """
-
-    constructie_naam: str
-    beschrijving: list[DocumentParagraph]
-    toestand_tabel: list[DocumentTable]
-    gebreken_tabel: list[DocumentTable]
 
 
 @dataclass
@@ -134,6 +99,98 @@ class SmartDocument:
         doc._parse_document()
         return doc
 
+    def _get_table_min_offset(self, table: DocumentTable) -> int:
+        """Bepaal de minimale offset van een tabel."""
+        if not table.cells:
+            return 0
+
+        min_offset = min(cell.spans[0].offset for cell in table.cells if cell.spans)
+        return min_offset
+
+    def get_rakdeel_secties(self) -> list[RakdeelSectie]:
+        """Haal de secties op die rakdelen beschrijven.
+
+        Returns
+        -------
+        list[RakdeelSectie]
+            Lijst van rakdeel secties met constructie informatie.
+        """
+        rakdeel_secties = []
+        for i, sectie in enumerate(self.sections):
+            if get_constructienaam(sectie.titel):
+                rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections[i:]))
+        return rakdeel_secties
+
+    def get_meettabel_houtmonsters(self) -> list[list[str]]:
+        """Haal de meettabel voor houtmonsters op.
+
+        Returns
+        -------
+        list[list[str]]
+            Tabelinhoud met houtmonster metingen.
+        """
+        for sectie in self.sections:
+            if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_valid = remove_invalid_rows(rows_wo_header)
+                rows_cleaned = [
+                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
+                ]
+                return rows_cleaned
+        return []
+
+    def get_meettabel_fundering_paal(self) -> list[list[str]]:
+        """Haal de meettabel voor palen op.
+
+        Returns
+        -------
+        list[list[str]]
+            Tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
+        """
+        for sectie in self.sections:
+            if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    if self._is_table_type_by_id_func(tabel, get_paal_id):
+                        rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_valid = remove_invalid_rows(rows_wo_header)
+                rows_cleaned = [
+                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
+                ]
+                return rows_cleaned
+        return []
+
+    def get_meettabel_fundering_kesp(self) -> list[list[str]]:
+        """Haal de meettabel voor kespen op.
+
+        Returns
+        -------
+        list[list[str]]
+            Tabelinhoud waar >50% van eerste kolom een geldig kesp ID bevat.
+        """
+        for sectie in self.sections:
+            if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
+                rows: list[list[str]] = []
+                for tabel in sectie.tabellen:
+                    if self._is_table_type_by_id_func(tabel, get_kesp_id):
+                        rows.extend(get_table_content(tabel))
+                rows_wo_header = remove_titel_rows(rows)
+                rows_cleaned = remove_invalid_rows(rows_wo_header)
+                return rows_cleaned
+        return []
+
+    def get_raknaam(self) -> str:
+        for tabel in self.sections[0].tabellen:
+            if tabel.column_count == 2:
+                for cell in tabel.cells:
+                    if get_rak_id(cell.content):
+                        return get_rak_id(cell.content) or cell.content.strip()
+        return "Onbekend Rak"
+
     def _parse_document(self) -> None:
         """Parse het AnalyzeResult en splits het op in secties."""
 
@@ -201,89 +258,34 @@ class SmartDocument:
             if not assigned and self.sections:
                 self.sections[-1].tabellen.append(table)
 
-    def _get_table_min_offset(self, table: DocumentTable) -> int:
-        """Bepaal de minimale offset van een tabel."""
-        if not table.cells:
-            return 0
+    def _is_table_type_by_id_func(
+        self, tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
+    ) -> bool:
+        """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
 
-        min_offset = min(cell.spans[0].offset for cell in table.cells if cell.spans)
-        return min_offset
-
-    def get_rakdeel_secties(self) -> list[RakdeelSectie]:
-        """Haal de secties op die rakdelen beschrijven.
-
-        Returns
-        -------
-        list[RakdeelSectie]
-            Lijst van rakdeel secties met constructie informatie.
-        """
-        rakdeel_secties = []
-        for i, sectie in enumerate(self.sections):
-            if "Constructie" in sectie.titel:
-                titel = sectie.titel.split(" ")[1:]
-                omschrijving = self.sections[i].inhoud
-                toestand_tabellen = self.sections[i + 2].tabellen
-                gebreken_tabellen = self.sections[i + 3].tabellen
-                rakdeel_secties.append(
-                    RakdeelSectie(
-                        constructie_naam=" ".join(titel),
-                        beschrijving=omschrijving,
-                        toestand_tabel=toestand_tabellen,
-                        gebreken_tabel=gebreken_tabellen,
-                    )
-                )
-        return rakdeel_secties
-
-    def get_meettabel_houtmonsters(self) -> list[DocumentTable]:
-        """Haal de meettabel voor houtmonsters op.
+        Parameters
+        ----------
+        tabel : DocumentTable
+            De tabel om te controleren.
+        id_func : callable
+            Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).
+        threshold : float
+            Minimale fractie van cellen die moeten matchen.
 
         Returns
         -------
-        list[DocumentTable]
-            Lijst van tabellen met houtmonster metingen.
+        bool
+            True als de tabel voldoet aan het type.
         """
-        for sectie in self.sections:
-            if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                return sectie.tabellen
-        return []
-
-    def _is_table_type_by_first_column(self, tabel: DocumentTable, prefix: str, threshold: float = 0.5) -> bool:
-        """Check of een tabel bij een type hoort op basis van eerste kolom prefix."""
-        if tabel.column_count <= 10:
+        if not tabel.cells:
             return False
 
         first_col_cells = [cell.content for cell in tabel.cells if cell.column_index == 0]
         if not first_col_cells:
             return False
 
-        matching_cells = sum(1 for cell in first_col_cells if cell.startswith(prefix))
+        matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
         return (matching_cells / len(first_col_cells)) > threshold
-
-    def get_meettabel_fundering_paal(self) -> list[DocumentTable]:
-        """Haal de meettabel voor palen op.
-
-        Returns
-        -------
-        list[DocumentTable]
-            Tabellen waar >50% van eerste kolom met 'P' begint.
-        """
-        for sectie in self.sections:
-            if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return [tabel for tabel in sectie.tabellen if self._is_table_type_by_first_column(tabel, "P")]
-        return []
-
-    def get_meettabel_fundering_kesp(self) -> list[DocumentTable]:
-        """Haal de meettabel voor kespen op.
-
-        Returns
-        -------
-        list[DocumentTable]
-            Tabellen waar >50% van eerste kolom met 'K' begint.
-        """
-        for sectie in self.sections:
-            if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return [tabel for tabel in sectie.tabellen if self._is_table_type_by_first_column(tabel, "K")]
-        return []
 
     def __repr__(self) -> str:
         section_summary = "\n".join(
