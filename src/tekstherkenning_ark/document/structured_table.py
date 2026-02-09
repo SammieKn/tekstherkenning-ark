@@ -1,7 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache, cached_property
-from typing import Literal
+from typing import Any, Literal
 from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark.document import sectie
@@ -28,6 +28,8 @@ class StructuredTable:
 
     columns: list[TableColumn]
     table_type: Literal["palen", "kespen", "houtmonsters"]
+
+    col_lookup_cache: dict[tuple, TableColumn] = field(default_factory=dict, init=False, repr=False)
 
     @property
     def num_rows(self) -> int:
@@ -83,9 +85,9 @@ class StructuredTable:
 
     def get_value(
         self,
-        header_in: str | list[str] = None,
-        sub_header_in: str | list[str] = None,
-        unit_in: str | list[str] = None,
+        header_in: str | list[str] = "",
+        sub_header_in: str | list[str] = "",
+        unit_in: str | list[str] = "",
         index: int = 0,
     ) -> str | None:
         """Get a value from the structured table based on header, sub-header, unit and row index by matching against possible values. Matching is case-insensitive."""
@@ -96,7 +98,6 @@ class StructuredTable:
 
         return None
 
-    @cache
     def get_column(
         self,
         header_in: str | list[str] = "",
@@ -131,6 +132,11 @@ class StructuredTable:
         if isinstance(unit_in, str):
             unit_in = [unit_in]
 
+        # Check cache first (for performance reasons)
+        cache_key = (tuple(header_in), tuple(sub_header_in), tuple(unit_in))
+        if cache_key in self.col_lookup_cache:
+            return self.col_lookup_cache[cache_key]
+
         # Make everything lowercase for case-insensitive matching
         header_in = [h.lower() for h in header_in] if header_in else None
         sub_header_in = [sh.lower() for sh in sub_header_in] if sub_header_in else None
@@ -144,12 +150,14 @@ class StructuredTable:
 
         # If exactly one column matches based on header and sub-header, return it.
         if len(subheader_matching_columns) == 1:
+            self.col_lookup_cache[cache_key] = subheader_matching_columns[0]
             return subheader_matching_columns[0]
 
         # If multiple columns match based on header and sub-header, use unit to disambiguate if possible.
         elif len(subheader_matching_columns) > 1 and unit_in is not None:
             for column in subheader_matching_columns:
                 if column.unit.lower() in unit_in:
+                    self.col_lookup_cache[cache_key] = column
                     return column
 
         # No matching columns, warn
@@ -163,6 +171,7 @@ class StructuredTable:
         logger.warning(
             f"No matching column found for {self.table_type} table for arguments {header_in}, {sub_header_in}, {unit_in}. {available_subheaders_str}Returning None."
         )
+        self.col_lookup_cache[cache_key] = None
         return None
 
     @cached_property
@@ -200,6 +209,7 @@ class TableColumn:
         """
 
         sub_header_col_offset = int(has_sub_header)
+        header_i = int(not has_sub_header)  # 0 if we have a sub-header, 1 if we don't
 
         # Create TableColumn objects for each column
         table_columns = []
@@ -208,8 +218,8 @@ class TableColumn:
         last_unit_value = ""
 
         for col in columns:
-            if col[0]:
-                last_header_value = col[0]
+            if col[header_i]:
+                last_header_value = col[header_i]
                 last_sub_header_value = ""
                 last_unit_value = ""
 

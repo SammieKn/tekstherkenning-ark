@@ -152,7 +152,12 @@ class Kesp(RakBaseModel):
                 header_in="Lengte uitstekende deel t.o.v. voorzijde frontwand", unit_in="[cm]", index=row_idx
             ),
             mate_inknijping_cm=table.get_value(
-                header_in="Mate van inknijping to.v. oorspronkelijke staat", unit_in="0", index=row_idx
+                header_in=[
+                    "Mate van inknijping to.v. oorspronkelijke staat",
+                    "Mate van inknijping Lo.v. oorspronkelijke staat",
+                ],
+                unit_in="0",
+                index=row_idx,
             ),
             indrukking_paal_in_kesp_cm=table.get_value(
                 header_in="Indrukking van de funderingspaal in de kesp", unit_in="[Ja/Nee]", index=row_idx
