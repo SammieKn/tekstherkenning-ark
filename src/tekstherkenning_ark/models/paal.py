@@ -138,6 +138,8 @@ class Paal(RakBaseModel):
                 continue
             constructie_id_col_val = utils.clean_string(row[16])
 
+            #
+
             if constructie_id_col_val != "":
                 current_constructie_id = constructie_id_col_val
 
@@ -180,14 +182,14 @@ class Paal(RakBaseModel):
         row_clean = [utils.clean_string(val) for val in row]
         return cls(
             paal_nummer=utils.clean_paal_id(row_clean[0]),
-            diameter_haaks=row_clean[1],
-            diameter_parallel=row_clean[2],
-            diameter_gemiddeld=row_clean[3],
-            hoh_afstand_cm=row_clean[4],
+            diameter_haaks=utils.convert_string_to_int(row_clean[1]),
+            diameter_parallel=utils.convert_string_to_int(row_clean[2]),
+            diameter_gemiddeld=utils.convert_string_to_int(row_clean[3]),
+            hoh_afstand_cm=utils.convert_string_to_int(row_clean[4]),
             hoh_paalnummer=row_clean[5],
-            schoor_graden=row_clean[8],
+            schoor_graden=utils.convert_string_to_int(row_clean[8]),
             schoor_richting=row_clean[9],
-            afstand_frontwand_cm=row_clean[10],
+            afstand_frontwand_cm=utils.convert_string_to_int(row_clean[10]),
             is_scheefstand=utils.parse_ja_nee(row_clean[11]),
             is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
             is_aantasting=utils.parse_ja_nee(row_clean[13]),

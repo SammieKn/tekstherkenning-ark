@@ -14,7 +14,6 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from tekstherkenning_ark.constants import DATA_DIR
 
-
 # Create logs directory
 LOG_DIR = DATA_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)

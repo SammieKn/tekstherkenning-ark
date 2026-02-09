@@ -5,7 +5,6 @@ from unidecode import unidecode
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 
-
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
 KESP_ID_PATTERN = r"\bK\d+\b"
@@ -192,3 +191,13 @@ def clean_string(value: str) -> str:
     value = value.strip()
 
     return value
+
+
+def convert_string_to_int(some_str: str) -> int | str:
+    """Convert a string to an integer, returning an OnverwachtResultaat on failure."""
+
+    try:
+        return int(some_str.strip())
+    except BaseException:
+        # no need to raise here, OnverwachtResultaat will handle this later
+        return some_str
