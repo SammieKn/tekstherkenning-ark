@@ -7,6 +7,7 @@ from azure.ai.documentintelligence.models import DocumentTable
 from tekstherkenning_ark.document import sectie
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import (
+    clean_string,
     get_kesp_id,
     get_paal_id,
     get_table_content,
@@ -94,7 +95,7 @@ class StructuredTable:
 
         column = self.get_column(header_in, sub_header_in, unit_in)
         if not column is None and column.values:
-            return column.values[index]
+            return clean_string(column.values[index])
 
         return None
 
