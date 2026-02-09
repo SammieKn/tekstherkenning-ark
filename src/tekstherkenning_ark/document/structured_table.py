@@ -1,10 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from functools import cache, cached_property
-from typing import Any, Literal
+from typing import Literal
 from azure.ai.documentintelligence.models import DocumentTable
 
-from tekstherkenning_ark.document import sectie
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import (
     clean_string,
@@ -174,15 +172,6 @@ class StructuredTable:
         )
         self.col_lookup_cache[cache_key] = None
         return None
-
-    @cached_property
-    def hash(self) -> str:
-        """Generate a hash for the structured table based on its content. This can be used for caching or comparison purposes."""
-        column_hashes = [f"{col.header}|{col.sub_header}|{col.unit}|{'|'.join(col.values)}" for col in self.columns]
-        return hash("|".join(column_hashes))
-
-    def __hash__(self):
-        return self.hash
 
 
 @dataclass
