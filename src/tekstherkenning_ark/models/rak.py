@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 
-    rak = Rak.from_smart_document(doc)
+    rak = Rak.from_smart_document(doc, use_caching=False)
 
     for rd in rak.rakdelen:
         print(rd.rakdeel_id)
