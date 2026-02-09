@@ -29,15 +29,13 @@ class RakdeelSectie:
     gebreken_tabel: list[list[str]]
 
     @classmethod
-    def from_smart_document(cls, secties: list[Sectie], index: int) -> RakdeelSectie:
+    def from_smart_document(cls, secties: list[Sectie]) -> RakdeelSectie:
         """Maak een rakdeel sectie uit SmartDocument-secties.
 
         Parameters
         ----------
         secties : list[Sectie]
             Lijst met alle secties uit het SmartDocument.
-        index : int
-            Index van de sectie die de constructie beschrijft.
 
         Returns
         -------
@@ -56,16 +54,17 @@ class RakdeelSectie:
 
         for sectie in secties:
             # if sectie titel contains "constructie [a-z]" then it is the base rakdeelsectie
-            if get_constructienaam(sectie.titel):
+            if get_constructienaam(sectie.titel) and not constructie_naam:
                 constructie_naam = get_constructienaam(sectie.titel) or ""
                 beschrijving = sectie.inhoud
-            elif "toestand" in sectie.titel.lower():
+            elif "toestand" in sectie.titel.lower() and not toestand_tabel:
                 toestand_tabel = RakdeelSectie._get_toestand_tabel(sectie.tabellen)
-            elif "gebrek" in sectie.titel.lower():
+            elif "gebrek" in sectie.titel.lower() and not gebreken_tabel:
                 gebreken_tabel = RakdeelSectie._get_gebreken_tabel(sectie.tabellen)
+                break
 
         return cls(
-            constructie_naam=constructie_naam,
+            constructie_naam=constructie_naam or "Onbekende constructie",
             beschrijving=beschrijving,
             toestand_tabel=toestand_tabel,
             gebreken_tabel=gebreken_tabel,

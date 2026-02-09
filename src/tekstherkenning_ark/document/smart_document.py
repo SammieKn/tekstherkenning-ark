@@ -118,7 +118,7 @@ class SmartDocument:
         rakdeel_secties = []
         for i, sectie in enumerate(self.sections):
             if get_constructienaam(sectie.titel):
-                rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections, i))
+                rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections[i:]))
         return rakdeel_secties
 
     def get_meettabel_houtmonsters(self) -> list[list[str]]:
