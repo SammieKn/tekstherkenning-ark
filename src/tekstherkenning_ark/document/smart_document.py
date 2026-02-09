@@ -8,6 +8,7 @@ from typing import Callable
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.utils import (
     get_constructienaam,
     get_paal_id,
@@ -121,67 +122,48 @@ class SmartDocument:
                 rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections[i:]))
         return rakdeel_secties
 
-    def get_meettabel_houtmonsters(self) -> list[list[str]]:
+    def get_meettabel_houtmonsters(self) -> StructuredTable | None:
         """Haal de meettabel voor houtmonsters op.
 
         Returns
         -------
-        list[list[str]]
-            Tabelinhoud met houtmonster metingen.
+        StructuredTable | None
+            Gestructureerde tabelinhoud met houtmonster metingen.
         """
         for sectie in self.sections:
             if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_valid = remove_invalid_rows(rows_wo_header)
-                rows_cleaned = [
-                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
-                ]
-                return rows_cleaned
-        return []
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type="houtmonsters")
 
-    def get_meettabel_fundering_paal(self) -> list[list[str]]:
+        return None
+
+    def get_meettabel_fundering_paal(self) -> StructuredTable | None:
         """Haal de meettabel voor palen op.
 
         Returns
         -------
-        list[list[str]]
-            Tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
+        StructuredTable | None
+            Gestructureerde tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    if self._is_table_type_by_id_func(tabel, get_paal_id):
-                        rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_valid = remove_invalid_rows(rows_wo_header)
-                rows_cleaned = [
-                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
-                ]
-                return rows_cleaned
-        return []
 
-    def get_meettabel_fundering_kesp(self) -> list[list[str]]:
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type="palen")
+
+        return None
+
+    def get_meettabel_fundering_kesp(self) -> StructuredTable | None:
         """Haal de meettabel voor kespen op.
 
         Returns
         -------
-        list[list[str]]
+        StructuredTable | None
             Tabelinhoud waar >50% van eerste kolom een geldig kesp ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    if self._is_table_type_by_id_func(tabel, get_kesp_id):
-                        rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_cleaned = remove_invalid_rows(rows_wo_header)
-                return rows_cleaned
-        return []
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type="kespen")
+
+        return None
 
     def get_raknaam(self) -> str:
         for tabel in self.sections[0].tabellen:

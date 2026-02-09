@@ -6,7 +6,7 @@ from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
@@ -49,6 +49,9 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
 def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     """Parse a Ja/Nee string to a boolean value."""
     from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+
+    if value is None:
+        return None
 
     if value.strip().lower().startswith("ja"):
         return True
@@ -244,3 +247,33 @@ def clean_string(value: str) -> str:
     value = value.strip()
 
     return value
+
+
+def is_table_type_by_id_func(
+    tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
+) -> bool:
+    """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
+
+    Parameters
+    ----------
+    tabel : DocumentTable
+        De tabel om te controleren.
+    id_func : callable
+        Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).
+    threshold : float
+        Minimale fractie van cellen die moeten matchen.
+
+    Returns
+    -------
+    bool
+        True als de tabel voldoet aan het type.
+    """
+    if not tabel.cells:
+        return False
+
+    first_col_cells = [cell.content for cell in tabel.cells if cell.column_index == 0]
+    if not first_col_cells:
+        return False
+
+    matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
+    return (matching_cells / len(first_col_cells)) > threshold
