@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import Type, TypeVar
-
-from azure.ai.documentintelligence.models import DocumentParagraph
+from typing import TypeVar
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -24,7 +22,7 @@ from tekstherkenning_ark.models.gebrek import (
 )
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.utils import contains_kesp_id, get_kesp_id, get_paal_id
+from tekstherkenning_ark.utils import get_kesp_id, get_paal_id
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.document.structured_table import StructuredTable
 
