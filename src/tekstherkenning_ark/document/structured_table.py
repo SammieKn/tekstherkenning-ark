@@ -20,13 +20,13 @@ logger = get_logger(__name__)
 @dataclass(frozen=True)
 class StructuredTable:
     """A structured representation of a table extracted from a document, with methods to access its values based on headers, sub-headers and units.
-    Used for parsing the palen, kespen and houtmonsters tables in the rakdeel secties.
+    Used for parsing the palen, kespen, houtmonsters, gebreken and toestandsbepaling tables in the rakdeel secties.
 
     The dataclass is frozen, meaning the structured table should not be modified after creation.
     Some functions are cached for performance reasons thus the underlying data should be immutable to avoid issues."""
 
     columns: list[TableColumn]
-    table_type: Literal["palen", "kespen", "houtmonsters"]
+    table_type: Literal["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"]
 
     col_lookup_cache: dict[tuple, TableColumn] = field(default_factory=dict, init=False, repr=False)
 
@@ -36,7 +36,9 @@ class StructuredTable:
 
     @classmethod
     def from_doc_table(
-        cls, tables: list[DocumentTable], table_type: Literal["palen", "kespen", "houtmonsters"]
+        cls,
+        tables: list[DocumentTable],
+        table_type: Literal["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"],
     ) -> StructuredTable:
         """Parse and return a StructuredTable object from table rows.
 
@@ -52,10 +54,18 @@ class StructuredTable:
         """
 
         # Validate table type
-        if not table_type in ["palen", "kespen", "houtmonsters"]:
-            raise ValueError(f"Invalid table type: {table_type}. Expected 'palen', 'kespen' or 'houtmonsters'.")
+        if not table_type in ["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"]:
+            raise ValueError(
+                f"Invalid table type: {table_type}. Must be one of: palen, kespen, houtmonsters, gebreken, toestandsbepaling"
+            )
 
-        id_func_dict = {"palen": get_paal_id, "kespen": get_kesp_id, "houtmonsters": None}
+        id_func_dict = {
+            "palen": get_paal_id,
+            "kespen": get_kesp_id,
+            "houtmonsters": None,
+            "gebreken": None,
+            "toestandsbepaling": None,
+        }
         id_func = id_func_dict[table_type]
 
         # Extract rows from all tables
