@@ -145,7 +145,7 @@ class Rakdeel(RakBaseModel):
         constructieonderdeel_rows = [r for r in rows if r and r[0] != expected_headers[0]]
 
         dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
-        if len(constructieonderdeel_rows) == 2:
+        if all((len(row) == 2 for row in constructieonderdeel_rows)):
             for constructieonderdeel, aangetast in constructieonderdeel_rows:
                 constructieonderdeel_clean = utils.clean_string(constructieonderdeel)
                 aangetast_clean = utils.parse_ja_nee(utils.clean_string(aangetast))
