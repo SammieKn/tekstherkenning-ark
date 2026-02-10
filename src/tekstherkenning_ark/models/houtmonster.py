@@ -115,9 +115,13 @@ class Houtmonster(RakBaseModel):
             rak_code=table.get_value(header_in="Rakcode", unit_in="[RAKxxxx]", index=row_idx),
             paal_nummer=table.get_value(header_in="Paalnummer", unit_in="[Px.y]", index=row_idx),
             houtmonster_code=table.get_value(header_in="Houtmonster", unit_in="[HMxxxxx]", index=row_idx),
-            diameter_paal_ter_hoogte_houtmonster_mm=table.get_value(header_in="Diameter paal", unit_in="[mm]", index=row_idx),
+            diameter_paal_ter_hoogte_houtmonster_mm=table.get_value(
+                header_in="Diameter paal", unit_in="[mm]", index=row_idx
+            ),
             hoogte_onder_nap_cm=table.get_value(header_in="Hoogte t.o.v. NAP", unit_in="[cm]", index=row_idx),
-            hoogte_tov_onderzijde_fundering_cm=table.get_value(header_in="Hoogte t.o.v. kesp/vloer", unit_in="[cm]", index=row_idx),
+            hoogte_tov_onderzijde_fundering_cm=table.get_value(
+                header_in="Hoogte t.o.v. kesp/vloer", unit_in="[cm]", index=row_idx
+            ),
             is_wankant_aanwezig=utils.parse_ja_nee(wankant_val) if wankant_val else None,
             datum_monstername=table.get_value(header_in="Datum monstername", unit_in="[dd-mm-j\\]", index=row_idx),
         )
