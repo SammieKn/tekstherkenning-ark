@@ -8,7 +8,7 @@ from typing import Callable
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.document.structured_table import StructuredTable, TableType
 from tekstherkenning_ark.utils import (
     get_constructienaam,
     get_rak_id,
@@ -127,7 +127,7 @@ class SmartDocument:
         """
         for sectie in self.sections:
             if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type="houtmonsters")
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.HOUTMONSTERS)
 
         return None
 
@@ -142,7 +142,7 @@ class SmartDocument:
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
 
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type="palen")
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.PALEN)
 
         return None
 
@@ -156,7 +156,7 @@ class SmartDocument:
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type="kespen")
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.KESPEN)
 
         return None
 

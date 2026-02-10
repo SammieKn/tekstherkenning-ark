@@ -5,7 +5,7 @@ from typing import Literal
 from azure.ai.documentintelligence.models import DocumentTable, DocumentParagraph
 
 from tekstherkenning_ark.document.sectie import Sectie
-from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.document.structured_table import StructuredTable, TableType
 from tekstherkenning_ark.utils import get_constructienaam, get_table_content, remove_titel_rows, remove_invalid_rows
 
 
@@ -78,7 +78,7 @@ class RakdeelSectie:
         if not list_of_tables:
             return None
 
-        return StructuredTable.from_doc_table(list_of_tables, table_type="toestandsbepaling")
+        return StructuredTable.from_doc_table(list_of_tables, table_type=TableType.TOESTANDSBEPALING)
 
     @staticmethod
     def _get_gebreken_tabel(list_of_tables: list[DocumentTable]) -> StructuredTable | None:
@@ -89,4 +89,4 @@ class RakdeelSectie:
         if not gebreken_tables:
             return None
 
-        return StructuredTable.from_doc_table(gebreken_tables, table_type="gebreken")
+        return StructuredTable.from_doc_table(gebreken_tables, table_type=TableType.GEBREKEN)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from enum import StrEnum
+from functools import cached_property
 from typing import Literal
 from azure.ai.documentintelligence.models import DocumentTable
 
@@ -17,6 +19,44 @@ from tekstherkenning_ark.utils import (
 logger = get_logger(__name__)
 
 
+class TableType(StrEnum):
+    PALEN = "palen"
+    KESPEN = "kespen"
+    HOUTMONSTERS = "houtmonsters"
+    GEBREKEN = "gebreken"
+    TOESTANDSBEPALING = "toestandsbepaling"
+
+    @cached_property
+    def header_offset(self) -> int:
+        """Houtmonsters have their header on the second row, rest is first row."""
+
+        if self is self.HOUTMONSTERS:
+            return 1
+        return 0
+
+    @cached_property
+    def sub_header_offset(self) -> int | None:
+        """Only palen and kespen have a sub-header row."""
+
+        if self in [self.PALEN, self.KESPEN]:
+            return 1
+        return None
+
+    @cached_property
+    def unit_offset(self) -> int | None:
+        """Only palen, kespen and houtmonsters have a unit row."""
+
+        if self in [self.PALEN, self.KESPEN, self.HOUTMONSTERS]:
+            return 2
+        return None
+
+    @cached_property
+    def values_offset(self) -> int:
+        """Calculate the offset for the first row of values based on the presence of header, sub-header and unit rows."""
+
+        return max(self.header_offset, self.sub_header_offset or 0, self.unit_offset or 0) + 1
+
+
 @dataclass(frozen=True)
 class StructuredTable:
     """A structured representation of a table extracted from a document, with methods to access its values based on headers, sub-headers and units.
@@ -26,7 +66,7 @@ class StructuredTable:
     Some functions are cached for performance reasons thus the underlying data should be immutable to avoid issues."""
 
     columns: list[TableColumn]
-    table_type: Literal["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"]
+    table_type: TableType
 
     col_lookup_cache: dict[tuple, TableColumn] = field(default_factory=dict, init=False, repr=False)
 
@@ -38,14 +78,17 @@ class StructuredTable:
     def from_doc_table(
         cls,
         tables: list[DocumentTable],
-        table_type: Literal["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"],
+        table_type: TableType,
     ) -> StructuredTable:
         """Parse and return a StructuredTable object from table rows.
 
         Parameters
         ----------
-        table_rows : list[list[str]]
-            List of table rows as lists of strings.
+        tables: list[DocumentTable]
+            List of DocumentTable objects to parse and find the relevant table based on the table type.
+        table_type: TableType
+            The type of the table to parse, which determines how headers, sub-headers and units are identified and how the values are extracted.
+            Possible values: "palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling".
 
         Returns
         -------
@@ -53,20 +96,16 @@ class StructuredTable:
             A StructuredTable object containing information from the table with headers, sub-headers, units, and values.
         """
 
-        # Validate table type
-        if not table_type in ["palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling"]:
-            raise ValueError(
-                f"Invalid table type: {table_type}. Must be one of: palen, kespen, houtmonsters, gebreken, toestandsbepaling"
-            )
+        # Ensure table_type is a valid TableType enum member
+        table_type = TableType(table_type)
 
+        # Define a mapping of table types to their corresponding ID extraction functions (if applicable)
         id_func_dict = {
-            "palen": get_paal_id,
-            "kespen": get_kesp_id,
-            "houtmonsters": None,
-            "gebreken": None,
-            "toestandsbepaling": None,
+            TableType.PALEN: get_paal_id,
+            TableType.KESPEN: get_kesp_id,
         }
-        id_func = id_func_dict[table_type]
+
+        id_func = id_func_dict.get(table_type, None)
 
         # Extract rows from all tables
         rows: list[list[str]] = []
@@ -76,19 +115,15 @@ class StructuredTable:
         rows_wo_header = remove_titel_rows(rows)
         table_rows = remove_invalid_rows(rows_wo_header)
 
-        # Determine if the table has a sub-header row based on the table type
-        has_sub_header = table_type in ["palen", "kespen"]
-        sub_header_col_offset = int(has_sub_header)
-
         # If there is no data or there are no value rows, return an empty StructuredTable
-        if len(table_rows) <= (2 + sub_header_col_offset):
+        if len(table_rows) <= table_type.values_offset:
             return StructuredTable(columns=[], table_type=table_type)
 
         # Transpose rows to columns
         columns = list(zip(*table_rows))
 
         # Create TableColumn objects for each column
-        table_columns = TableColumn.from_column_lists(columns, has_sub_header=has_sub_header)
+        table_columns = TableColumn.from_column_lists(columns, table_type)
 
         return StructuredTable(columns=table_columns, table_type=table_type)
 
@@ -192,7 +227,11 @@ class TableColumn:
     values: list[str] = None
 
     @classmethod
-    def from_column_lists(cls, columns: list[list[str]], has_sub_header: bool) -> list[TableColumn]:
+    def from_column_lists(
+        cls,
+        columns: list[list[str]],
+        table_type: TableType,
+    ) -> list[TableColumn]:
         """Create TableColumn objects from lists of column values, determining headers, sub-headers and units based on the table type.
 
         Parameters
@@ -208,9 +247,6 @@ class TableColumn:
             A list of TableColumn objects containing header, sub-header, unit and values for each column.
         """
 
-        sub_header_col_offset = int(has_sub_header)
-        header_i = int(not has_sub_header)  # 0 if we have a sub-header, 1 if we don't
-
         # Create TableColumn objects for each column
         table_columns = []
         last_header_value = ""
@@ -218,17 +254,19 @@ class TableColumn:
         last_unit_value = ""
 
         for col in columns:
-            if col[header_i]:
-                last_header_value = col[header_i]
+            if col[table_type.header_offset]:
+                last_header_value = col[table_type.header_offset]
                 last_sub_header_value = ""
                 last_unit_value = ""
 
-            if has_sub_header and col[1]:
-                last_sub_header_value = col[1]
+            if table_type.sub_header_offset is not None and col[table_type.sub_header_offset]:
+                last_sub_header_value = col[table_type.sub_header_offset]
                 last_unit_value = ""
 
-            last_unit_value = col[1 + sub_header_col_offset] or last_unit_value
-            values = list(col[2 + sub_header_col_offset :])
+            if table_type.unit_offset is not None and col[table_type.unit_offset]:
+                last_unit_value = col[table_type.unit_offset]
+
+            values = list(col[table_type.values_offset :])
 
             table_columns.append(cls(last_header_value, last_sub_header_value, last_unit_value, values))
 
