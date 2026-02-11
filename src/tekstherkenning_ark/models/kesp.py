@@ -117,8 +117,10 @@ class Kesp(RakBaseModel):
                     kesp_dict[current_constructie_id] = []
                 kesp_dict[current_constructie_id].append(kesp)
 
+        # If one or more kespen were found without a constructie ID, remove all construction ids
         if "" in kesp_dict:
-            logger.warning(f"{len(kesp_dict[''])} kespen found with constructie ID missing.")
+            logger.warning("One or more kespen found without constructie ID. Removing all constructie IDs for kespen.")
+            kesp_dict = utils.remove_construtie_id(kesp_dict)
 
         return kesp_dict
 

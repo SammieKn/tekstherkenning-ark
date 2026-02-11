@@ -7,7 +7,7 @@ from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from tekstherkenning_ark.logger import get_logger
 
@@ -22,6 +22,8 @@ CONSTRUCTIE_PATTERN = r"constructie [a-z]"
 ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
 
 logger = get_logger(__name__)
+
+T = TypeVar("T")
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -309,3 +311,16 @@ def is_table_type_by_id_func(
 
     matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
     return (matching_cells / len(first_col_cells)) > threshold
+
+
+def dict_items_flat(item_dict: dict[str, list[T]]) -> list[T]:
+    """Flatten the values of a dictionary into a single list."""
+    return [item for sublist in item_dict.values() for item in sublist]
+
+
+def remove_construtie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
+    """Als er palen of kespen unassigned zijn, maak dan alle palen of kespen unassigned.
+
+    Een deel unassigned is indicatie dat de tabel niet klopt. In dit geval moet dus alles unassigned blijven."""
+    all_items = dict_items_flat(item_dict)
+    return {"": all_items}
