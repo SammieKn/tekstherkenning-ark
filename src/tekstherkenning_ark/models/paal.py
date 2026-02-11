@@ -131,7 +131,7 @@ class Paal(RakBaseModel):
 
             constructie_id_col_val = utils.clean_string(opmerkingen_col.values[row_idx])
 
-            if "constructie" in constructie_id_col_val.lower():
+            if constructie_id_col_val.lower().startswith("constructie"):
                 current_constructie_id = constructie_id_col_val
 
                 if current_constructie_id in paal_dict:
