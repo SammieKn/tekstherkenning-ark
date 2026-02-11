@@ -127,7 +127,9 @@ class SmartDocument:
         """
         for sectie in self.sections:
             if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.HOUTMONSTERS)
+                table = StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.HOUTMONSTERS)
+                if table:
+                    return table
 
         return None
 
@@ -142,8 +144,9 @@ class SmartDocument:
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
 
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.PALEN)
-
+                table = StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.PALEN)
+                if table:
+                    return table
         return None
 
     def get_meettabel_fundering_kesp(self) -> StructuredTable | None:
@@ -156,7 +159,9 @@ class SmartDocument:
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.KESPEN)
+                table = StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.KESPEN)
+                if table:
+                    return table
 
         return None
 
