@@ -160,7 +160,7 @@ class Rakdeel(RakBaseModel):
         constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
         aangetast_col = structured_table.get_column(header_in="Aangetast")
 
-        if not constructieonderdeel_col or not aangetast_col:
+        if not constructieonderdeel_col and not aangetast_col:
             logger.error("Could not find required columns in toestandsbepaling table")
             return dict_toestandsbepaling
 
@@ -192,6 +192,9 @@ class Rakdeel(RakBaseModel):
             Lijst van gebreken onttrokken uit de gebreken tabel in het duikrapport.
         """
 
+        niet_gevonden_kespen = 0
+        niet_gevonden_palen = 0
+
         for gebrek in gebreken:
             gebrek_assigned = False
 
@@ -217,9 +220,7 @@ class Rakdeel(RakBaseModel):
                     kesp.gebreken.append(gebrek)
                     gebrek_assigned = True
                 else:
-                    logger.warning(
-                        f"Kesp ID {kesp_id} gevonden in gebrek codering, maar geen overeenkomende Kesp in rakdeel {self.rakdeel_id}"
-                    )
+                    niet_gevonden_kespen += 1
 
             # Match paal
             elif not paal_id is None:
@@ -228,9 +229,17 @@ class Rakdeel(RakBaseModel):
                     paal.gebreken.append(gebrek)
                     gebrek_assigned = True
                 else:
-                    logger.warning(
-                        f"Paal ID {paal_id} gevonden in gebrek codering, maar geen overeenkomende Paal in rakdeel {self.rakdeel_id}"
-                    )
+                    niet_gevonden_palen += 1
 
             if not gebrek_assigned:
                 self.gebreken.append(gebrek)
+
+        if niet_gevonden_kespen:
+            logger.warning(
+                f"{niet_gevonden_kespen} kesp IDs gevonden in gebrek codering zonder overeenkomende kespen in rakdeel {self.rakdeel_id}"
+            )
+
+        if niet_gevonden_palen:
+            logger.warning(
+                f"{niet_gevonden_palen} paal IDs gevonden in gebrek codering zonder overeenkomende palen in rakdeel {self.rakdeel_id}"
+            )

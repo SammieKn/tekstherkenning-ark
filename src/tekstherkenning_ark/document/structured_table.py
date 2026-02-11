@@ -166,8 +166,8 @@ class StructuredTable:
         table_rows = cls.remove_rows_before_header(valid_table_rows, table_type)
 
         # If there is no data or there are no value rows, return an empty StructuredTable
-        if len(table_rows) <= table_type.values_offset:
-            return StructuredTable(columns=[], table_type=table_type)
+        if not table_rows or len(table_rows) <= table_type.values_offset:
+            return None
 
         # Transpose rows to columns
         columns = list(zip(*table_rows))
@@ -187,7 +187,7 @@ class StructuredTable:
         """Get a value from the structured table based on header, sub-header, unit and row index by matching against possible values. Matching is case-insensitive."""
 
         column = self.get_column(header_in, sub_header_in, unit_in)
-        if not column is None and column.values:
+        if column is not None and column.values:
             return clean_string(column.values[index])
 
         return None
@@ -217,6 +217,9 @@ class StructuredTable:
         TableColumn | None
             The matching TableColumn object or None if no match is found.
         """
+
+        if not self.columns:
+            return None
 
         # Convert single string inputs to lists for uniform processing
         if isinstance(header_in, str):
@@ -282,6 +285,9 @@ class StructuredTable:
     @classmethod
     def remove_rows_before_header(cls, table_rows: list[list[str]], table_type: TableType) -> list[list[str]]:
         """Remove rows before the header row based on the expected header column names for the given table type."""
+
+        if not table_rows:
+            return table_rows
 
         # Get the header row location
         first_header_row_index = next(
