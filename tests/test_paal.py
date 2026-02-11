@@ -9,7 +9,7 @@ def test_get_palen_dict_dimensions(paal_tables):
     """check type and dimensions"""
     palen_dict = Paal.from_doc_tables(paal_tables)
     assert isinstance(palen_dict, dict)
-    assert len(palen_dict) == 8
+    assert len(palen_dict) == 10
 
 
 def test_get_palen_no_onverwacht_resultaat(paal_tables):

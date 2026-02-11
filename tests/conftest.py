@@ -8,21 +8,22 @@ import json
 import pickle
 import pytest
 from pathlib import Path
-import importlib
 
-from tekstherkenning_ark.smart_document import SmartDocument
+from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark import constants
 
 # Test directory constants
 TEST_DIR = Path(__file__).parent
+TEST_DIR = Path(r"C:\repos\tekstherkenning-ark\tests")
 TEST_DATA_DIR = TEST_DIR / "data"
+
+constants.CACHE_DIR = Path(TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
 
 
 @pytest.fixture
 def kzg0202_from_test_cache():
     # Set a new CACHE_DIR for this test
-    constants.CACHE_DIR = Path(TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
     cached_doc_path = constants.CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
 
     return get_rak_kzg0202(cached_doc_path)
@@ -35,15 +36,19 @@ def get_rak_kzg0202(cached_doc_path):
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"],
                                analyze_result=None)
     # rak
-    rak = Rak.from_smart_document(loaded_doc)
+    rak = Rak.from_smart_document(loaded_doc, use_caching=False)  # use cached LLM parts but not rak itself
     return rak
 
 
 @pytest.fixture(scope="session")
-def paal_tables() -> list:
+def paal_tables():
     """Fixture to provide a complete mock Rak object with gebreken at various levels."""
-    cache_file = TEST_DATA_DIR / "palen_HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pkl"
-    return pickle.loads(cache_file.read_bytes())
+    cached_doc_path = constants.CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
+    doc_from_cache = pickle.loads(cached_doc_path.read_bytes())
+    loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"],
+                               analyze_result=None)
+    paal_tables = loaded_doc.get_meettabel_fundering_paal()
+    return paal_tables
 
 
 @pytest.fixture(scope="session")
@@ -60,27 +65,3 @@ def mock_rak_with_onverwachte_resultaten() -> Rak:
     json_path = TEST_DATA_DIR / "mock_rak_with_onverwachte_resultaten.json"
     data = json.loads(json_path.read_text(encoding="utf-8"))
     return Rak.model_validate(data)
-
-
-# from tekstherkenning_ark.parsed_pdf import ParsedPDF
-# from tekstherkenning_ark.constants import DATA_DIR
-
-# TEST_PDF_PATH = DATA_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
-
-
-# @pytest.fixture(scope="module")
-# def parsed_pdf_fixture():
-#     """Fixture to provide a ParsedPDF instance for tests."""
-#     return ParsedPDF.from_pdf(TEST_PDF_PATH, use_cache=True)
-
-
-# @pytest.fixture(scope="module")
-# def gebreken_tabel_fixture(parsed_pdf_fixture):
-#     """Fixture to provide the 'GEBREKEN' table from the ParsedPDF instance."""
-#     return parsed_pdf_fixture.result.tables[13]
-
-
-# @pytest.fixture(scope="module")
-# def palen_tabel_fixture(parsed_pdf_fixture):
-#     """Fixture to provide the 'FIGUREN' table from the ParsedPDF instance."""
-#     return parsed_pdf_fixture.result.tables[89]

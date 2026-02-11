@@ -1,14 +1,10 @@
 """
 Helper to create test data for the tests.
 Two steps:
-- create or copy the data from the CONSTANTS
-- in conftest.py the fixtures will load data from tests/data
+- create the data with this module, that reads TESTDATA_INI_PATH
+- in conftest.py the fixtures will load this data from tests/data
 
-This module handles first step (only).
-
-Step 1: Create or copy the relevant cache data.
-Provide a test PDF and output path cache in create_testdata.ini, then run this script to create the test data.
-
+This module handles first step (only) with help of
 create_testdata.ini - which you must create yourself, with the following content:
 
 [DEFAULT]
@@ -19,17 +15,16 @@ The function create_testdata() reads the ini file, extracts the paths, runs the 
  and creates the test data in subfolder of output_path_cache with stem name pdf.
  Recommended to use subfolder in tests/data/ for output_path_cache, when intention is to create unit tests for this repo.
 """
-import os
 import pickle
 import configparser
 from pathlib import Path
-from importlib import reload
 
-from tekstherkenning_ark.smart_document import SmartDocument
+from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark import constants
 
 TESTDATA_INI_PATH = __file__.replace("_create_testdata.py", "create_testdata.ini")
+TESTDATA_INI_PATH = Path(r"C:\repos\tekstherkenning-ark\tests\data\create_testdata.ini")
 
 
 def create_testdata():
@@ -66,7 +61,7 @@ def create_testdata():
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"], analyze_result=None)
 
     # AND rak instance -save only relevant Rak sections to save some size.
-    constants.CACHE_DIR = output_patch_cache
+    constants.CACHE_DIR = Path(output_patch_cache)
     _ = Rak.from_smart_document(loaded_doc)  # sets LLM cache in output_patch_cache as well
 
 
@@ -80,7 +75,7 @@ def get_testdata():
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"],
                                analyze_result=None)
     # return rak
-    kzg0202_from_test_cache = Rak.from_smart_document(loaded_doc)
+    kzg0202_from_test_cache = Rak.from_smart_document(loaded_doc, use_caching=False)
     return kzg0202_from_test_cache
 
 

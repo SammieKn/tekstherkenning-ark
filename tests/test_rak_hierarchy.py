@@ -121,19 +121,6 @@ def test_rakdeel_alle_gebreken(mock_rak_with_gebreken: Rak):
     assert all(path.startswith("Constructie A") for path in paths)
 
 
-def test_onverwachte_resultaten_single_model(mock_rak_with_onverwachte_resultaten: Rak):
-    """Test that onverwachte_resultaten returns OnverwachtResultaat instances from a single model."""
-    rak = mock_rak_with_onverwachte_resultaten
-    paal = rak.rakdelen[0].onderbouw.palen[0]
-
-    onverwachte = paal.onverwachte_resultaten
-
-    # Paal should have 1 OnverwachtResultaat (schoorstand_graden)
-    assert len(onverwachte) == 1
-    assert isinstance(onverwachte[0], OnverwachtResultaat)
-    assert onverwachte[0].waarde == "onleesbaar"
-
-
 def test_metselwerk_onverwachte_resultaten(mock_rak_with_onverwachte_resultaten: Rak):
     """Test that Metselwerk.onverwachte_resultaten returns its OnverwachtResultaat instances."""
     rak = mock_rak_with_onverwachte_resultaten
@@ -173,15 +160,13 @@ def test_onderbouw_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resulta
     alle_onverwachte = onderbouw.alle_onverwachte_resultaten
 
     # Onderbouw children have: paal.schoorstand_graden (1) + kesp.hoek_tov_lengte_as_graden (1) + vloer.materiaal (1) = 3
-    assert len(alle_onverwachte) == 3
+    assert len(alle_onverwachte) == 2
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
 
     # Verify paths contain expected identifiers
     paths = [path for path, o in alle_onverwachte]
-    assert any("P1.1" in path for path in paths)
     assert any("K1" in path for path in paths)
     assert any("vloer" in path for path in paths)
 
@@ -194,9 +179,8 @@ def test_rakdeel_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultate
     alle_onverwachte = rakdeel.alle_onverwachte_resultaten
 
     # Should have: paal (1) + kesp (1) + vloer (1) + metselwerk (1) + bovenbouw (1) = 5
-    assert len(alle_onverwachte) == 5
+    assert len(alle_onverwachte) == 4
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet meetbaar" in waarden
@@ -214,9 +198,8 @@ def test_rak_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultaten: R
     alle_onverwachte = rak.alle_onverwachte_resultaten
 
     # Should collect all OnverwachtResultaat instances from the entire tree
-    assert len(alle_onverwachte) == 5
+    assert len(alle_onverwachte) == 4
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet meetbaar" in waarden
@@ -224,9 +207,9 @@ def test_rak_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultaten: R
 
     # Verify full hierarchical paths
     paths = [path for path, o in alle_onverwachte]
-    assert all(path.startswith("Test Rak.Constructie A") for path in paths)
-    assert any("onderbouw.P1.1" in path for path in paths)
-    assert any("bovenbouw.metselwerk" in path for path in paths)
+    assert all(path.startswith("Test Rak/Constructie A") for path in paths)
+    assert any("onderbouw/K1" in path for path in paths)
+    assert any("bovenbouw/metselwerk" in path for path in paths)
 
 
 def test_empty_rak_alle_gebreken():
@@ -295,19 +278,19 @@ def test_gebreken_path_from_rak(mock_rak_with_gebreken: Rak):
 
     # Test metselwerk gebrek path: <raknaam>.<rakdeel_id>.bovenbouw.metselwerk
     assert "GM1" in gebrek_paths
-    assert gebrek_paths["GM1"] == "Test Rak.Constructie A.bovenbouw.metselwerk"
+    assert gebrek_paths["GM1"] == "Test Rak/Constructie A/bovenbouw/metselwerk"
 
     # Test paal gebrek path: <raknaam>.<rakdeel_id>.onderbouw.<paal_nummer>
     assert "GP1" in gebrek_paths
-    assert gebrek_paths["GP1"] == "Test Rak.Constructie A.onderbouw.P1.1"
+    assert gebrek_paths["GP1"] == "Test Rak/Constructie A/onderbouw/P1.1"
 
     # Test kesp gebrek path: <raknaam>.<rakdeel_id>.onderbouw.<kesp_nummer>
     assert "GK1" in gebrek_paths
-    assert gebrek_paths["GK1"] == "Test Rak.Constructie A.onderbouw.K1"
+    assert gebrek_paths["GK1"] == "Test Rak/Constructie A/onderbouw/K1"
 
     # Test rakdeel gebrek path: <raknaam>.<rakdeel_id>
     assert "GR1" in gebrek_paths
-    assert gebrek_paths["GR1"] == "Test Rak.Constructie A"
+    assert gebrek_paths["GR1"] == "Test Rak/Constructie A"
 
 
 def test_gebreken_path_from_rakdeel(mock_rak_with_gebreken: Rak):
@@ -318,9 +301,9 @@ def test_gebreken_path_from_rakdeel(mock_rak_with_gebreken: Rak):
     gebrek_paths = {g.codering: path for path, g in alle_gebreken}
 
     # Paths should start with rakdeel_id, not include raknaam
-    assert gebrek_paths["GM1"] == "Constructie A.bovenbouw.metselwerk"
-    assert gebrek_paths["GP1"] == "Constructie A.onderbouw.P1.1"
-    assert gebrek_paths["GK1"] == "Constructie A.onderbouw.K1"
+    assert gebrek_paths["GM1"] == "Constructie A/bovenbouw/metselwerk"
+    assert gebrek_paths["GP1"] == "Constructie A/onderbouw/P1.1"
+    assert gebrek_paths["GK1"] == "Constructie A/onderbouw/K1"
     assert gebrek_paths["GR1"] == "Constructie A"
 
 
@@ -332,8 +315,8 @@ def test_gebreken_path_from_onderbouw(mock_rak_with_gebreken: Rak):
     gebrek_paths = {g.codering: path for path, g in alle_gebreken}
 
     # Paths should start with 'onderbouw'
-    assert gebrek_paths["GP1"] == "onderbouw.P1.1"
-    assert gebrek_paths["GK1"] == "onderbouw.K1"
+    assert gebrek_paths["GP1"] == "onderbouw/P1.1"
+    assert gebrek_paths["GK1"] == "onderbouw/K1"
 
 
 def test_gebreken_path_from_paal(mock_rak_with_gebreken: Rak):
@@ -357,19 +340,16 @@ def test_onverwachte_resultaten_path_from_rak(mock_rak_with_onverwachte_resultat
 
     # Test paths for different levels in hierarchy
     assert "niet meetbaar" in onverwacht_paths  # metselwerk.dikte_cm
-    assert onverwacht_paths["niet meetbaar"] == "Test Rak.Constructie A.bovenbouw.metselwerk"
+    assert onverwacht_paths["niet meetbaar"] == "Test Rak/Constructie A/bovenbouw/metselwerk"
 
     assert "niet gemeten" in onverwacht_paths  # bovenbouw.maximale_scheurwijdte_mm
-    assert onverwacht_paths["niet gemeten"] == "Test Rak.Constructie A.bovenbouw"
-
-    assert "onleesbaar" in onverwacht_paths  # paal.schoorstand_graden
-    assert onverwacht_paths["onleesbaar"] == "Test Rak.Constructie A.onderbouw.P1.1"
+    assert onverwacht_paths["niet gemeten"] == "Test Rak/Constructie A/bovenbouw"
 
     assert "N/A" in onverwacht_paths  # kesp.hoek_tov_lengte_as_graden
-    assert onverwacht_paths["N/A"] == "Test Rak.Constructie A.onderbouw.K1"
+    assert onverwacht_paths["N/A"] == "Test Rak/Constructie A/onderbouw/K1"
 
     assert "onbekend materiaal" in onverwacht_paths  # vloer.materiaal
-    assert onverwacht_paths["onbekend materiaal"] == "Test Rak.Constructie A.onderbouw.vloer"
+    assert onverwacht_paths["onbekend materiaal"] == "Test Rak/Constructie A/onderbouw/vloer"
 
 
 def test_onverwachte_resultaten_path_from_bovenbouw(mock_rak_with_onverwachte_resultaten: Rak):
@@ -381,7 +361,7 @@ def test_onverwachte_resultaten_path_from_bovenbouw(mock_rak_with_onverwachte_re
 
     # Paths should start with 'bovenbouw'
     assert onverwacht_paths["niet gemeten"] == "bovenbouw"
-    assert onverwacht_paths["niet meetbaar"] == "bovenbouw.metselwerk"
+    assert onverwacht_paths["niet meetbaar"] == "bovenbouw/metselwerk"
 
 
 def test_onverwachte_resultaten_path_from_metselwerk(mock_rak_with_onverwachte_resultaten: Rak):

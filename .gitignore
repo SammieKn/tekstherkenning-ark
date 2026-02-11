@@ -156,3 +156,4 @@ cython_debug/
 /.idea/modules.xml
 /.idea/tekstherkenning-ark.iml
 /.idea/vcs.xml
+/tests/data/KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325/rak_KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325.pkl

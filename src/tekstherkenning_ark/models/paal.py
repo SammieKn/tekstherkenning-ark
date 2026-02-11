@@ -184,7 +184,7 @@ class Paal(RakBaseModel):
         return cls(
             paal_nummer=utils.clean_paal_id(table.get_value(header_in="Paalnummer", unit_in="[Px.y]", index=row_idx)),
             diameter_haaks=table.get_value("Diameter", "Haaks", "[mm]", row_idx),
-            diameter_parallel=table.get_value("Diameter", "Parrallel", "[mm]", row_idx),
+            diameter_parallel=table.get_value("Diameter", ["Parallel", "Parrallel"], "[mm]", row_idx),
             diameter_gemiddeld=table.get_value("Diameter", "Gemiddelde", "[mm]", row_idx),
             hoh_afstand_cm=table.get_value("Hart-op-hart-afstanden", "Afstand", "[cm]", row_idx),
             hoh_paalnummer=table.get_value("Hart-op-hart-afstanden", ["Paal", "aa"], "[Px.y]", row_idx),
@@ -192,7 +192,7 @@ class Paal(RakBaseModel):
             schoor_richting=table.get_value("Schoorstand", "Richting", "[+ ]", row_idx),
             afstand_frontwand_cm=table.get_value("Afstand", "Frontwand", "[cm]", row_idx),
             is_scheefstand=utils.parse_ja_nee(table.get_value("Schades", "Scheefstand", "[Ja/Nee]", row_idx)),
-            is_paalbreuk=utils.parse_ja_nee(table.get_value("Schades", "Paalbreuk", "[Ja/Nee]", row_idx)),
+            is_paalbreuk=utils.parse_ja_nee(table.get_value("Schades", ["Paalbreuk", "Paal breuk"], "[Ja/Nee]", row_idx)),
             is_aantasting=utils.parse_ja_nee(table.get_value("Schades", "Aantasting", "[Ja/Nee]", row_idx)),
             aansluiting_status=table.get_value("Aansluiting", "Aansluiting", "[G/S]", row_idx),
             positionering_aansluiting_cm=table.get_value("Aansluiting", "Positionering", "[+]+[cm]", row_idx),
