@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.document.structured_table import StructuredTable
@@ -57,6 +56,15 @@ class Kesp(RakBaseModel):
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Kesp instance."""
         return self.kesp_nummer
+
+    @property
+    def kesp_nummer_main(self) -> int | None:
+        """Extract the main number from the kesp_nummer, which is expected to be in the format 'Kx'"""
+        try:
+            return int(self.kesp_nummer.lstrip("K"))
+        except:
+            logger.warning(f"Failed to extract main nummer from kesp nummer {self.kesp_nummer}")
+            return None
 
     @classmethod
     def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Kesp]]:
@@ -121,6 +129,16 @@ class Kesp(RakBaseModel):
         if "" in kesp_dict:
             logger.warning("One or more kespen found without constructie ID. Removing all constructie IDs for kespen.")
             kesp_dict = utils.remove_construtie_id(kesp_dict)
+
+        # Validate kesp nummers are sequential within each constructie ID
+        prev_main_kesp_nummer = 0
+
+        for kesp in utils.dict_items_flat(kesp_dict):
+            if not kesp.kesp_nummer_main in [prev_main_kesp_nummer, prev_main_kesp_nummer + 1]:
+                logger.warning(
+                    f"Non-sequential kesp nummers found. Expected K{prev_main_kesp_nummer + 1} after K{prev_main_kesp_nummer} but instead got {kesp.kesp_nummer}"
+                )
+            prev_main_kesp_nummer = kesp.kesp_nummer_main
 
         return kesp_dict
 

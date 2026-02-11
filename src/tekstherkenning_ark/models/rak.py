@@ -280,7 +280,9 @@ class Rak(RakBaseModel):
         rakdeel_ids = sorted([rd.rakdeel_id for rd in rakdelen])
         gevonden_constructie_ids = sorted(list(set(list(palen_dict.keys()) + list(kespen_dict.keys()))))
         for constructie_id in gevonden_constructie_ids:
-            if not any(constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids):
+            if constructie_id and not any(
+                constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids
+            ):
                 logger.warning(f"Constructie ID '{constructie_id}' found in palen/kespen but not in rakdelen")
 
         # Create rak instance
