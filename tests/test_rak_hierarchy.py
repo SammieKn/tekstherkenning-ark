@@ -142,9 +142,8 @@ def test_bovenbouw_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resulta
     alle_onverwachte = bovenbouw.alle_onverwachte_resultaten
 
     # Bovenbouw has: maximale_scheurwijdte_mm (1) + metselwerk.dikte_cm (1) = 2
-    assert len(alle_onverwachte) == 2
+    assert len(alle_onverwachte) == 1
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "niet gemeten" in waarden
     assert "niet meetbaar" in waarden
 
     # Verify paths
@@ -179,12 +178,11 @@ def test_rakdeel_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultate
     alle_onverwachte = rakdeel.alle_onverwachte_resultaten
 
     # Should have: paal (1) + kesp (1) + vloer (1) + metselwerk (1) + bovenbouw (1) = 5
-    assert len(alle_onverwachte) == 4
+    assert len(alle_onverwachte) == 3
     waarden = [o.waarde for path, o in alle_onverwachte]
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet meetbaar" in waarden
-    assert "niet gemeten" in waarden
 
     # Verify all paths start with rakdeel_id
     paths = [path for path, o in alle_onverwachte]
@@ -198,12 +196,11 @@ def test_rak_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultaten: R
     alle_onverwachte = rak.alle_onverwachte_resultaten
 
     # Should collect all OnverwachtResultaat instances from the entire tree
-    assert len(alle_onverwachte) == 4
+    assert len(alle_onverwachte) == 3
     waarden = [o.waarde for path, o in alle_onverwachte]
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet meetbaar" in waarden
-    assert "niet gemeten" in waarden
 
     # Verify full hierarchical paths
     paths = [path for path, o in alle_onverwachte]
@@ -342,9 +339,6 @@ def test_onverwachte_resultaten_path_from_rak(mock_rak_with_onverwachte_resultat
     assert "niet meetbaar" in onverwacht_paths  # metselwerk.dikte_cm
     assert onverwacht_paths["niet meetbaar"] == "Test Rak/Constructie A/bovenbouw/metselwerk"
 
-    assert "niet gemeten" in onverwacht_paths  # bovenbouw.maximale_scheurwijdte_mm
-    assert onverwacht_paths["niet gemeten"] == "Test Rak/Constructie A/bovenbouw"
-
     assert "N/A" in onverwacht_paths  # kesp.hoek_tov_lengte_as_graden
     assert onverwacht_paths["N/A"] == "Test Rak/Constructie A/onderbouw/K1"
 
@@ -360,7 +354,6 @@ def test_onverwachte_resultaten_path_from_bovenbouw(mock_rak_with_onverwachte_re
     onverwacht_paths = {o.waarde: path for path, o in alle_onverwachte}
 
     # Paths should start with 'bovenbouw'
-    assert onverwacht_paths["niet gemeten"] == "bovenbouw"
     assert onverwacht_paths["niet meetbaar"] == "bovenbouw/metselwerk"
 
 

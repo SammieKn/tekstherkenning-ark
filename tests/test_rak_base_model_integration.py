@@ -135,28 +135,15 @@ def test_vloer_with_normal_values():
     assert vloer.is_beschadigd is False
 
 
-def test_bovenbouw_with_onverwacht_resultaat():
-    """Test that Bovenbouw automatically converts invalid values to OnverwachtResultaat."""
-
-    # Pass a string where a float is expected
-    bovenbouw = Bovenbouw(maximale_scheurwijdte_mm="niet gemeten", is_scheefstand_aanwezig=False)
-
-    assert isinstance(bovenbouw.maximale_scheurwijdte_mm, OnverwachtResultaat)
-    assert bovenbouw.maximale_scheurwijdte_mm.waarde == "niet gemeten"
-    assert bovenbouw.is_scheefstand_aanwezig is False
-
-
 def test_bovenbouw_with_normal_values():
     """Test that Bovenbouw accepts normal values."""
 
     bovenbouw = Bovenbouw(
-        maximale_scheurwijdte_mm=2.5,
         maximaal_aantal_scheuren_per_10_m=3,
         is_scheefstand_aanwezig=False,
         opmerkingen="Goede staat",
     )
 
-    assert bovenbouw.maximale_scheurwijdte_mm == 2.5
     assert bovenbouw.maximaal_aantal_scheuren_per_10_m == 3
     assert bovenbouw.opmerkingen == "Goede staat"
 

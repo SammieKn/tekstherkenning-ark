@@ -65,4 +65,3 @@ def test_kzg0202_kesp_breedtes(kzg0202_from_test_cache):
     assert len(all_non_numeric) == 1, f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
     assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
     # expected = 1549 + 1"NM" (total len 97, numerical len 96)
-    
