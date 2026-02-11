@@ -318,7 +318,7 @@ def dict_items_flat(item_dict: dict[str, list[T]]) -> list[T]:
     return [item for sublist in item_dict.values() for item in sublist]
 
 
-def remove_construtie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
+def remove_constructie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
     """Als er palen of kespen unassigned zijn, maak dan alle palen of kespen unassigned.
 
     Een deel unassigned is indicatie dat de tabel niet klopt. In dit geval moet dus alles unassigned blijven."""

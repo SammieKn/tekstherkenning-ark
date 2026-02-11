@@ -155,7 +155,7 @@ class Paal(RakBaseModel):
         # If one or more palen were found without a constructie ID, remove all construction ids
         if "" in paal_dict:
             logger.warning("One or more palen found without constructie ID. Removing all constructie IDs for palen.")
-            paal_dict = utils.remove_construtie_id(paal_dict)
+            paal_dict = utils.remove_constructie_id(paal_dict)
 
         # Validate paal nummers are sequential within each constructie ID
         prev_main_paal_nummer = 0

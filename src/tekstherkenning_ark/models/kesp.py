@@ -128,7 +128,7 @@ class Kesp(RakBaseModel):
         # If one or more kespen were found without a constructie ID, remove all construction ids
         if "" in kesp_dict:
             logger.warning("One or more kespen found without constructie ID. Removing all constructie IDs for kespen.")
-            kesp_dict = utils.remove_construtie_id(kesp_dict)
+            kesp_dict = utils.remove_constructie_id(kesp_dict)
 
         # Validate kesp nummers are sequential within each constructie ID
         prev_main_kesp_nummer = 0
