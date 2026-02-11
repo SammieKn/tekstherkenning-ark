@@ -11,6 +11,7 @@ from tekstherkenning_ark.utils import (
     is_algemeen_gebrek,
 )
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.llm.gebrek_classificatie import (
     ScheurMetselwerkLLM,
     ScheurHoutLLM,
@@ -42,37 +43,48 @@ class Gebrek(BaseModel):
     figuurnummer: str | NietBeschikbaar
 
     @classmethod
-    async def from_doc_tables(cls, rows: list[list[str]]) -> list[Gebrek]:
-        """Maak een lijst van Gebrek instanties uit tabel rijen.
+    async def from_doc_tables(cls, structured_table: StructuredTable | None) -> list[Gebrek]:
+        """Maak een lijst van Gebrek instanties uit een structured table.
 
         Parameters
         ----------
-        rows : list[list[str]]
-            Lijst van tabel rijen als lijsten van strings.
+        structured_table : StructuredTable | None
+            Structured table met gebrek informatie.
 
         Returns
         -------
         list[Gebrek]
             Een lijst van Gebrek instanties.
         """
-        expected_header = ["Gebrekcodering", "Omschrijving", "Figuurnummer"]
-
-        # Check header and filter content rows
-        if rows and rows[0] != expected_header:
-            logger.warning(
-                f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {rows[0] if rows else 'leeg'}..."
-            )
+        if structured_table is None:
+            logger.warning("Geen gebreken tabel gevonden")
             return []
 
-        # Skip header row
-        gebrek_rows = [r for r in rows if r[0] != expected_header[0]]
+        # Get columns
+        codering_col = structured_table.get_column(header_in="Gebrekcodering")
+        omschrijving_col = structured_table.get_column(header_in="Omschrijving")
+        figuurnummer_col = structured_table.get_column(header_in="Figuurnummer")
+
+        if not codering_col or not omschrijving_col or not figuurnummer_col:
+            logger.error("Could not find required columns in gebreken table")
+            return []
 
         # Parsing logica om Gebrek instanties te maken
         list_gebreken = []
-        for row in gebrek_rows:
-            if row[0].strip() == "-" or row[0].strip() == "":
+        num_rows = len(codering_col.values)
+
+        for row_idx in range(num_rows):
+            codering_val = codering_col.values[row_idx].strip()
+
+            # Stop at empty or dash rows
+            if codering_val == "-" or codering_val == "":
                 break
-            gebrek_instance = cls(codering=row[0], omschrijving=row[1], figuurnummer=row[2])
+
+            gebrek_instance = cls(
+                codering=codering_val,
+                omschrijving=omschrijving_col.values[row_idx],
+                figuurnummer=figuurnummer_col.values[row_idx],
+            )
             list_gebreken.append(gebrek_instance)
 
         # Classificeer elk gebrek naar een specifiek subtype indien mogelijk (parallel)

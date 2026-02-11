@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from functools import cache
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
@@ -43,6 +49,10 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
 
 def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     """Parse a Ja/Nee string to a boolean value."""
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+
+    if value is None:
+        return None
 
     if value.strip().lower().startswith("ja"):
         return True
@@ -54,13 +64,11 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     try:
         return NietBeschikbaar(value.strip())
     except:
-        pass
-
-    return OnverwachtResultaat(
-        waarde=value,
-        onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
-        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
-    )
+        return OnverwachtResultaat(
+            waarde=value,
+            onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
+            details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
+        )
 
 
 def clean_paal_id(value: str) -> str:
@@ -224,6 +232,7 @@ def remove_invalid_rows(table_rows: list[list[str]]) -> list[list[str]]:
     return [row for row in table_rows if len(row) == max_kolommen]
 
 
+@cache
 def clean_string(value: str) -> str:
     """Clean an input string"""
 
@@ -240,3 +249,33 @@ def clean_string(value: str) -> str:
     value = value.strip()
 
     return value
+
+
+def is_table_type_by_id_func(
+    tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
+) -> bool:
+    """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
+
+    Parameters
+    ----------
+    tabel : DocumentTable
+        De tabel om te controleren.
+    id_func : callable
+        Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).
+    threshold : float
+        Minimale fractie van cellen die moeten matchen.
+
+    Returns
+    -------
+    bool
+        True als de tabel voldoet aan het type.
+    """
+    if not tabel.cells:
+        return False
+
+    first_col_cells = [cell.content for cell in tabel.cells if cell.column_index == 0]
+    if not first_col_cells:
+        return False
+
+    matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
+    return (matching_cells / len(first_col_cells)) > threshold

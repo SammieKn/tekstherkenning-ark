@@ -224,14 +224,14 @@ class Rak(RakBaseModel):
         raknaam = doc.get_raknaam()
 
         # Laad palen, kespen en houtmonsters uit tabellen
-        paal_tables = doc.get_meettabel_fundering_paal()
-        palen_dict = Paal.from_doc_tables(paal_tables)
+        paal_structured_table = doc.get_meettabel_fundering_paal()
+        palen_dict = Paal.from_doc_tables(paal_structured_table)
 
-        kesp_tables = doc.get_meettabel_fundering_kesp()
-        kespen_dict = Kesp.from_doc_tables(kesp_tables)
+        kesp_structured_table = doc.get_meettabel_fundering_kesp()
+        kespen_dict = Kesp.from_doc_tables(kesp_structured_table)
 
-        houtmonster_tables = doc.get_meettabel_houtmonsters()
-        houtmonsters = Houtmonster.from_doc_tables(houtmonster_tables)
+        houtmonster_structured_table = doc.get_meettabel_houtmonsters()
+        houtmonsters = Houtmonster.from_doc_tables(houtmonster_structured_table)
 
         # Plaats houtmonsters onder juiste palen
         processed_houtmonsters: set[Houtmonster] = set()
@@ -272,6 +272,14 @@ class Rak(RakBaseModel):
         # totale_lengte_m = doc.get_rak_totale_lengte_m()
         # opmerkingen = doc.get_rak_opmerkingen()
 
+        # Validate all constructie ids in palen and kespen are present in rakdelen, otherwise log a warning
+        rakdeel_ids = sorted([rd.rakdeel_id for rd in rakdelen])
+        gevonden_constructie_ids = sorted(list(set(list(palen_dict.keys()) + list(kespen_dict.keys()))))
+        for constructie_id in gevonden_constructie_ids:
+            if not any(constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids):
+                logger.warning(f"Constructie ID '{constructie_id}' found in palen/kespen but not in rakdelen")
+
+        # Create rak instance
         rak_instance = cls(
             rakdelen=list(rakdelen),
             raknaam=raknaam,
