@@ -62,6 +62,10 @@ class Rak(RakBaseModel):
         for rakdeel in self.rakdelen:
             for paal in rakdeel.onderbouw.palen:
                 resultaat.append((rakdeel.rakdeel_id, paal))
+
+        # Add unassigned palen
+        for paal in self.unassigned_palen:
+            resultaat.append(("unassigned", paal))
         return resultaat
 
     @property
@@ -77,6 +81,10 @@ class Rak(RakBaseModel):
         for rakdeel in self.rakdelen:
             for kesp in rakdeel.onderbouw.kespen:
                 resultaat.append((rakdeel.rakdeel_id, kesp))
+
+        # Add unassigned kespen
+        for kesp in self.unassigned_kespen:
+            resultaat.append(("unassigned", kesp))
         return resultaat
 
     @property
@@ -93,6 +101,10 @@ class Rak(RakBaseModel):
             for paal in rakdeel.onderbouw.palen:
                 for houtmonster in paal.houtmonsters:
                     resultaat.append((rakdeel.rakdeel_id, paal.paal_nummer, houtmonster))
+
+        # Add unassigned houtmonsters
+        for houtmonster in self.unassigned_houtmonsters:
+            resultaat.append(("unassigned", "unassigned", houtmonster))
         return resultaat
 
     def to_excel(self, export_dir: Path | None = None) -> Path:
