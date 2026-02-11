@@ -102,10 +102,5 @@ class Onderbouw(RakBaseModel):
         if not self.palen:
             return None
 
-        aantal_slecht = sum(
-            1
-            for paal in self.palen
-            if isinstance(paal.aansluiting_status, AansluitingStatus)
-            and paal.aansluiting_status == AansluitingStatus.SLECHT
-        )
+        aantal_slecht = sum(1 for paal in self.palen if paal.aansluiting_status is AansluitingStatus.SLECHT)
         return round((aantal_slecht / len(self.palen)) * 100, 2)
