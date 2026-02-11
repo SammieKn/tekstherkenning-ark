@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cache
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
@@ -231,6 +232,7 @@ def remove_invalid_rows(table_rows: list[list[str]]) -> list[list[str]]:
     return [row for row in table_rows if len(row) == max_kolommen]
 
 
+@cache
 def clean_string(value: str) -> str:
     """Clean an input string"""
 
