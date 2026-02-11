@@ -27,6 +27,7 @@ from importlib import reload
 
 from tekstherkenning_ark.smart_document import SmartDocument
 from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark import constants
 
 TESTDATA_INI_PATH = __file__.replace("_create_testdata.py", "create_testdata.ini")
 
@@ -54,7 +55,7 @@ def create_testdata():
     relevant_sections = sorted(set(relevant_sections))
     relevant_sections = [doc.sections[i] for i in relevant_sections]
 
-    # copy cache_file = constants.CACHE_DIR / f"{pdf_path.stem}_docai_result.pkl" to output_patch_cache
+
     output_cache_file = Path(output_patch_cache) / f"{Path(pdf_path).stem}_docai_result.pkl"
     output_cache_file.parent.mkdir(parents=True, exist_ok=True)
     # write bytes
@@ -65,26 +66,15 @@ def create_testdata():
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"], analyze_result=None)
 
     # AND rak instance -save only relevant Rak sections to save some size.
-    # set environment variable to point to output_patch_cache for the LLM cache to be created there as well
-    os.environ["CACHE_DIR"] = output_patch_cache
-    # reload constants to reflect the updated environment variable
-    import tekstherkenning_ark.constants
-    reload(tekstherkenning_ark.constants)
-    from tekstherkenning_ark.constants import CACHE_DIR
-    print(f"Cache dir {CACHE_DIR}")  # This will now reflect the updated value from os.environ
-
+    constants.CACHE_DIR = output_patch_cache
     _ = Rak.from_smart_document(loaded_doc)  # sets LLM cache in output_patch_cache as well
 
 
 def get_testdata():
     """for debugging purposes/writing tests"""
     # set cache dir to tests/data/KZG0202 dir
-    os.environ["CACHE_DIR"] = __file__.replace("_create_testdata.py", "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
-
-    import tekstherkenning_ark.constants
-    reload(tekstherkenning_ark.constants)
-    from tekstherkenning_ark.constants import CACHE_DIR
-    cached_doc_path = CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
+    constants.CACHE_DIR = __file__.replace("_create_testdata.py", "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
+    cached_doc_path = constants.CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
     # load data
     doc_from_cache = pickle.loads(cached_doc_path.read_bytes())
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"],
