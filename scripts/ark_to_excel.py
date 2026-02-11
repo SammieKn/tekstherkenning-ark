@@ -620,7 +620,10 @@ def laad_testdata_voor_rak(rak_id: str) -> list[RakdeelTestData]:
 def vind_alle_ark_excels() -> list[Path]:
     ark_path = DATA_DIR / "ark"
     # Filter tijdelijke bestanden (beginnen met ~$)
-    return [f for f in ark_path.glob("*.xlsm") if not f.name.startswith("~$")]
+    ark_excels = [f for f in ark_path.glob("*.xlsm") if not f.name.startswith("~$")]
+    if not ark_excels:
+        raise FileNotFoundError(f"Geen ARK Excel bestanden gevonden in: {ark_path}")
+    return ark_excels
 
 
 def laad_alle_testdata() -> list[RakdeelTestData]:
