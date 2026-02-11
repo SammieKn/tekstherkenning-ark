@@ -6,7 +6,7 @@ from azure.ai.documentintelligence.models import DocumentTable, DocumentParagrap
 
 from tekstherkenning_ark.document.sectie import Sectie
 from tekstherkenning_ark.document.structured_table import StructuredTable, TableType
-from tekstherkenning_ark.utils import get_constructienaam, get_table_content, remove_titel_rows, remove_invalid_rows
+from tekstherkenning_ark.utils import get_constructienaam
 
 
 @dataclass
