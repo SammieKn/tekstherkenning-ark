@@ -1,14 +1,22 @@
+from __future__ import annotations
+
+from functools import cache
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
 KESP_ID_PATTERN = r"\bK\d+\b"
 RAK_ID_PATTERN = r"([A-Z]{3}\d{4})(-\d{2})?"
+CONSTRUCTIE_PATTERN = r"constructie [a-z]"
 ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
 
 
@@ -41,6 +49,10 @@ def get_table_content(table: DocumentTable) -> list[list[str]]:
 
 def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     """Parse a Ja/Nee string to a boolean value."""
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+
+    if value is None:
+        return None
 
     if value.strip().lower().startswith("ja"):
         return True
@@ -52,13 +64,11 @@ def parse_ja_nee(value: str) -> bool | NietBeschikbaar | OnverwachtResultaat:
     try:
         return NietBeschikbaar(value.strip())
     except:
-        pass
-
-    return OnverwachtResultaat(
-        waarde=value,
-        onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
-        details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
-    )
+        return OnverwachtResultaat(
+            waarde=value,
+            onverwacht_resultaat_type=OnverwachtResultaatType.PARSING_FOUT,
+            details=f"Kan Ja/Nee waarde niet parsen o.b.v. : `{value}`",
+        )
 
 
 def clean_paal_id(value: str) -> str:
@@ -153,6 +163,32 @@ def get_rak_id(value: str) -> str | None:
     return match.group(0) if match else None
 
 
+def get_constructienaam(value: str) -> str | None:
+    r"""Extract constructie naam from a string (e.g., 'Constructie A', 'constructie b').
+
+    Parameters
+    ----------
+    value : str
+        Input string that may contain a constructie naam
+
+    Returns
+    -------
+    str | None
+        The extracted constructie naam or None if not found
+    """
+    value = clean_string(value)
+
+    match = re.search(CONSTRUCTIE_PATTERN, value.lower())
+    if match:
+        naam = match.group(0)
+        if len(naam) > 1:
+            naam = naam[0].upper() + naam[1:-1] + naam[-1].upper()
+        else:
+            naam = naam.upper()
+        return naam
+    return None
+
+
 def is_algemeen_gebrek(value: str) -> bool:
     """Check if a string indicates an 'algemeen gebrek'."""
 
@@ -175,6 +211,28 @@ def is_houtmonster_id(value: str) -> bool:
     return True
 
 
+def remove_titel_rows(
+    table_rows: list[list[str]], titel_keywords: list[str] = ["Titel", "Rapportnummer"]
+) -> list[list[str]]:
+    """Remove rows from a table that contain any of the specified titel keywords."""
+
+    return [
+        row
+        for row in table_rows
+        if not any(keyword.lower() in cell.lower() for cell in row for keyword in titel_keywords)
+    ]
+
+
+def remove_invalid_rows(table_rows: list[list[str]]) -> list[list[str]]:
+    if not table_rows:
+        return table_rows
+
+    max_kolommen = max(len(row) for row in table_rows)
+
+    return [row for row in table_rows if len(row) == max_kolommen]
+
+
+@cache
 def clean_string(value: str) -> str:
     """Clean an input string"""
 
@@ -193,11 +251,31 @@ def clean_string(value: str) -> str:
     return value
 
 
-def convert_string_to_int(some_str: str) -> int | str:
-    """Convert a string to an integer, returning an OnverwachtResultaat on failure."""
+def is_table_type_by_id_func(
+    tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
+) -> bool:
+    """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
 
-    try:
-        return int(some_str.strip())
-    except BaseException:
-        # no need to raise here, OnverwachtResultaat will handle this later
-        return some_str
+    Parameters
+    ----------
+    tabel : DocumentTable
+        De tabel om te controleren.
+    id_func : callable
+        Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).
+    threshold : float
+        Minimale fractie van cellen die moeten matchen.
+
+    Returns
+    -------
+    bool
+        True als de tabel voldoet aan het type.
+    """
+    if not tabel.cells:
+        return False
+
+    first_col_cells = [cell.content for cell in tabel.cells if cell.column_index == 0]
+    if not first_col_cells:
+        return False
+
+    matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
+    return (matching_cells / len(first_col_cells)) > threshold

@@ -74,29 +74,9 @@ def get_logger(name: str) -> logging.Logger:
     # Ensure root logger is configured for exception handling
     _ensure_root_logger_configured()
 
+    # Return a logger that will use the root logger's handlers via propagation
     logger = logging.getLogger(name)
-
-    # Only configure if not already configured
-    if not logger.handlers:
-        logger.setLevel(logging.DEBUG)
-
-        # File handler - DEBUG level and above
-        file_handler = RotatingFileHandler(
-            LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 10 MB
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
-        file_handler.setFormatter(file_formatter)
-
-        # Console handler - INFO level and above
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.INFO)
-        console_formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
-        console_handler.setFormatter(console_formatter)
-
-        # Add handlers
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+    logger.setLevel(logging.DEBUG)
 
     return logger
 

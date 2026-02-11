@@ -16,7 +16,7 @@ from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
-from tekstherkenning_ark.smart_document import SmartDocument
+from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import get_rak_id
 
@@ -221,17 +221,17 @@ class Rak(RakBaseModel):
             rak_instance = pickle.loads(cache_file.read_bytes())
             return rak_instance
 
-        raknaam = get_rak_id(doc.pdf_path.stem) or "onbekend_rak"
+        raknaam = doc.get_raknaam()
 
         # Laad palen, kespen en houtmonsters uit tabellen
-        paal_tables = doc.get_meettabel_fundering_paal()
-        palen_dict = Paal.from_doc_tables(paal_tables)
+        paal_structured_table = doc.get_meettabel_fundering_paal()
+        palen_dict = Paal.from_doc_tables(paal_structured_table)
 
-        kesp_tables = doc.get_meettabel_fundering_kesp()
-        kespen_dict = Kesp.from_doc_tables(kesp_tables)
+        kesp_structured_table = doc.get_meettabel_fundering_kesp()
+        kespen_dict = Kesp.from_doc_tables(kesp_structured_table)
 
-        houtmonster_tables = doc.get_meettabel_houtmonsters()
-        houtmonsters = Houtmonster.from_doc_tables(houtmonster_tables)
+        houtmonster_structured_table = doc.get_meettabel_houtmonsters()
+        houtmonsters = Houtmonster.from_doc_tables(houtmonster_structured_table)
 
         # Plaats houtmonsters onder juiste palen
         processed_houtmonsters: set[Houtmonster] = set()
@@ -272,6 +272,14 @@ class Rak(RakBaseModel):
         # totale_lengte_m = doc.get_rak_totale_lengte_m()
         # opmerkingen = doc.get_rak_opmerkingen()
 
+        # Validate all constructie ids in palen and kespen are present in rakdelen, otherwise log a warning
+        rakdeel_ids = sorted([rd.rakdeel_id for rd in rakdelen])
+        gevonden_constructie_ids = sorted(list(set(list(palen_dict.keys()) + list(kespen_dict.keys()))))
+        for constructie_id in gevonden_constructie_ids:
+            if not any(constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids):
+                logger.warning(f"Constructie ID '{constructie_id}' found in palen/kespen but not in rakdelen")
+
+        # Create rak instance
         rak_instance = cls(
             rakdelen=list(rakdelen),
             raknaam=raknaam,
@@ -288,7 +296,7 @@ if __name__ == "__main__":
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 
-    rak = Rak.from_smart_document(doc)
+    rak = Rak.from_smart_document(doc, use_caching=False)
 
     for rd in rak.rakdelen:
         print(rd.rakdeel_id)

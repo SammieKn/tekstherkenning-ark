@@ -3,16 +3,15 @@ from __future__ import annotations
 import asyncio
 from typing import Literal
 from pydantic import BaseModel
-from azure.ai.documentintelligence.models import DocumentTable
 
 from tekstherkenning_ark.utils import (
     get_paal_id,
-    get_table_content,
     contains_kesp_id,
     contains_paal_id,
     is_algemeen_gebrek,
 )
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.llm.gebrek_classificatie import (
     ScheurMetselwerkLLM,
     ScheurHoutLLM,
@@ -44,46 +43,48 @@ class Gebrek(BaseModel):
     figuurnummer: str | NietBeschikbaar
 
     @classmethod
-    async def from_doc_tables(cls, tables: list[DocumentTable]) -> list[Gebrek]:
-        """Maak een lijst van Gebrek instanties uit meerdere document tabellen.
+    async def from_doc_tables(cls, structured_table: StructuredTable | None) -> list[Gebrek]:
+        """Maak een lijst van Gebrek instanties uit een structured table.
 
         Parameters
         ----------
-        tables : list[DocumentTable]
-            Lijst van DocumentTable objecten zoals teruggegeven door Azure Document Intelligence SDK
-            behorend bij de gebreken bijlage
+        structured_table : StructuredTable | None
+            Structured table met gebrek informatie.
 
         Returns
         -------
         list[Gebrek]
             Een lijst van Gebrek instanties.
         """
-        expected_header = ["Gebrekcodering", "Omschrijving", "Figuurnummer"]
+        if structured_table is None:
+            logger.warning("Geen gebreken tabel gevonden")
+            return []
 
-        gebrek_rows: list[list[str]] = []
-        for table in tables:
-            # Extraheer tabel inhoud als lijst van rijen
-            table_rows = get_table_content(table)
+        # Get columns
+        codering_col = structured_table.get_column(header_in="Gebrekcodering")
+        omschrijving_col = structured_table.get_column(header_in="Omschrijving")
+        figuurnummer_col = structured_table.get_column(header_in="Figuurnummer")
 
-            # Controleer header van eerste tabel
-            if (len(gebrek_rows) == 0 and table_rows[0] != expected_header) or len(table_rows[0]) < len(
-                expected_header
-            ):
-                logger.warning(
-                    f"Onverwachte tabel header. Verwacht {expected_header}, kreeg {table_rows[0]}, door naar volgende tabel..."
-                )
-                continue  # Ga door naar volgende tabel in plaats van een fout te gooien
-
-            # Sla header rijen over en voeg toe aan gebrek_rows
-            content_rows = [r for r in table_rows if r[0] != expected_header[0]]
-            gebrek_rows.extend(content_rows)
+        if not codering_col or not omschrijving_col or not figuurnummer_col:
+            logger.error("Could not find required columns in gebreken table")
+            return []
 
         # Parsing logica om Gebrek instanties te maken
         list_gebreken = []
-        for row in gebrek_rows:
-            if row[0].strip() == "-" or row[0].strip() == "":
+        num_rows = len(codering_col.values)
+
+        for row_idx in range(num_rows):
+            codering_val = codering_col.values[row_idx].strip()
+
+            # Stop at empty or dash rows
+            if codering_val == "-" or codering_val == "":
                 break
-            gebrek_instance = cls(codering=row[0], omschrijving=row[1], figuurnummer=row[2])
+
+            gebrek_instance = cls(
+                codering=codering_val,
+                omschrijving=omschrijving_col.values[row_idx],
+                figuurnummer=figuurnummer_col.values[row_idx],
+            )
             list_gebreken.append(gebrek_instance)
 
         # Classificeer elk gebrek naar een specifiek subtype indien mogelijk (parallel)
