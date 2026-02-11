@@ -57,7 +57,7 @@ class Gebrek(BaseModel):
             Een lijst van Gebrek instanties.
         """
         if structured_table is None:
-            logger.warning("Geen gebreken tabel gevonden")
+            logger.warning(f"Geen {cls.__name__.lower()} tabel gevonden")
             return []
 
         # Get columns

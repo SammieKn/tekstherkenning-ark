@@ -92,7 +92,7 @@ class Paal(RakBaseModel):
         return int(self.paal_nummer.split(".")[1])
 
     @classmethod
-    def from_doc_tables(cls, structured_table: StructuredTable) -> dict[str, list[Paal]]:
+    def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Paal]]:
         """Parse and return a list of Paal objects from a structured table.
 
         Parameters
@@ -105,7 +105,9 @@ class Paal(RakBaseModel):
         dict[str, list[Paal]]
             A dictionary mapping constructie ID's to lists of Paal objects containing information from the table
         """
-
+        if structured_table is None:
+            logger.warning(f"Geen {cls.__name__.lower()} tabel gevonden")
+            return {}
         # Get the paalnummer column to identify valid paal rows
         paal_nummer_col = structured_table.get_column(header_in="Paalnummer", unit_in="[Px.y]")
         opmerkingen_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")

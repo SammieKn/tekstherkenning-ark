@@ -59,7 +59,7 @@ class Kesp(RakBaseModel):
         return self.kesp_nummer
 
     @classmethod
-    def from_doc_tables(cls, structured_table: StructuredTable) -> dict[str, list[Kesp]]:
+    def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Kesp]]:
         """Parse and return a list of Kesp objects from a structured table.
 
         Parameters
@@ -72,7 +72,9 @@ class Kesp(RakBaseModel):
         dict[str, list[Kesp]]
             A dictionary mapping constructie ID's to lists of Kesp objects containing information from the table
         """
-
+        if structured_table is None:
+            logger.warning(f"Geen {cls.__name__.lower()} tabel gevonden")
+            return {}
         # Get the kespnummer column to identify valid kesp rows
         kesp_nummer_col = structured_table.get_column(header_in="Kespnummer", unit_in="[Ky]")
         opmerkingen_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")

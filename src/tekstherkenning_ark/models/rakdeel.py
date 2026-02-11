@@ -67,6 +67,23 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    # @property
+    # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
+    # def maximaal_aantal_scheuren_per_10_m(self) -> int | None:
+    #     """Aantal scheuren genormaliseerd naar 10 meter lengte."""
+    #     if self.lengte_m is None or self.lengte_m == 0:
+    #         return None
+    #     aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
+    #     return round((aantal_scheuren / self.lengte_m) * 10)
+
+    @property
+    def aantal_scheuren_per_meter(self) -> float | None:
+        """Scheur-dichtheid per meter."""
+        if self.lengte_m is None or self.lengte_m == 0:
+            return None
+        aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
+        return round(aantal_scheuren / self.lengte_m, 2)
+
     @classmethod
     async def from_smart_doc_section(
         cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]
@@ -121,7 +138,7 @@ class Rakdeel(RakBaseModel):
         )
 
         # Add gebreken to rakdeel and subcomponents
-        rakdeel.assign_gebreken_to_children(gebreken)
+        rakdeel.add_gebreken(gebreken)
 
         return rakdeel
 
@@ -130,7 +147,7 @@ class Rakdeel(RakBaseModel):
         """Haalt een lijst van objecten (Paal of Kesp) op voor dit rakdeel op basis van de constructie naam."""
 
         rakdeel_id_lower = rakdeel_id.lower()
-        key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), None)
+        key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
 
         return obj_dict.get(key, [])
 
@@ -160,7 +177,7 @@ class Rakdeel(RakBaseModel):
         constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
         aangetast_col = structured_table.get_column(header_in="Aangetast")
 
-        if not constructieonderdeel_col and not aangetast_col:
+        if not constructieonderdeel_col or not aangetast_col:
             logger.error("Could not find required columns in toestandsbepaling table")
             return dict_toestandsbepaling
 
@@ -181,7 +198,7 @@ class Rakdeel(RakBaseModel):
 
         return dict_toestandsbepaling
 
-    def assign_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
+    def add_gebreken(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken
         verdeeld over onderliggende componenten (kespen, palen, etc). Algemene
         gebreken worden opgeslagen in het Rakdeel model zelf.
@@ -192,54 +209,41 @@ class Rakdeel(RakBaseModel):
             Lijst van gebreken onttrokken uit de gebreken tabel in het duikrapport.
         """
 
-        niet_gevonden_kespen = 0
-        niet_gevonden_palen = 0
-
         for gebrek in gebreken:
-            gebrek_assigned = False
 
             # Try to extract kesp or paal id
             kesp_id = get_kesp_id(gebrek.codering)
             paal_id = get_paal_id(gebrek.codering)
 
-            # Match gebreken to onderdeel
+            # Match gebreken to o
             if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
                 if self.bovenbouw.metselwerk is None:
                     self.bovenbouw.metselwerk = Metselwerk()
                 self.bovenbouw.metselwerk.gebreken.append(gebrek)
-                gebrek_assigned = True
 
             elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):
                 self.bovenbouw.gebreken.append(gebrek)
-                gebrek_assigned = True
 
             # Match kesp
             elif not kesp_id is None:
                 kesp = next((k for k in self.onderbouw.kespen if k.kesp_nummer == kesp_id), None)
                 if kesp:
                     kesp.gebreken.append(gebrek)
-                    gebrek_assigned = True
                 else:
-                    niet_gevonden_kespen += 1
+                    logger.warning(
+                        f"Kesp ID {kesp_id} gevonden in gebrek codering, maar geen overeenkomende Kesp in rakdeel {self.rakdeel_id}"
+                    )
 
             # Match paal
             elif not paal_id is None:
                 paal = next((p for p in self.onderbouw.palen if p.paal_nummer == paal_id), None)
                 if paal:
                     paal.gebreken.append(gebrek)
-                    gebrek_assigned = True
                 else:
-                    niet_gevonden_palen += 1
+                    logger.warning(
+                        f"Paal ID {paal_id} gevonden in gebrek codering, maar geen overeenkomende Paal in rakdeel {self.rakdeel_id}"
+                    )
 
-            if not gebrek_assigned:
+            else:
+                # If it doesnt belong to metselwerk, paal or kesp add to rakdeel itself
                 self.gebreken.append(gebrek)
-
-        if niet_gevonden_kespen:
-            logger.warning(
-                f"{niet_gevonden_kespen} kesp IDs gevonden in gebrek codering zonder overeenkomende kespen in rakdeel {self.rakdeel_id}"
-            )
-
-        if niet_gevonden_palen:
-            logger.warning(
-                f"{niet_gevonden_palen} paal IDs gevonden in gebrek codering zonder overeenkomende palen in rakdeel {self.rakdeel_id}"
-            )
