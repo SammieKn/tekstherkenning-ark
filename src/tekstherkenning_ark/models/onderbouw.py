@@ -47,7 +47,7 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_onderzochte_palen(self) -> int:
         """Aantal palen dat daadwerkelijk onderzocht is."""
-        return sum(1 for paal in self.palen if paal.is_onderzocht is True)
+        return sum(1 for paal in self.palen if paal.is_onderzocht)
 
     @property
     def percentage_slechte_palen(self) -> float | None:
@@ -55,7 +55,7 @@ class Onderbouw(RakBaseModel):
         if not self.palen:
             return None
 
-        aantal_slecht = sum(1 for paal in self.palen if paal.is_aantasting is True)
+        aantal_slecht = sum(1 for paal in self.palen if paal.is_aantasting)
         return round((aantal_slecht / len(self.palen)) * 100, 2)
 
     # TODO: Checken met Geert hoe een ongewenste schoorstand gedefinieerd is en of dit veld in de meettabel palen staat.
@@ -74,12 +74,12 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_palen_met_scheefstand(self) -> int:
         """Aantal palen met geconstateerde scheefstand."""
-        return sum(1 for paal in self.palen if paal.is_scheefstand is True)
+        return sum(1 for paal in self.palen if paal.is_scheefstand)
 
     @property
     def aantal_palen_met_paalbreuk(self) -> int:
         """Aantal palen met geconstateerde paalbreuk."""
-        return sum(1 for paal in self.palen if paal.is_paalbreuk is True)
+        return sum(1 for paal in self.palen if paal.is_paalbreuk)
 
     @property
     def totaal_aantal_kespen(self) -> int:
@@ -93,7 +93,7 @@ class Onderbouw(RakBaseModel):
         if not self.kespen:
             return None
 
-        aantal_beschadigd = sum(1 for kesp in self.kespen if kesp.is_vervormd is True or kesp.is_aangetast is True)
+        aantal_beschadigd = sum(1 for kesp in self.kespen if kesp.is_vervormd or kesp.is_aangetast)
         return round((aantal_beschadigd / len(self.kespen)) * 100, 2)
 
     @property
