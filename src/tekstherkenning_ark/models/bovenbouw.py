@@ -48,15 +48,8 @@ class Bovenbouw(RakBaseModel):
     @property
     def maximale_scheurwijdte_mm(self) -> float | None:
         """Grootste scheurwijdte uit alle ScheurMetselwerk gebreken."""
-        if self.metselwerk is None:
-            return None
 
-        scheurwijdtes = [
-            gebrek.scheurwijdte_mm
-            for gebrek in self.metselwerk.gebreken
-            if isinstance(gebrek, ScheurMetselwerk) and isinstance(gebrek.scheurwijdte_mm, (int, float))
-        ]
-        return max(scheurwijdtes) if scheurwijdtes else None
+        return max(self.lijst_scheurwijdtes) if self.lijst_scheurwijdtes else None
 
     @property
     def lijst_scheurwijdtes(self) -> list[float]:
