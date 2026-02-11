@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import cached_property
+import math
 from typing import Literal
 from azure.ai.documentintelligence.models import DocumentTable
 
@@ -27,34 +28,81 @@ class TableType(StrEnum):
     TOESTANDSBEPALING = "toestandsbepaling"
 
     @cached_property
-    def header_offset(self) -> int:
-        """Houtmonsters have their header on the second row, rest is first row."""
-
-        if self is self.HOUTMONSTERS:
-            return 1
-        return 0
-
-    @cached_property
-    def sub_header_offset(self) -> int | None:
+    def has_sub_header(self) -> bool:
         """Only palen and kespen have a sub-header row."""
 
-        if self in [self.PALEN, self.KESPEN]:
-            return 1
-        return None
+        return self in [self.PALEN, self.KESPEN]
 
     @cached_property
-    def unit_offset(self) -> int | None:
+    def has_unit(self) -> bool:
         """Only palen, kespen and houtmonsters have a unit row."""
 
-        if self in [self.PALEN, self.KESPEN, self.HOUTMONSTERS]:
-            return 2
-        return None
+        return self in [self.PALEN, self.KESPEN, self.HOUTMONSTERS]
+
+    @cached_property
+    def unit_offset(self) -> int:
+        """Return the expected row index for the unit row based on the table type."""
+
+        return int(self.has_sub_header) + int(self.has_unit)
 
     @cached_property
     def values_offset(self) -> int:
         """Calculate the offset for the first row of values based on the presence of header, sub-header and unit rows."""
 
-        return max(self.header_offset, self.sub_header_offset or 0, self.unit_offset or 0) + 1
+        return self.unit_offset + 1
+
+    @cached_property
+    def expected_header_colnames(self) -> list[str]:
+        """Return expected header column names for this table type in lowercase for case-insensitive matching."""
+
+        if self is self.PALEN:
+            return [
+                "paalnummer",
+                "diameter",
+                "hart-op-hart-afstanden",
+                "schoorstand",
+                "afstand",
+                "schades",
+                "aansluiting",
+                "opmerkingen",
+                "onderzocht",
+            ]
+        elif self is self.KESPEN:
+            return [
+                "kespnummer",
+                "afmetingen",
+                "hoek t.o.v. lengte-as frontwand",
+                "lengte uitstekende deel t.o.v. voorzijde frontwand",
+                "mate van inknijping",
+                "indrukking van de funderingspaal in de kesp",
+                "opsluitklos",
+                "schades",
+            ]
+        elif self is self.HOUTMONSTERS:
+            return [
+                "codering",
+                "rakcode",
+                "paalnummer",
+                "houtmonster",
+                "diameter paal",
+                "hoogte t.o.v. nap",
+                "hoogte t.o.v. kesp/vloer",
+                "wankant aanwezig?",
+                "datum monstername",
+            ]
+        elif self is self.GEBREKEN:
+            return [
+                "gebrekcodering",
+                "omschrijving",
+                "figuurnummer",
+            ]
+        elif self is self.TOESTANDSBEPALING:
+            return [
+                "constructieonderdeel",
+                "aangetast",
+            ]
+        else:
+            raise NotImplementedError(f"Expected header column names not defined for table type: {self}")
 
 
 @dataclass(frozen=True)
@@ -113,7 +161,9 @@ class StructuredTable:
             if id_func is None or is_table_type_by_id_func(tabel, id_func):
                 rows.extend(get_table_content(tabel))
         rows_wo_header = remove_titel_rows(rows)
-        table_rows = remove_invalid_rows(rows_wo_header)
+        valid_table_rows = remove_invalid_rows(rows_wo_header)
+
+        table_rows = cls.remove_rows_before_header(valid_table_rows, table_type)
 
         # If there is no data or there are no value rows, return an empty StructuredTable
         if len(table_rows) <= table_type.values_offset:
@@ -218,6 +268,33 @@ class StructuredTable:
         self.col_lookup_cache[cache_key] = None
         return None
 
+    @staticmethod
+    def is_header_row(row: list[str], table_type: TableType, threshold: float = 0.5) -> bool:
+        """Return whether the current row is likely to be a header row or not"""
+
+        row_clean = [clean_string(val).lower() for val in row]
+        row_values = [val for val in row_clean if val]
+
+        present_count = sum(val in table_type.expected_header_colnames for val in row_values)
+        required_count = int(math.ceil(len(row_values) * threshold))
+        return present_count >= required_count
+
+    @classmethod
+    def remove_rows_before_header(cls, table_rows: list[list[str]], table_type: TableType) -> list[list[str]]:
+        """Remove rows before the header row based on the expected header column names for the given table type."""
+
+        # Get the header row location
+        first_header_row_index = next(
+            (index for index, row in enumerate(table_rows) if cls.is_header_row(row, table_type)), None
+        )
+
+        # Return the table rows starting from the header row (inclusive) or the original rows if no header row is found
+        if first_header_row_index is not None:
+            return table_rows[first_header_row_index:]
+
+        logger.warning(f"No header row found for table type {table_type}. Returning original rows.")
+        return table_rows
+
 
 @dataclass
 class TableColumn:
@@ -254,16 +331,16 @@ class TableColumn:
         last_unit_value = ""
 
         for col in columns:
-            if col[table_type.header_offset]:
-                last_header_value = col[table_type.header_offset]
+            if col[0]:
+                last_header_value = col[0]
                 last_sub_header_value = ""
                 last_unit_value = ""
 
-            if table_type.sub_header_offset is not None and col[table_type.sub_header_offset]:
-                last_sub_header_value = col[table_type.sub_header_offset]
+            if table_type.has_sub_header and col[1]:
+                last_sub_header_value = col[1]
                 last_unit_value = ""
 
-            if table_type.unit_offset is not None and col[table_type.unit_offset]:
+            if table_type.has_unit and col[table_type.unit_offset]:
                 last_unit_value = col[table_type.unit_offset]
 
             values = list(col[table_type.values_offset :])
