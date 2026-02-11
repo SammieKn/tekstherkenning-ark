@@ -122,7 +122,7 @@ class Rakdeel(RakBaseModel):
         )
 
         # Add gebreken to rakdeel and subcomponents
-        rakdeel.assign_gebreken_to_children(overige_gebreken)
+        rakdeel.assign_overige_gebreken_to_children(overige_gebreken)
 
         return rakdeel
 
@@ -227,7 +227,7 @@ class Rakdeel(RakBaseModel):
 
         return dict_toestandsbepaling
 
-    def assign_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
+    def assign_overige_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken
         verdeeld over onderliggende componenten (kespen, palen, etc). Algemene
         gebreken worden opgeslagen in het Rakdeel model zelf.
@@ -238,15 +238,8 @@ class Rakdeel(RakBaseModel):
             Lijst van gebreken onttrokken uit de gebreken tabel in het duikrapport.
         """
 
-        niet_gevonden_kespen = 0
-        niet_gevonden_palen = 0
-
         for gebrek in gebreken:
             gebrek_assigned = False
-
-            # Try to extract kesp or paal id
-            kesp_id = get_kesp_id(gebrek.codering)
-            paal_id = get_paal_id(gebrek.codering)
 
             # Match gebreken to onderdeel
             if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
@@ -259,33 +252,5 @@ class Rakdeel(RakBaseModel):
                 self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
 
-            # Match kesp
-            elif not kesp_id is None:
-                kesp = next((k for k in self.onderbouw.kespen if k.kesp_nummer == kesp_id), None)
-                if kesp:
-                    kesp.gebreken.append(gebrek)
-                    gebrek_assigned = True
-                else:
-                    niet_gevonden_kespen += 1
-
-            # Match paal
-            elif not paal_id is None:
-                paal = next((p for p in self.onderbouw.palen if p.paal_nummer == paal_id), None)
-                if paal:
-                    paal.gebreken.append(gebrek)
-                    gebrek_assigned = True
-                else:
-                    niet_gevonden_palen += 1
-
             if not gebrek_assigned:
                 self.gebreken.append(gebrek)
-
-        if niet_gevonden_kespen:
-            logger.warning(
-                f"{niet_gevonden_kespen} kesp IDs gevonden in gebrek codering zonder overeenkomende kespen in rakdeel {self.rakdeel_id}"
-            )
-
-        if niet_gevonden_palen:
-            logger.warning(
-                f"{niet_gevonden_palen} paal IDs gevonden in gebrek codering zonder overeenkomende palen in rakdeel {self.rakdeel_id}"
-            )
