@@ -130,7 +130,7 @@ class Rakdeel(RakBaseModel):
         """Haalt een lijst van objecten (Paal of Kesp) op voor dit rakdeel op basis van de constructie naam."""
 
         rakdeel_id_lower = rakdeel_id.lower()
-        key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), "")
+        key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), None)
 
         return obj_dict.get(key, [])
 
