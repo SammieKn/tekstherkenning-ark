@@ -67,6 +67,24 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    # @property
+    # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
+    # def maximaal_aantal_scheuren_per_10_m(self) -> int | None:
+    #     """Aantal scheuren genormaliseerd naar 10 meter lengte."""
+    #     if self.lengte_m is None or self.lengte_m == 0:
+    #         return None
+    #     aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
+    #     return round((aantal_scheuren / self.lengte_m) * 10)
+
+    @property
+    def aantal_scheuren_per_meter(self) -> float | None:
+        """Scheur-dichtheid per meter."""
+        if not self.lengte_m:
+            return None
+
+        aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
+        return round(aantal_scheuren / self.lengte_m, 2)
+
     @classmethod
     async def from_smart_doc_section(
         cls, section: RakdeelSectie, kespen_dict: dict[str, list[Kesp]], palen_dict: dict[str, list[Paal]]
