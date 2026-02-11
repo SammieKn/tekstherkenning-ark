@@ -145,7 +145,7 @@ class Kesp(RakBaseModel):
         )
 
         return cls(
-            kesp_nummer=table.get_value(header_in="Kespnummer", unit_in="[Ky]", index=row_idx),
+            kesp_nummer=utils.clean_kesp_id(table.get_value(header_in="Kespnummer", unit_in="[Ky]", index=row_idx)),
             hoogte_cm=table.get_value(header_in="Afmetingen", sub_header_in="Hoogte", unit_in="[cm]", index=row_idx),
             breedte_cm=table.get_value(header_in="Afmetingen", sub_header_in="Breedte", unit_in="[cm]", index=row_idx),
             hoek_tov_lengte_as_graden=table.get_value(
