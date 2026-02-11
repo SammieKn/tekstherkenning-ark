@@ -40,10 +40,19 @@ class Rak(RakBaseModel):
     # Te vinden in paragraaf 2.2.1 (paspoortgegevens) en/of de constructiebeschrijving (eerste zin van paragraaf 5.x).
     totale_lengte_m: float
 
+    unassigned_palen: list[Paal] = []
+    unassigned_kespen: list[Kesp] = []
+    unassigned_houtmonsters: list[Houtmonster] = []
+
     @property
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Rak instance."""
         return str(self.raknaam)
+
+    @property
+    def aantal_rakdelen(self) -> int:
+        """Totaal aantal rakdelen in dit rak."""
+        return len(self.rakdelen)
 
     @property
     def alle_palen(self) -> list[tuple[str, Paal]]:
@@ -58,6 +67,10 @@ class Rak(RakBaseModel):
         for rakdeel in self.rakdelen:
             for paal in rakdeel.onderbouw.palen:
                 resultaat.append((rakdeel.rakdeel_id, paal))
+
+        # Add unassigned palen
+        for paal in self.unassigned_palen:
+            resultaat.append(("unassigned", paal))
         return resultaat
 
     @property
@@ -73,6 +86,10 @@ class Rak(RakBaseModel):
         for rakdeel in self.rakdelen:
             for kesp in rakdeel.onderbouw.kespen:
                 resultaat.append((rakdeel.rakdeel_id, kesp))
+
+        # Add unassigned kespen
+        for kesp in self.unassigned_kespen:
+            resultaat.append(("unassigned", kesp))
         return resultaat
 
     @property
@@ -89,6 +106,10 @@ class Rak(RakBaseModel):
             for paal in rakdeel.onderbouw.palen:
                 for houtmonster in paal.houtmonsters:
                     resultaat.append((rakdeel.rakdeel_id, paal.paal_nummer, houtmonster))
+
+        # Add unassigned houtmonsters
+        for houtmonster in self.unassigned_houtmonsters:
+            resultaat.append(("unassigned", "unassigned", houtmonster))
         return resultaat
 
     def to_excel(self, export_dir: Path | None = None) -> Path:
@@ -233,24 +254,7 @@ class Rak(RakBaseModel):
         houtmonster_structured_table = doc.get_meettabel_houtmonsters()
         houtmonsters = Houtmonster.from_doc_tables(houtmonster_structured_table)
 
-        # Plaats houtmonsters onder juiste palen
-        processed_houtmonsters: set[Houtmonster] = set()
-        for _, palen in palen_dict.items():
-            for paal in palen:
-                paal.houtmonsters = [
-                    hm
-                    for hm in houtmonsters
-                    if paal.paal_nummer == hm.paal_nummer or paal.paal_nummer == hm.codering.split("/")[2]
-                ]
-                if paal.houtmonsters:
-                    processed_houtmonsters.update(set(paal.houtmonsters))
-
-        # Validate that all houtmonsters have been assigned to a paal
-        unprocessed_houtmonsters = set(houtmonsters) - processed_houtmonsters
-        if unprocessed_houtmonsters:
-            logger.warning(
-                f"The following houtmonsters could not be assigned to a paal: {[hm.codering for hm in unprocessed_houtmonsters]}"
-            )
+        cls.assign_houtmonsters_to_palen(palen_dict=palen_dict, houtmonsters=houtmonsters)
 
         # Maak rakdelen aan (parallel via async)
         rakdeel_sections = doc.get_rakdeel_secties()
@@ -287,9 +291,71 @@ class Rak(RakBaseModel):
             opmerkingen="",
         )
 
+        # Check if all palen, kespen and houtmonsters are correctly assigned to rakdelen
+        rak_instance.check_assigned_objects(palen_dict=palen_dict, kespen_dict=kespen_dict, houtmonsters=houtmonsters)
+
+        # Cache the created Rak instance
         cache_file.write_bytes(pickle.dumps(rak_instance))
 
         return rak_instance
+
+    @staticmethod
+    def assign_houtmonsters_to_palen(palen_dict: dict[str, list[Paal]], houtmonsters: list[Houtmonster]):
+        """Plaats houtmonsters onder juiste palen op basis van paal_nummer of codering."""
+
+        processed_houtmonsters: set[Houtmonster] = set()
+        for _, palen in palen_dict.items():
+            for paal in palen:
+                paal.houtmonsters = [
+                    hm
+                    for hm in houtmonsters
+                    if paal.paal_nummer == hm.paal_nummer or paal.paal_nummer == hm.codering.split("/")[2]
+                ]
+                if paal.houtmonsters:
+                    processed_houtmonsters.update(set(paal.houtmonsters))
+
+    def check_assigned_objects(
+        self, palen_dict: dict[str, list[Paal]], kespen_dict: dict[str, list[Kesp]], houtmonsters: list[Houtmonster]
+    ):
+        """Controleer of alle palen, kespen en houtmonsters correct zijn toegewezen aan rakdelen.
+        Indien niet, sla de niet toegewezen objecten op in het rak en log een waarschuwing."""
+
+        # Get assigned objects from rak object
+        assigned_palen = [p for _, p in self.alle_palen]
+        assigned_kespen = [k for _, k in self.alle_kespen]
+        assigned_houtmonsters = [hm for _, _, hm in self.alle_houtmonsters]
+
+        # Check for unassigned palen
+        unassigned_palen = []
+        for palen in palen_dict.values():
+            unassigned_palen.extend([p for p in palen if not p in assigned_palen])
+
+        # Check for unassigned kespen
+        unassigned_kespen = []
+        for kespen in kespen_dict.values():
+            unassigned_kespen.extend([k for k in kespen if not k in assigned_kespen])
+
+        # Check for unassigned houtmonsters
+        unassigned_houtmonsters = [hm for hm in houtmonsters if hm not in assigned_houtmonsters]
+
+        # Log warnings for unassigned objects
+        if unassigned_palen:
+            logger.warning(
+                f"{len(unassigned_palen)} palen could not be assigned to any rakdeel. Storing them in `unassigned_palen` list in Rak."
+            )
+            self.unassigned_palen = unassigned_palen
+
+        if unassigned_kespen:
+            logger.warning(
+                f"{len(unassigned_kespen)} kespen could not be assigned to any rakdeel. Storing them in `unassigned_kespen` list in Rak."
+            )
+            self.unassigned_kespen = unassigned_kespen
+
+        if unassigned_houtmonsters:
+            logger.warning(
+                f"{len(unassigned_houtmonsters)} houtmonsters could not be assigned to any paal. Storing them in `unassigned_houtmonsters` list in Rak."
+            )
+            self.unassigned_houtmonsters = unassigned_houtmonsters
 
 
 if __name__ == "__main__":

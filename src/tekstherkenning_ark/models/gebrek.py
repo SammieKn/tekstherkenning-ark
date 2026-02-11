@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from tekstherkenning_ark.utils import (
+    clean_string,
     get_paal_id,
     contains_kesp_id,
     contains_paal_id,
@@ -57,7 +58,7 @@ class Gebrek(BaseModel):
             Een lijst van Gebrek instanties.
         """
         if structured_table is None:
-            logger.warning("Geen gebreken tabel gevonden")
+            logger.warning(f"Geen {cls.__name__.lower()} tabel gevonden")
             return []
 
         # Get columns
@@ -65,16 +66,15 @@ class Gebrek(BaseModel):
         omschrijving_col = structured_table.get_column(header_in="Omschrijving")
         figuurnummer_col = structured_table.get_column(header_in="Figuurnummer")
 
-        if not codering_col or not omschrijving_col or not figuurnummer_col:
-            logger.error("Could not find required columns in gebreken table")
+        if not codering_col and not omschrijving_col and not figuurnummer_col:
+            logger.error("Could not find any required columns in gebreken table")
             return []
 
         # Parsing logica om Gebrek instanties te maken
         list_gebreken = []
-        num_rows = len(codering_col.values)
 
-        for row_idx in range(num_rows):
-            codering_val = codering_col.values[row_idx].strip()
+        for row_idx in range(structured_table.num_rows):
+            codering_val = clean_string(codering_col.values[row_idx]) if codering_col else ""
 
             # Stop at empty or dash rows
             if codering_val == "-" or codering_val == "":
@@ -82,8 +82,8 @@ class Gebrek(BaseModel):
 
             gebrek_instance = cls(
                 codering=codering_val,
-                omschrijving=omschrijving_col.values[row_idx],
-                figuurnummer=figuurnummer_col.values[row_idx],
+                omschrijving=omschrijving_col.values[row_idx] if omschrijving_col else "",
+                figuurnummer=figuurnummer_col.values[row_idx] if figuurnummer_col else "",
             )
             list_gebreken.append(gebrek_instance)
 
