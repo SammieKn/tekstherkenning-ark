@@ -50,6 +50,11 @@ class Rak(RakBaseModel):
         return str(self.raknaam)
 
     @property
+    def aantal_rakdelen(self) -> int:
+        """Totaal aantal rakdelen in dit rak."""
+        return len(self.rakdelen)
+
+    @property
     def alle_palen(self) -> list[tuple[str, Paal]]:
         """Verzamel alle palen uit alle rakdelen.
 

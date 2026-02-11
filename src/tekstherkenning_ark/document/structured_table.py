@@ -127,7 +127,7 @@ class StructuredTable:
         cls,
         tables: list[DocumentTable],
         table_type: TableType,
-    ) -> StructuredTable:
+    ) -> StructuredTable | None:
         """Parse and return a StructuredTable object from table rows.
 
         Parameters
