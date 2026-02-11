@@ -56,7 +56,7 @@ class Houtmonster(RakBaseModel):
         return str(self.codering)
 
     @classmethod
-    def from_doc_tables(cls, structured_table: StructuredTable) -> list[Houtmonster]:
+    def from_doc_tables(cls, structured_table: StructuredTable | None) -> list[Houtmonster]:
         """Parse and return a list of Houtmonster objects from a structured table.
 
         Parameters
@@ -69,7 +69,9 @@ class Houtmonster(RakBaseModel):
         list[Houtmonster]
             A list of Houtmonster objects containing information from the table.
         """
-
+        if structured_table is None:
+            logger.warning(f"Geen {cls.__name__.lower()} tabel gevonden")
+            return []
         # Get the codering column to identify valid houtmonster rows
         codering_col = structured_table.get_column(header_in="Codering", unit_in="[RAKxxxx/Px.y/HM]")
 
