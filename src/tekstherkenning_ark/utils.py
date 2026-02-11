@@ -9,6 +9,8 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 
 from typing import TYPE_CHECKING, Callable
 
+from tekstherkenning_ark.logger import get_logger
+
 if TYPE_CHECKING:
     from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
@@ -18,6 +20,8 @@ KESP_ID_PATTERN = r"\bK\d+\b"
 RAK_ID_PATTERN = r"([A-Z]{3}\d{4})(-\d{2})?"
 CONSTRUCTIE_PATTERN = r"constructie [a-z]"
 ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
+
+logger = get_logger(__name__)
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -75,8 +79,8 @@ def clean_paal_id(value: str) -> str:
     """Correct for common errors in paal ID's.
 
     Known and accepted exceptions:
-    - P.2.163
-    - 21.169
+    - P.2.163 -> P2.163
+    - 21.169 -> P2.169
     """
 
     value = clean_string(value)
@@ -89,18 +93,44 @@ def clean_paal_id(value: str) -> str:
     return exceptions_dict.get(value, value)
 
 
+def clean_kesp_id(value: str) -> str:
+    """Correct for common errors in kesp ID's.
+
+    Known and accepted exceptions:
+    - Kg -> K9
+    """
+
+    value = clean_string(value)
+
+    exceptions_dict = {
+        "Kg": "K9",
+    }
+
+    return exceptions_dict.get(value, value)
+
+
 def contains_paal_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
 
     value = clean_paal_id(clean_string(value))
+    found = bool(re.search(PAAL_ID_PATTERN, value))
 
-    return bool(re.search(PAAL_ID_PATTERN, value.strip()))
+    if not found and value.strip().lower().startswith("p"):
+        logger.warning(f"Waarschijnlijk paal ID gevonden dat niet voldoet aan patroon: '{value}'")
+
+    return found
 
 
 def contains_kesp_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'K\d+' (e.g., K1, K24)"""
 
-    return bool(re.search(KESP_ID_PATTERN, value.strip()))
+    value = clean_kesp_id(clean_string(value))
+    found = bool(re.search(KESP_ID_PATTERN, value))
+
+    if not found and value.strip().lower().startswith("k"):
+        logger.warning(f"Waarschijnlijk kesp ID gevonden dat niet voldoet aan patroon: '{value}'")
+
+    return found
 
 
 def get_paal_id(value: str) -> str | None:
@@ -116,9 +146,9 @@ def get_paal_id(value: str) -> str | None:
     str | None
         The extracted paal ID or None if not found
     """
-    value = clean_paal_id(clean_string(value))
 
-    match = re.search(PAAL_ID_PATTERN, value.strip())
+    value = clean_paal_id(clean_string(value))
+    match = re.search(PAAL_ID_PATTERN, value)
 
     return match.group(0) if match else None
 
@@ -136,9 +166,9 @@ def get_kesp_id(value: str) -> str | None:
     str | None
         The extracted kesp ID or None if not found
     """
-    value = clean_string(value)
 
-    match = re.search(KESP_ID_PATTERN, value.strip())
+    value = clean_kesp_id(clean_string(value))
+    match = re.search(KESP_ID_PATTERN, value)
 
     return match.group(0) if match else None
 
