@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import Type, TypeVar
-
-from azure.ai.documentintelligence.models import DocumentParagraph
+from typing import TypeVar
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -24,8 +22,9 @@ from tekstherkenning_ark.models.gebrek import (
 )
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.utils import contains_kesp_id, get_kesp_id, get_paal_id
+from tekstherkenning_ark.utils import get_kesp_id, get_paal_id
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.document.structured_table import StructuredTable
 
 logger = get_logger(__name__)
 
@@ -109,7 +108,7 @@ class Rakdeel(RakBaseModel):
         onderdeel_is_aangetast = cls.from_toestandbepaling_table(section.toestand_tabel)
 
         # Parse gebrekentabel
-        gebreken = await Gebrek.from_doc_tables(rows=section.gebreken_tabel)
+        gebreken = await Gebrek.from_doc_tables(section.gebreken_tabel)
 
         # Verkrijg palen en kespen voor dit rakdeel
         palen = cls.get_for_constructie_naam(section.constructie_naam, palen_dict)
@@ -154,23 +153,47 @@ class Rakdeel(RakBaseModel):
 
     @staticmethod
     def from_toestandbepaling_table(
-        rows: list[list[str]],
+        structured_table: StructuredTable | None,
     ) -> dict[str, bool | NietBeschikbaar | OnverwachtResultaat]:
-        expected_headers = ["Constructieonderdeel", "Aangetast"]
+        """Parse toestandsbepaling table from structured table.
 
-        # Skip header rows
-        constructieonderdeel_rows = [r for r in rows if r and r[0] != expected_headers[0]]
+        Parameters
+        ----------
+        structured_table : StructuredTable | None
+            Structured table containing toestandsbepaling data.
 
+        Returns
+        -------
+        dict[str, bool | NietBeschikbaar | OnverwachtResultaat]
+            Dictionary mapping construction components to their condition status.
+        """
         dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
-        if len(constructieonderdeel_rows) == 2:
-            for constructieonderdeel, aangetast in constructieonderdeel_rows:
-                constructieonderdeel_clean = utils.clean_string(constructieonderdeel)
-                aangetast_clean = utils.parse_ja_nee(utils.clean_string(aangetast))
+
+        if structured_table is None:
+            logger.warning("Geen toestandsbepaling tabel gevonden")
+            return dict_toestandsbepaling
+
+        # Get columns
+        constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
+        aangetast_col = structured_table.get_column(header_in="Aangetast")
+
+        if not constructieonderdeel_col or not aangetast_col:
+            logger.error("Could not find required columns in toestandsbepaling table")
+            return dict_toestandsbepaling
+
+        num_rows = len(constructieonderdeel_col.values)
+
+        for row_idx in range(num_rows):
+            constructieonderdeel = utils.clean_string(constructieonderdeel_col.values[row_idx])
+            aangetast = utils.clean_string(aangetast_col.values[row_idx])
+
+            if constructieonderdeel:  # Skip empty rows
+                aangetast_clean = utils.parse_ja_nee(aangetast)
                 if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
-                    dict_toestandsbepaling[constructieonderdeel_clean] = aangetast_clean
+                    dict_toestandsbepaling[constructieonderdeel] = aangetast_clean
                 else:
-                    print(
-                        f"Waarschuwing: Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel_clean}', wordt overgeslagen."
+                    logger.warning(
+                        f"Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel}', wordt overgeslagen."
                     )
 
         return dict_toestandsbepaling

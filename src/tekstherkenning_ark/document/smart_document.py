@@ -8,14 +8,10 @@ from typing import Callable
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.document.structured_table import StructuredTable, TableType
 from tekstherkenning_ark.utils import (
     get_constructienaam,
-    get_paal_id,
-    get_kesp_id,
     get_rak_id,
-    get_table_content,
-    remove_titel_rows,
-    remove_invalid_rows,
 )
 from tekstherkenning_ark.document.sectie import Sectie
 from tekstherkenning_ark.document.rakdeelsectie import RakdeelSectie
@@ -121,67 +117,48 @@ class SmartDocument:
                 rakdeel_secties.append(RakdeelSectie.from_smart_document(self.sections[i:]))
         return rakdeel_secties
 
-    def get_meettabel_houtmonsters(self) -> list[list[str]]:
+    def get_meettabel_houtmonsters(self) -> StructuredTable | None:
         """Haal de meettabel voor houtmonsters op.
 
         Returns
         -------
-        list[list[str]]
-            Tabelinhoud met houtmonster metingen.
+        StructuredTable | None
+            Gestructureerde tabelinhoud met houtmonster metingen.
         """
         for sectie in self.sections:
             if "meettabel houtmonsters" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_valid = remove_invalid_rows(rows_wo_header)
-                rows_cleaned = [
-                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
-                ]
-                return rows_cleaned
-        return []
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.HOUTMONSTERS)
 
-    def get_meettabel_fundering_paal(self) -> list[list[str]]:
+        return None
+
+    def get_meettabel_fundering_paal(self) -> StructuredTable | None:
         """Haal de meettabel voor palen op.
 
         Returns
         -------
-        list[list[str]]
-            Tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
+        StructuredTable | None
+            Gestructureerde tabelinhoud waar >50% van eerste kolom een geldig paal ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    if self._is_table_type_by_id_func(tabel, get_paal_id):
-                        rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_valid = remove_invalid_rows(rows_wo_header)
-                rows_cleaned = [
-                    row for row in rows_valid if all(x not in row[0].lower() for x in ["meettabel", "[rak]"])
-                ]
-                return rows_cleaned
-        return []
 
-    def get_meettabel_fundering_kesp(self) -> list[list[str]]:
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.PALEN)
+
+        return None
+
+    def get_meettabel_fundering_kesp(self) -> StructuredTable | None:
         """Haal de meettabel voor kespen op.
 
         Returns
         -------
-        list[list[str]]
+        StructuredTable | None
             Tabelinhoud waar >50% van eerste kolom een geldig kesp ID bevat.
         """
         for sectie in self.sections:
             if "meettabel fundering" in sectie.titel.lower() and sectie.tabellen:
-                rows: list[list[str]] = []
-                for tabel in sectie.tabellen:
-                    if self._is_table_type_by_id_func(tabel, get_kesp_id):
-                        rows.extend(get_table_content(tabel))
-                rows_wo_header = remove_titel_rows(rows)
-                rows_cleaned = remove_invalid_rows(rows_wo_header)
-                return rows_cleaned
-        return []
+                return StructuredTable.from_doc_table(sectie.tabellen, table_type=TableType.KESPEN)
+
+        return None
 
     def get_raknaam(self) -> str:
         for tabel in self.sections[0].tabellen:
@@ -257,41 +234,6 @@ class SmartDocument:
 
             if not assigned and self.sections:
                 self.sections[-1].tabellen.append(table)
-
-    def _is_table_type_by_id_func(
-        self, tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
-    ) -> bool:
-        """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
-
-        Parameters
-        ----------
-        tabel : DocumentTable
-            De tabel om te controleren.
-        id_func : callable
-            Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).
-        threshold : float
-            Minimale fractie van cellen die moeten matchen.
-
-        Returns
-        -------
-        bool
-            True als de tabel voldoet aan het type.
-        """
-        if not tabel.cells:
-            return False
-
-        first_col_cells = [cell.content for cell in tabel.cells if cell.column_index == 0]
-        if not first_col_cells:
-            return False
-
-        matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
-        return (matching_cells / len(first_col_cells)) > threshold
-
-    def __repr__(self) -> str:
-        section_summary = "\n".join(
-            [f"  - {s.titel} ({len(s.inhoud)} paragrafen, {len(s.tabellen)} tabellen)" for s in self.sections]
-        )
-        return f"SmartDocument met {len(self.sections)} secties:\n{section_summary}"
 
 
 if __name__ == "__main__":

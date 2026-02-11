@@ -1,9 +1,11 @@
 from __future__ import annotations
-from pydantic import BaseModel
 
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaatType, OnverwachtResultaat
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Houtmonster(RakBaseModel):
@@ -54,13 +56,13 @@ class Houtmonster(RakBaseModel):
         return str(self.codering)
 
     @classmethod
-    def from_doc_tables(cls, rows: list[list[str]]) -> list[Houtmonster]:
-        """Parse and return a list of Houtmonster objects from table rows.
+    def from_doc_tables(cls, structured_table: StructuredTable) -> list[Houtmonster]:
+        """Parse and return a list of Houtmonster objects from a structured table.
 
         Parameters
         ----------
-        rows : list[list[str]]
-            List of table rows as lists of strings.
+        structured_table : StructuredTable
+            Structured table containing houtmonster data with expected headers.
 
         Returns
         -------
@@ -68,23 +70,37 @@ class Houtmonster(RakBaseModel):
             A list of Houtmonster objects containing information from the table.
         """
 
-        # Skip header rows and filter to houtmonster rows
-        houtmonster_rows = [r for r in rows if utils.is_houtmonster_id(r[0])]
+        # Get the codering column to identify valid houtmonster rows
+        codering_col = structured_table.get_column(header_in="Codering", unit_in="[RAKxxxx/Px.y/HM]")
+
+        if not codering_col:
+            logger.error("Could not find codering column in table")
+            return []
 
         # Parse each row into a Houtmonster object
-        houtmonster_list = [cls.from_houtmonster_table_row(row) for row in houtmonster_rows]
+        houtmonster_list = []
+        num_rows = len(codering_col.values)
+
+        for row_idx in range(num_rows):
+            codering_val = codering_col.values[row_idx]
+
+            if utils.is_houtmonster_id(codering_val):
+                houtmonster = cls.from_houtmonster_table_row(structured_table, row_idx)
+                houtmonster_list.append(houtmonster)
 
         return houtmonster_list
 
     @classmethod
-    def from_houtmonster_table_row(cls, row: list[str]) -> Houtmonster:
+    def from_houtmonster_table_row(cls, table: StructuredTable, row_idx: int) -> Houtmonster:
         """Parse and return a Houtmonster object from a single row of the
-        houtmonsteren table.
+        houtmonsteren structured table.
 
         Parameters
         ----------
-        row : list[str]
-            A single row from the houtmonsteren table as a list of strings.
+        table : StructuredTable
+            Structured table containing houtmonster data.
+        row_idx : int
+            Index of the row to parse.
 
         Returns
         -------
@@ -92,18 +108,22 @@ class Houtmonster(RakBaseModel):
             A Houtmonster object containing information from the row.
         """
 
-        row_clean = [utils.clean_string(val) for val in row]
+        wankant_val = table.get_value(header_in="Wankant aanwezig?", unit_in="[Ja/Nee]", index=row_idx)
 
         return cls(
-            codering=row_clean[0],
-            rak_code=row_clean[1],
-            paal_nummer=row_clean[2],
-            houtmonster_code=row_clean[3],
-            diameter_paal_ter_hoogte_houtmonster_mm=row_clean[4],
-            hoogte_onder_nap_cm=row_clean[5],
-            hoogte_tov_onderzijde_fundering_cm=row_clean[6],
-            is_wankant_aanwezig=utils.parse_ja_nee(row_clean[7]) if row_clean[7] else None,
-            datum_monstername=row_clean[8],
+            codering=table.get_value(header_in="Codering", unit_in="[RAKxxxx/Px.y/HM]", index=row_idx),
+            rak_code=table.get_value(header_in="Rakcode", unit_in="[RAKxxxx]", index=row_idx),
+            paal_nummer=table.get_value(header_in="Paalnummer", unit_in="[Px.y]", index=row_idx),
+            houtmonster_code=table.get_value(header_in="Houtmonster", unit_in="[HMxxxxx]", index=row_idx),
+            diameter_paal_ter_hoogte_houtmonster_mm=table.get_value(
+                header_in="Diameter paal", unit_in="[mm]", index=row_idx
+            ),
+            hoogte_onder_nap_cm=table.get_value(header_in="Hoogte t.o.v. NAP", unit_in="[cm]", index=row_idx),
+            hoogte_tov_onderzijde_fundering_cm=table.get_value(
+                header_in="Hoogte t.o.v. kesp/vloer", unit_in="[cm]", index=row_idx
+            ),
+            is_wankant_aanwezig=utils.parse_ja_nee(wankant_val) if wankant_val else None,
+            datum_monstername=table.get_value(header_in="Datum monstername", unit_in="[dd-mm-j\\]", index=row_idx),
         )
 
     def __hash__(self):

@@ -36,14 +36,13 @@ def test_paal_with_onverwacht_resultaat():
     # Pass a string where a float is expected
     paal = Paal(
         paal_nummer="P1.5",
-        schoorstand_graden="onleesbaar",
         diameter_haaks=150,
         diameter_parallel=140,
         diameter_gemiddeld=145,
         hoh_afstand_cm=80,
         hoh_paalnummer="P1.6",
         schoor_graden=5,
-        schoor_richting=SchoorStand.POSITIEF,
+        schoor_richting="verkeerde waarde",
         afstand_frontwand_cm=20,
         is_scheefstand=False,
         is_paalbreuk=False,
@@ -52,8 +51,8 @@ def test_paal_with_onverwacht_resultaat():
         positionering_aansluiting_cm="0",
     )
 
-    assert isinstance(paal.schoorstand_graden, OnverwachtResultaat)
-    assert paal.schoorstand_graden.waarde == "onleesbaar"
+    assert isinstance(paal.schoor_richting, OnverwachtResultaat)
+    assert paal.schoor_richting.waarde == "verkeerde waarde"
     assert paal.paal_nummer == "P1.5"
 
 
@@ -62,7 +61,6 @@ def test_paal_with_normal_values():
 
     paal = Paal(
         paal_nummer="P1.1",
-        schoorstand_graden=5.2,
         diameter_haaks=150,
         diameter_parallel=150,
         diameter_gemiddeld=150,
@@ -78,7 +76,7 @@ def test_paal_with_normal_values():
         positionering_aansluiting_cm="0",
     )
 
-    assert paal.schoorstand_graden == 5.2
+    assert paal.schoor_richting == SchoorStand.POSITIEF
     assert paal.paal_nummer == "P1.1"
 
 

@@ -8,6 +8,7 @@ from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.document.structured_table import StructuredTable
 
 logger = get_logger(__name__)
 
@@ -44,24 +45,11 @@ class Paal(RakBaseModel):
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.
     gebreken: list[Gebrek] = []
 
-    # TODO Waar te vinden? - MT
-    paalrij_nummer: str = ""
-
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paal_nummer: str
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
     is_onderzocht: bool | None = None
-
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Schoorstand'.
-    schoorstand_graden: float | None = None
-    scheefstand: bool | None = None
-    materiaal: MateriaalOnderbouw | None = None
-
-    @property
-    def identifier(self) -> str:
-        """Return a string that uniquely identifies this Paal instance."""
-        return str(self.paal_nummer)
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
@@ -93,19 +81,24 @@ class Paal(RakBaseModel):
     houtmonsters: list[Houtmonster] = []
 
     @property
+    def identifier(self) -> str:
+        """Return a string that uniquely identifies this Paal instance."""
+        return str(self.paal_nummer)
+
+    @property
     def paal_nummer_main(self) -> int:
         """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
 
         return int(self.paal_nummer.split(".")[1])
 
     @classmethod
-    def from_doc_tables(cls, rows: list[list[str]]) -> dict[str, list[Paal]]:
-        """Parse and return a list of Paal objects from table rows.
+    def from_doc_tables(cls, structured_table: StructuredTable) -> dict[str, list[Paal]]:
+        """Parse and return a list of Paal objects from a structured table.
 
         Parameters
         ----------
-        rows : list[list[str]]
-            List of table rows as lists of strings.
+        structured_table : StructuredTable
+            Structured table containing paal data with expected headers and sub-headers.
 
         Returns
         -------
@@ -113,53 +106,74 @@ class Paal(RakBaseModel):
             A dictionary mapping constructie ID's to lists of Paal objects containing information from the table
         """
 
-        # Skip header rows and filter to paal rows
-        paal_rows = [r for r in rows if utils.contains_paal_id(r[0])]
+        # Get the paalnummer column to identify valid paal rows
+        paal_nummer_col = structured_table.get_column(header_in="Paalnummer", unit_in="[Px.y]")
+        opmerkingen_col = structured_table.get_column(header_in="Opmerkingen", unit_in="[aanvullende tekst]")
+
+        if opmerkingen_col is None or not any("constructie" in str(val).lower() for val in opmerkingen_col.values):
+            if opmerkingen_col is None:
+                logger.warning("Could not find constructie ID column in table based on header 'Opmerkingen'. ")
+            else:
+                logger.warning("Could not find any constructie ID values in column with header 'Opmerkingen'.")
+            opmerkingen_col = paal_nummer_col
+
+        if not paal_nummer_col:
+            logger.error("Could not find paalnummer column in table")
+            return {}
 
         # Parse each row into a Paal object
         paal_dict: dict[str, list[Paal]] = {}
         current_constructie_id = ""
 
-        last_main_paal_nummer = 0
+        num_rows = len(paal_nummer_col.values)
 
-        for row in paal_rows:
-            if len(row) != 17:
-                logger.warning(f"Onverwacht aantal kolommen in paal rij: verwacht 17, kreeg {len(row)}. Rij: {row}")
-                continue
-            constructie_id_col_val = utils.clean_string(row[16])
+        for row_idx in range(num_rows):
 
-            if constructie_id_col_val != "":
-                current_constructie_id = constructie_id_col_val  # TODO: dit gaat niet goed bij palen waar de rakdeelnaam boven de palen staat
+            constructie_id_col_val = utils.clean_string(opmerkingen_col.values[row_idx])
 
-                if current_constructie_id not in paal_dict:
-                    paal_dict[current_constructie_id] = []
-                else:
+            if "constructie" in constructie_id_col_val.lower():
+                current_constructie_id = constructie_id_col_val
+
+                if current_constructie_id in paal_dict:
                     logger.warning(f"Duplicate constructie ID found: {current_constructie_id}")
 
-            if current_constructie_id != "":
-                paal = cls.from_paal_table_row(row)
+            paal_nummer_val = paal_nummer_col.values[row_idx]
 
-                # Validate paal nummers are sequential
-                if not paal.paal_nummer_main in [last_main_paal_nummer, last_main_paal_nummer + 1]:
-                    logger.warning(
-                        f"Paal nummers are not sequential. Expected {last_main_paal_nummer} or {last_main_paal_nummer + 1}, got {paal.paal_nummer_main} for {paal.paal_nummer}. \nLast 5 palen: {[p.paal_nummer for p in paal_dict[current_constructie_id][-5:]]}"
-                    )
-                last_main_paal_nummer = paal.paal_nummer_main
+            if utils.contains_paal_id(paal_nummer_val):
+                paal = cls.from_paal_table_row(structured_table, row_idx)
 
                 # Add paal to the correct constructie ID list
+                if current_constructie_id not in paal_dict:
+                    paal_dict[current_constructie_id] = []
                 paal_dict[current_constructie_id].append(paal)
+
+        # Validate paal nummers are sequential within each constructie ID
+        prev_main_paal_nummer = 0
+
+        for constructie_id, palen in paal_dict.items():
+            for paal in palen:
+                if not paal.paal_nummer_main in [prev_main_paal_nummer, prev_main_paal_nummer + 1]:
+                    logger.warning(
+                        f"Paal nummers are not sequential within constructie ID {constructie_id}. Expected {prev_main_paal_nummer} or {prev_main_paal_nummer + 1}, got {paal.paal_nummer_main} for {paal.paal_nummer}"
+                    )
+                prev_main_paal_nummer = paal.paal_nummer_main
+
+        if "" in paal_dict:
+            logger.warning(f"{len(paal_dict[''])} palen found with constructie ID missing.")
 
         return paal_dict
 
     @classmethod
-    def from_paal_table_row(cls, row: list[str]) -> Paal:
+    def from_paal_table_row(cls, table: StructuredTable, row_idx: int) -> Paal:
         """Parse and return a Paal object from a single row of the
-        funderingspalen table.
+        funderingspalen structured table.
 
         Parameters
         ----------
-        row : list[str]
-            A single row from the funderingspalen table as a list of strings.
+        table : StructuredTable
+            Structured table containing paal data.
+        row_idx : int
+            Index of the row to parse.
 
         Returns
         -------
@@ -167,34 +181,35 @@ class Paal(RakBaseModel):
             A Paal object containing information from the row.
         """
 
-        row_clean = [utils.clean_string(val) for val in row]
         return cls(
-            paal_nummer=utils.clean_paal_id(row_clean[0]),
-            diameter_haaks=row_clean[1],
-            diameter_parallel=row_clean[2],
-            diameter_gemiddeld=row_clean[3],
-            hoh_afstand_cm=row_clean[4],
-            hoh_paalnummer=row_clean[5],
-            schoor_graden=row_clean[8],
-            schoor_richting=row_clean[9],
-            afstand_frontwand_cm=row_clean[10],
-            is_scheefstand=utils.parse_ja_nee(row_clean[11]),
-            is_paalbreuk=utils.parse_ja_nee(row_clean[12]),
-            is_aantasting=utils.parse_ja_nee(row_clean[13]),
-            aansluiting_status=row_clean[14],
-            positionering_aansluiting_cm=row_clean[15],
+            paal_nummer=utils.clean_paal_id(table.get_value(header_in="Paalnummer", unit_in="[Px.y]", index=row_idx)),
+            diameter_haaks=table.get_value("Diameter", "Haaks", "[mm]", row_idx),
+            diameter_parallel=table.get_value("Diameter", "Parrallel", "[mm]", row_idx),
+            diameter_gemiddeld=table.get_value("Diameter", "Gemiddelde", "[mm]", row_idx),
+            hoh_afstand_cm=table.get_value("Hart-op-hart-afstanden", "Afstand", "[cm]", row_idx),
+            hoh_paalnummer=table.get_value("Hart-op-hart-afstanden", ["Paal", "aa"], "[Px.y]", row_idx),
+            schoor_graden=table.get_value("Schoorstand", "Graden", "[]", row_idx),
+            schoor_richting=table.get_value("Schoorstand", "Richting", "[+ ]", row_idx),
+            afstand_frontwand_cm=table.get_value("Afstand", "Frontwand", "[cm]", row_idx),
+            is_scheefstand=utils.parse_ja_nee(table.get_value("Schades", "Scheefstand", "[Ja/Nee]", row_idx)),
+            is_paalbreuk=utils.parse_ja_nee(table.get_value("Schades", "Paalbreuk", "[Ja/Nee]", row_idx)),
+            is_aantasting=utils.parse_ja_nee(table.get_value("Schades", "Aantasting", "[Ja/Nee]", row_idx)),
+            aansluiting_status=table.get_value("Aansluiting", "Aansluiting", "[G/S]", row_idx),
+            positionering_aansluiting_cm=table.get_value("Aansluiting", "Positionering", "[+]+[cm]", row_idx),
         )
 
 
 if __name__ == "__main__":
 
     from tekstherkenning_ark.document.smart_document import SmartDocument
+    from tekstherkenning_ark.document.structured_table import StructuredTable, TableColumn
     from tekstherkenning_ark import constants
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 
-    paal_tables = doc.get_meettabel_fundering_paal()
-    palen_dict = Paal.from_doc_tables(paal_tables)
+    palen_table = doc.get_meettabel_fundering_paal()
+
+    palen_dict = Paal.from_doc_tables(palen_table)
 
     for palen in palen_dict.values():
         for paal in palen:
