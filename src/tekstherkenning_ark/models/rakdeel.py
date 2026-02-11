@@ -79,8 +79,9 @@ class Rakdeel(RakBaseModel):
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
         """Scheur-dichtheid per meter."""
-        if self.lengte_m is None or self.lengte_m == 0:
+        if not self.lengte_m:
             return None
+
         aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
         return round(aantal_scheuren / self.lengte_m, 2)
 
