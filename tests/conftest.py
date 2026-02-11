@@ -12,6 +12,7 @@ import importlib
 
 from tekstherkenning_ark.smart_document import SmartDocument
 from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark import constants
 
 # Test directory constants
 TEST_DIR = Path(__file__).parent
@@ -19,25 +20,16 @@ TEST_DATA_DIR = TEST_DIR / "data"
 
 
 @pytest.fixture
-def kzg0202_from_test_cache(monkeypatch):
+def kzg0202_from_test_cache():
     # Set a new CACHE_DIR for this test
-    new_cache_dir = Path(TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
-    monkeypatch.setenv("CACHE_DIR", str(new_cache_dir))
+    constants.CACHE_DIR = Path(TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325")
+    cached_doc_path = constants.CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
 
-    # Reload the constants module to reflect the updated environment variable
-    import tekstherkenning_ark.constants
-    importlib.reload(tekstherkenning_ark.constants)
-    from tekstherkenning_ark.constants import CACHE_DIR
-    assert CACHE_DIR == new_cache_dir
-
-    return get_rak_kzg0202()
+    return get_rak_kzg0202(cached_doc_path)
 
 
-def get_rak_kzg0202():
+def get_rak_kzg0202(cached_doc_path):
     """Get a Rak instance for the KZG0202 test PDF from the test cache."""
-    # Reload the constants module to reflect the updated environment variable
-    from tekstherkenning_ark.constants import CACHE_DIR
-    cached_doc_path = CACHE_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
     # load data
     doc_from_cache = pickle.loads(cached_doc_path.read_bytes())
     loaded_doc = SmartDocument(pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"],
