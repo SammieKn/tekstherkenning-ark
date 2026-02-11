@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from tekstherkenning_ark.utils import (
+    clean_string,
     get_paal_id,
     contains_kesp_id,
     contains_paal_id,
@@ -73,7 +74,7 @@ class Gebrek(BaseModel):
         list_gebreken = []
 
         for row_idx in range(structured_table.num_rows):
-            codering_val = codering_col.values[row_idx].strip() if codering_col else ""
+            codering_val = clean_string(codering_col.values[row_idx]) if codering_col else ""
 
             # Stop at empty or dash rows
             if codering_val == "-" or codering_val == "":
