@@ -295,8 +295,13 @@ class StructuredTable:
         )
 
         # Return the table rows starting from the header row (inclusive) or the original rows if no header row is found
+        # Filter out all the additional header rows after the first one
         if first_header_row_index is not None:
-            return table_rows[first_header_row_index:]
+            return [
+                row
+                for i, row in enumerate(table_rows[first_header_row_index:])
+                if i == 0 or not cls.is_header_row(row, table_type)
+            ]
 
         logger.warning(f"No header row found for table type {table_type}. Returning original rows.")
         return table_rows
