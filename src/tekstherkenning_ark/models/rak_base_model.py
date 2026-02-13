@@ -3,6 +3,7 @@ from typing import Type, TypeVar, get_args, get_origin, Union, Annotated, Any, U
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
@@ -34,6 +35,7 @@ class RakBaseModel(BaseModel):
 
     gebreken: list[Gebrek] = []
     opmerkingen: str = ""
+    toestand_onderdelen: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
 
     @property
     def identifier(self) -> str:
