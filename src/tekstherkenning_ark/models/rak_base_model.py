@@ -96,7 +96,7 @@ class RakBaseModel(BaseModel):
 
         return children
 
-    def _get_all_with_path(self, obj_type: Type[T], prefix: str = "") -> list[tuple[str, T]]:
+    def _get_all_gebrek_with_path(self, obj_type: Type[T], prefix: str = "") -> list[tuple[str, T]]:
         """Helper method to recursively collect gebreken with their identifier paths.
 
         Args:
@@ -129,7 +129,7 @@ class RakBaseModel(BaseModel):
         The path is a slash-separated string of identifiers showing the hierarchy,
         e.g., 'raknaam/rakdeel_id/bovenbouw/metselwerk'.
         """
-        return self._get_all_with_path(obj_type=OnverwachtResultaat)
+        return self._get_all_gebrek_with_path(obj_type=OnverwachtResultaat)
 
     @property
     def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
@@ -138,4 +138,12 @@ class RakBaseModel(BaseModel):
         The path is a slash-separated string of identifiers showing the hierarchy,
         e.g., 'raknaam/rakdeel_id/onderbouw/paal_nummer'.
         """
-        return self._get_all_with_path(obj_type=Gebrek)
+        return self._get_all_gebrek_with_path(obj_type=Gebrek)
+
+    @property
+    def alle_toestandsbepalingen(self) -> list[tuple[str, str, bool | NietBeschikbaar | OnverwachtResultaat]]:
+        """Return alle toestandsbepalingen als `(pad, onderdeel, waarde)`.
+
+        Het pad is slash-gescheiden en volgt dezelfde hiërarchie als `alle_gebreken`.
+        """
+        return self._get_all_toestand_with_path()
