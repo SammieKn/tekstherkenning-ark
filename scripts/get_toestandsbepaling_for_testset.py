@@ -10,7 +10,6 @@ Output: Excel-bestand in `data/toestandsbepaling` met kolommen:
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
 import pandas as pd
 
 from tekstherkenning_ark import constants
@@ -41,6 +40,14 @@ def waarde_naar_serieel(waarde):
     return str(waarde)
 
 
+def haal_rakdeel_id_uit_pad(pad: str) -> str:
+    """Haal `rakdeel_id` uit een hiërarchisch pad zoals `rak/rakdeel/onderbouw/vloer`."""
+    delen = [deel for deel in pad.split("/") if deel]
+    if len(delen) >= 2:
+        return delen[1]
+    return ""
+
+
 def main():
     pdf_rapporten = [file for file in (constants.DATA_DIR / "duikrapporten").glob("*.pdf")]
 
@@ -57,17 +64,15 @@ def main():
 
         rak_id = rak.raknaam
 
-        for rakdeel in rak.rakdelen:
-            rakdeel_id = rakdeel.rakdeel_id
-            for onderdeel, aangetast in (rakdeel.onderdeel_is_aangetast or {}).items():
-                resultaten.append(
-                    {
-                        "rak_id": rak_id,
-                        "rakdeel_id": rakdeel_id,
-                        "onderdeel": onderdeel,
-                        "aangetast": waarde_naar_serieel(aangetast),
-                    }
-                )
+        for pad, onderdeel, aangetast in rak.alle_toestandsbepalingen:
+            resultaten.append(
+                {
+                    "rak_id": rak_id,
+                    "rakdeel_id": haal_rakdeel_id_uit_pad(pad),
+                    "onderdeel": onderdeel,
+                    "aangetast": waarde_naar_serieel(aangetast),
+                }
+            )
 
     output_dir = constants.DATA_DIR / "toestandsbepaling"
     output_dir.mkdir(parents=True, exist_ok=True)
