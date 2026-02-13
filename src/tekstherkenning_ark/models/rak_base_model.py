@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Type, TypeVar, get_args, get_origin, Union, Annotated, Any, Union
+from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, Any, Union
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 
@@ -118,7 +118,19 @@ class RakBaseModel(BaseModel):
 
         # Recursively collect from children
         for child in self.children:
-            result.extend(child._get_all_with_path(obj_type=obj_type, prefix=current_path))
+            result.extend(child._get_all_gebrek_with_path(obj_type=obj_type, prefix=current_path))
+
+        return cast(list[tuple[str, T]], result)
+
+    def _get_all_toestand_with_path(
+        self, prefix: str = ""
+    ) -> list[tuple[str, str, bool | NietBeschikbaar | OnverwachtResultaat]]:
+        """Verzamel alle toestandsbepalingen met hiërarchisch pad."""
+        current_path = f"{prefix}/{self.identifier}" if prefix else self.identifier
+        result = [(current_path, onderdeel, waarde) for onderdeel, waarde in self.toestand_onderdelen.items()]
+
+        for child in self.children:
+            result.extend(child._get_all_toestand_with_path(prefix=current_path))
 
         return result
 
