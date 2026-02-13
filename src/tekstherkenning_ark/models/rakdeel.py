@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TypeVar
 
-from tekstherkenning_ark import utils
+from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
@@ -200,7 +200,8 @@ class Rakdeel(RakBaseModel):
 
         rakdeel_id_lower = rakdeel_id.lower()
         key = next((key for key in obj_dict.keys() if key.lower().startswith(rakdeel_id_lower)), None)
-
+        if key is None:
+            return []
         return obj_dict.get(key, [])
 
     @staticmethod
@@ -229,7 +230,7 @@ class Rakdeel(RakBaseModel):
         constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
         aangetast_col = structured_table.get_column(header_in="Aangetast")
 
-        if not constructieonderdeel_col and not aangetast_col:
+        if constructieonderdeel_col is None or aangetast_col is None:
             logger.error("Could not find required columns in toestandsbepaling table")
             return dict_toestandsbepaling
 
@@ -249,6 +250,72 @@ class Rakdeel(RakBaseModel):
                     )
 
         return dict_toestandsbepaling
+
+    def bepaal_doelmodel_pad(self, onderdeel: str) -> str | None:
+        """Bepaal doelmodel-pad op basis van `CONSTRUCTIEONDERDEEL_MAPPING`.
+
+        Retourneert een padstring zoals `onderbouw.vloer` of `bovenbouw`.
+        """
+        tekst = utils.clean_string(onderdeel).lower()
+
+        for model_pad, patronen in constants.CONSTRUCTIEONDERDEEL_MAPPING.items():
+            if not any(patroon in tekst for patroon in patronen):
+                continue
+
+            if model_pad == "onderbouw.vloer" and isinstance(self.onderbouw.vloer, Vloer):
+                return model_pad
+            if model_pad == "onderbouw.onderloopsheidscherm" and isinstance(
+                self.onderbouw.onderloopsheidscherm, Onderloopsheidscherm
+            ):
+                return model_pad
+            if model_pad == "onderbouw" and isinstance(self.onderbouw, Onderbouw):
+                return model_pad
+            if model_pad == "bovenbouw" and isinstance(self.bovenbouw, Bovenbouw):
+                return model_pad
+
+        return None
+
+    def classificeer_toestand_op_model(self) -> None:
+        """Classificeer toestandstabel op modelniveau.
+
+        Alles zonder match blijft op `rakdeel.toestand_onderdelen`.
+        """
+        self.toestand_onderdelen = {}
+
+        # Reset toestand op doelmodellen voor een schone herberekening
+        for model_pad in constants.CONSTRUCTIEONDERDEEL_MAPPING:
+            doelmodel = self.get_model_op_pad(model_pad)
+            if doelmodel is not None:
+                doelmodel.toestand_onderdelen = {}
+
+        for onderdeel, waarde in self.onderdeel_is_aangetast.items():
+            doelmodel_pad = self.bepaal_doelmodel_pad(onderdeel)
+
+            if doelmodel_pad is None:
+                self.toestand_onderdelen[onderdeel] = waarde
+                continue
+
+            doelmodel = self.get_model_op_pad(doelmodel_pad)
+            if doelmodel is not None:
+                doelmodel.toestand_onderdelen[onderdeel] = waarde
+            else:
+                self.toestand_onderdelen[onderdeel] = waarde
+
+    def get_model_op_pad(self, model_pad: str) -> RakBaseModel | None:
+        """Haal een model op via een punt-notatie pad vanaf `Rakdeel`.
+
+        Voorbeeld: `onderbouw.vloer`.
+        """
+        current = self
+        for deel in model_pad.split("."):
+            current = getattr(current, deel, None)
+            if current is None:
+                return None
+
+        if isinstance(current, RakBaseModel):
+            return current
+
+        return None
 
     def assign_overige_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken
