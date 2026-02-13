@@ -67,6 +67,11 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    def model_post_init(self, __context) -> None:
+        """Classificeer toestandsbepaling direct na initialisatie."""
+        if self.onderdeel_is_aangetast:
+            self.classificeer_toestand_op_model()
+
     # @property
     # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
     # def maximaal_aantal_scheuren_per_10_m(self) -> int | None:
