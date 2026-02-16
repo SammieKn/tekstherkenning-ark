@@ -408,8 +408,7 @@ def vergelijk_rakdeel(
         "onderbouw.percentage_beschadigde_verbinding": "onderbouw.percentage_beschadigde_verbinding",
         "onderbouw.vloer.materiaal": "onderbouw.vloer.materiaal",
         # Testset fields for materials map to `onderbouw.materiaal` on the model
-        "onderbouw.materiaal_fundering": "onderbouw.materiaal",
-        # TODO: Check waar materiaal fundering en onderbouw assigned worden na parsing.
+        "onderbouw.materiaal_fundering": "onderbouw.materiaal_fundering",
         "onderbouw.materiaal_onderbouw": "onderbouw.materiaal",
         "onderbouw.vloer.is_beschadigd": "onderbouw.vloer.is_beschadigd",
         "onderbouw.onderloopsheidscherm.is_aanwezig": "onderbouw.onderloopsheidscherm.is_beschadigd",

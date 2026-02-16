@@ -122,6 +122,7 @@ class Rakdeel(RakBaseModel):
             onderloopsheidscherm=Onderloopsheidscherm.from_rakdeel_omschrijving(rakdeel_omschrijving),
             vloer=Vloer.from_rakdeel_omschrijving(rakdeel_omschrijving),
             materiaal=rakdeel_omschrijving.materiaal_onderbouw,
+            materiaal_fundering=rakdeel_omschrijving.materiaal_fundering,
         )
         bovenbouw = Bovenbouw(
             materiaal=rakdeel_omschrijving.materiaal_bovenbouw,
