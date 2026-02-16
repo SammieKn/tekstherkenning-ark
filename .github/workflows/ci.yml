@@ -1,0 +1,36 @@
+name: Continuous Integration with Pytest
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+  pull_request:
+    branches: 
+      - main
+      - develop
+
+jobs:
+  test:
+    name: Run PyTest with uv on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    # https://github.com/astral-sh/setup-uv
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: uv sync --all-extras --dev
+
+    - name: Run PyTest
+      run: uv run pytest --junitxml=test-results.xml
