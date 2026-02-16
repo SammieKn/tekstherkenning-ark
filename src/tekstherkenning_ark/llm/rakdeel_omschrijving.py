@@ -7,7 +7,7 @@ from typing import ClassVar
 from pydantic import Field
 
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
-from tekstherkenning_ark import constants
+from tekstherkenning_ark.constants import NAP_CM_HOOGTE_WATERLIJN
 from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.enums import (
     MateriaalBovenbouw,
@@ -76,7 +76,8 @@ class RakdeelOmschrijving(LLMClassifier):
     )
     # benodigd voor onderbouw/fundering
     materiaal_vloer: MateriaalVloer | NietBeschikbaar = Field(
-        default=NietBeschikbaar.LEEG, description="Het materiaal van de vloer van het rakdeel."
+        default=NietBeschikbaar.LEEG,
+        description="Het materiaal van de vloer van het rakdeel. Als is aangegeven dat palen erin zijn gestort, dan is het een betonnen vloer.",
     )
 
     # onderloopsheidscherm aanwezig ja/nee
@@ -89,10 +90,20 @@ class RakdeelOmschrijving(LLMClassifier):
     bovenkant_deksteen_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="De hoogte van de bovenkant van de kademuur in centimeters ten opzichte van de waterlijn. Ook wel kerende hoogte genoemd. De bovenkant wordt vaak aangegeven door deksteen, metselwerk of maaiveld.",
+        description=f"""
+        De hoogte van de bovenkant van de kademuur in centimeters **ten opzichte van het NAP**. \n
+        - De bovenkant wordt vaak aangegeven door deksteen, metselwerk of maaiveld.\n
+        - Als de bovenkant deksteen niet direct gemeld wordt, kan deze berekend worden door de onderdelen boven de waterlijn op te tellen.
+        - De waterlijn bevindt zich op {NAP_CM_HOOGTE_WATERLIJN} cm boven NAP.\n
+        - NAP bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm.""",
     )
     bovenkant_vloer_cm: float | None = Field(
-        gt=0.0,
+        lt=0.0,
         default=None,
-        description="De hoogte van de waterlijn tot de bovenkant van de funderingsvloer. Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer.",
+        description=f"""
+        De hoogte **ten opzichte van NAP** tot de bovenkant van de funderingsvloer.\n
+        - Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer.\n
+        - Als de onderzijde van de constructie wordt vermeldt, dan tel je de dikte van de vloer en onderliggende constructie zoals kespen of balken op tot de vloer.\n
+        - De waterlijn bevindt zich op {NAP_CM_HOOGTE_WATERLIJN} cm boven NAP.\n,
+        - NAP bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm.""",
     )
