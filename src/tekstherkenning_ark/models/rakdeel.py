@@ -82,10 +82,7 @@ class Rakdeel(RakBaseModel):
         Als lengte_m_omschrijving beschikbaar is, wordt deze gebruikt, anders wordt de lengte afgeleid a.d.h.v. de paalafstanden in de onderbouw.
         """
 
-        if self.lengte_m_omschrijving is not None:
-            return self.lengte_m_omschrijving
-
-        return self.lengte_m_afgeleid
+        return self.lengte_m_omschrijving or self.lengte_m_afgeleid
 
     @property
     def lengte_m_afgeleid(self) -> float | None | OnverwachtResultaat:
