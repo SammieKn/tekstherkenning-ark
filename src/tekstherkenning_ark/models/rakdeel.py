@@ -4,7 +4,7 @@ from typing import TypeVar
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
@@ -37,7 +37,7 @@ class Rakdeel(RakBaseModel):
         rakdeel_id: Unieke identificatie van het rakdeel.
         bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
         constructietype: Type constructie van het rakdeel (bijvoorbeeld houten paalfundering, betonnen L-wand, etc.).
-        lengte_m: Lengte van het rakdeel in meters.
+        lengte_m_omschrijving: Lengte van het rakdeel in meters uitgelezen uit de omschrijving.
         onderbouw: Object met alle eigenschappen van de onderbouw van het rakdeel.
         rakdeel_id: Unieke identificatie van het rakdeel, bijvoorbeeld 'Constructie A' of 'Constructie B'.
         bouwjaar: Bouwjaar van het rakdeel.
@@ -53,7 +53,7 @@ class Rakdeel(RakBaseModel):
     onderdeel_is_aangetast: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
 
     # Te vinden in paragraaf 5.x, eerste zin.
-    lengte_m: float | None = None
+    lengte_m_omschrijving: float | None = None
 
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None
@@ -74,6 +74,95 @@ class Rakdeel(RakBaseModel):
     #         return None
     #     aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
     #     return round((aantal_scheuren / self.lengte_m) * 10)
+
+    @property
+    def lengte_m(self) -> float | None | OnverwachtResultaat:
+        """Lengte van het rakdeel in meters.
+
+        Als lengte_m_omschrijving beschikbaar is, wordt deze gebruikt, anders wordt de lengte afgeleid a.d.h.v. de paalafstanden in de onderbouw.
+        """
+
+        if self.lengte_m_omschrijving is not None:
+            return self.lengte_m_omschrijving
+
+        return self.lengte_m_afgeleid
+
+    @property
+    def lengte_m_afgeleid(self) -> float | None | OnverwachtResultaat:
+        """Lengte van het rakdeel in meters afgeleid a.d.h.v. de paalafstanden in de onderbouw.
+
+        Returns
+        -------
+        float | None | OnverwachtResultaat
+        - float: de opgetelde hoh_afstanden van de palen in de eerste rij van de onderbouw, omgerekend naar meters
+        - None: als er geen palen in de onderbouw zijn
+        - OnverwachtResultaat: als de paal data fouten bevat, bijvoorbeeld:
+          - Ontbrekende hoh_afstand_cm voor een paal
+          - Cyclische paalreferenties via hoh_paalnummer
+          - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
+        """
+
+        # Leid lengte af uit hoh-aftanden tussen onderliggende palen
+        eerste_rij_palen = self.onderbouw.eerste_rij_palen
+
+        if not eerste_rij_palen:
+            return None
+
+        processed_paal_nummers: set[str] = set()
+        current_paal = eerste_rij_palen[0]
+        total_length_cm = 0.0
+
+        while current_paal:
+
+            # Check for cyclical references to prevent infinite loops
+            if current_paal.paal_nummer in processed_paal_nummers:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Cyclische paalreferenties gedetecteerd bij Rakdeel {self.rakdeel_id}",
+                )
+
+            # Check if hoh_afstand_cm is available for the current paal
+            if isinstance(current_paal.hoh_afstand_cm, NietBeschikbaar) or current_paal.hoh_afstand_cm is None:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Ontbrekende hoh_afstand_cm voor paal {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
+                )
+
+            # Actually add the length of the current paal to the total length
+            total_length_cm += current_paal.hoh_afstand_cm
+            processed_paal_nummers.add(current_paal.paal_nummer)
+
+            # Determine the next paal in the sequence based on hoh_paalnummer.
+            palen_that_refer_to_current_paal = [
+                p for p in eerste_rij_palen if p.hoh_paalnummer == current_paal.paal_nummer
+            ]
+
+            # Check if there are multiple palen that refer to the same hoh_paalnummer, which would indicate a data issue
+            if len(palen_that_refer_to_current_paal) > 1:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Meerdere palen verwijzen naar hetzelfde hoh_paalnummer {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
+                )
+
+            if len(palen_that_refer_to_current_paal) == 1:
+                current_paal = palen_that_refer_to_current_paal[0]
+            else:
+                # No next paal
+                current_paal = None
+
+        # Validate that we have processed the expected number of palen based on the first row palen in onderbouw
+        if not len(processed_paal_nummers) == len(eerste_rij_palen):
+            return OnverwachtResultaat(
+                waarde=None,
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                details=f"Onvolledige verwerking van palen bij Rakdeel {self.rakdeel_id}: {len(processed_paal_nummers)} van {len(eerste_rij_palen)} palen verwerkt. Dit kan duiden op onvolledige data of een gebroken reeks.",
+            )
+
+        total_length_m = total_length_cm / 100.0
+        return total_length_m
 
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
@@ -130,7 +219,7 @@ class Rakdeel(RakBaseModel):
 
         rakdeel = Rakdeel(
             bovenbouw=bovenbouw,
-            lengte_m=rakdeel_omschrijving.lengte_rakdeel,
+            lengte_m_omschrijving=rakdeel_omschrijving.lengte_rakdeel,
             onderbouw=onderbouw,
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,

@@ -18,6 +18,7 @@ class OnverwachtResultaatType(Enum):
     INCORRECT_TYPE = "incorrect_type"
     PARSING_FOUT = "parsing_fout"
     ONBEKEND = "onbekend"
+    ONDERLIGGENDE_DATA_INCORRECT = "onderliggende_data_incorrect"
 
 
 class OnverwachtResultaat(BaseModel):
