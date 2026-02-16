@@ -3,7 +3,6 @@ from typing import TypeVar
 
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
@@ -333,9 +332,7 @@ class Rakdeel(RakBaseModel):
 
             # Match gebreken to onderdeel
             if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
-                if self.bovenbouw.metselwerk is None:
-                    self.bovenbouw.metselwerk = Metselwerk()
-                self.bovenbouw.metselwerk.gebreken.append(gebrek)
+                self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
 
             elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):

@@ -7,23 +7,18 @@
             "omschrijving": "Houten paalfundering",
             "lengte_m": 50.0,
             "bovenbouw": {
-                "maximale_scheurwijdte_mm": "niet gemeten",
-                "metselwerk": {
-                    "dikte_cm": "niet meetbaar",
-                    "hoogte_cm": 250.0
-                }
+                "bovenkant_deksteen_cm_tov_nap": "niet gemeten"
             },
             "onderbouw": {
                 "palen": [
                     {
                         "paal_nummer": "P1.1",
-                        "schoorstand_graden": "onleesbaar",
+                        "schoor_graden": "onleesbaar",
                         "diameter_haaks": 150,
                         "diameter_parallel": 150,
                         "diameter_gemiddeld": 150,
                         "hoh_afstand_cm": 100,
                         "hoh_paalnummer": "P1.2",
-                        "schoor_graden": 5,
                         "schoor_richting": "PNV",
                         "afstand_frontwand_cm": 25,
                         "is_scheefstand": false,

@@ -1,33 +1,11 @@
 """Integration test to verify OnverwachtResultaat works with actual models."""
 
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
-from tekstherkenning_ark.models.metselwerk import Metselwerk
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.enums import NietBeschikbaar, MateriaalVloer, AansluitingStatus, SchoorStand
-
-
-def test_metselwerk_with_onverwacht_resultaat():
-    """Test that Metselwerk automatically converts invalid values to OnverwachtResultaat."""
-
-    # Pass a string where a float is expected
-    metselwerk = Metselwerk(dikte_cm="niet meetbaar", hoogte_cm=250.0)
-
-    assert isinstance(metselwerk.dikte_cm, OnverwachtResultaat)
-    assert metselwerk.dikte_cm.waarde == "niet meetbaar"
-    assert metselwerk.hoogte_cm == 250.0
-
-
-def test_metselwerk_with_normal_values():
-    """Test that Metselwerk still accepts normal values."""
-
-    metselwerk = Metselwerk(dikte_cm=30.5, hoogte_cm=250.0, opmerkingen="Geen bijzonderheden")
-
-    assert metselwerk.dikte_cm == 30.5
-    assert metselwerk.hoogte_cm == 250.0
-    assert metselwerk.opmerkingen == "Geen bijzonderheden"
 
 
 def test_paal_with_onverwacht_resultaat():
@@ -139,25 +117,25 @@ def test_bovenbouw_with_onverwacht_resultaat():
     """Test that Bovenbouw automatically converts invalid values to OnverwachtResultaat."""
 
     # Pass a string where a float is expected
-    bovenbouw = Bovenbouw(maximale_scheurwijdte_mm="niet gemeten", is_scheefstand_aanwezig=False)
+    bovenbouw = Bovenbouw(bovenkant_deksteen_cm_tov_nap="niet gemeten")
 
-    assert isinstance(bovenbouw.maximale_scheurwijdte_mm, OnverwachtResultaat)
-    assert bovenbouw.maximale_scheurwijdte_mm.waarde == "niet gemeten"
-    assert bovenbouw.is_scheefstand_aanwezig is False
+    assert isinstance(bovenbouw.bovenkant_deksteen_cm_tov_nap, OnverwachtResultaat)
+    assert bovenbouw.bovenkant_deksteen_cm_tov_nap.waarde == "niet gemeten"
 
 
 def test_bovenbouw_with_normal_values():
     """Test that Bovenbouw accepts normal values."""
 
     bovenbouw = Bovenbouw(
-        maximale_scheurwijdte_mm=2.5,
+        bovenkant_deksteen_cm_tov_nap=125.5,
         maximaal_aantal_scheuren_per_10_m=3,
-        is_scheefstand_aanwezig=False,
+        percentage_niet_functionerend_schuifhout=15.0,
         opmerkingen="Goede staat",
     )
 
-    assert bovenbouw.maximale_scheurwijdte_mm == 2.5
+    assert bovenbouw.bovenkant_deksteen_cm_tov_nap == 125.5
     assert bovenbouw.maximaal_aantal_scheuren_per_10_m == 3
+    assert bovenbouw.percentage_niet_functionerend_schuifhout == 15.0
     assert bovenbouw.opmerkingen == "Goede staat"
 
 
@@ -165,7 +143,7 @@ def test_collection_fields_not_affected():
     """Test that collection fields (gebreken) do NOT accept OnverwachtResultaat."""
 
     # gebreken is a list, so it should remain as list[Gebrek]
-    metselwerk = Metselwerk(dikte_cm=30.0, hoogte_cm=250.0, gebreken=[])
+    vloer = Vloer(materiaal=MateriaalVloer.HOUT, gebreken=[])
 
-    assert isinstance(metselwerk.gebreken, list)
-    assert len(metselwerk.gebreken) == 0
+    assert isinstance(vloer.gebreken, list)
+    assert len(vloer.gebreken) == 0
