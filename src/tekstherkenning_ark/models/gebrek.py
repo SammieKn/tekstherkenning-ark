@@ -156,6 +156,9 @@ class Gebrek(BaseModel):
                 **llm_result.model_dump(),
             )
 
+        if "scherm" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+            return OnderloopsheidschermBeschadigd(**gebrek.model_dump())
+
         # logica voor lokaal verdwenen metselwerk
         synonyms = [
             "ontbreekt metselwerk",
@@ -303,3 +306,9 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     breedte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
     hoogte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
     diepte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+
+
+class OnderloopsheidschermBeschadigd(Gebrek):
+    """Model voor een onderloopsheidscherm."""
+
+    is_beschadigd: bool = True

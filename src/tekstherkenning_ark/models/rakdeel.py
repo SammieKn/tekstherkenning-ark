@@ -16,6 +16,8 @@ from tekstherkenning_ark.models.gebrek import (
     Gebrek,
     GrondVoerendGat,
     LokaalVerdwenenMetselwerk,
+    OnderloopsheidschermBeschadigd,
+    Scheur,
     ScheurHout,
     ScheurMetselwerk,
 )
@@ -260,13 +262,18 @@ class Rakdeel(RakBaseModel):
             gebrek_assigned = False
 
             # Match gebreken to onderdeel
-            if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
+            if isinstance(gebrek, (Scheur, ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
                 self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
 
             elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):
                 self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
+
+            elif isinstance(gebrek, OnderloopsheidschermBeschadigd):
+                if self.onderbouw.onderloopsheidscherm:
+                    self.onderbouw.onderloopsheidscherm.gebreken.append(gebrek)
+                    gebrek_assigned = True
 
             if not gebrek_assigned:
                 self.gebreken.append(gebrek)
