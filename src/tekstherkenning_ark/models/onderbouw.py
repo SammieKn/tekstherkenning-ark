@@ -45,6 +45,16 @@ class Onderbouw(RakBaseModel):
         return len(self.palen)
 
     @property
+    def eerste_rij_palen(self) -> list[Paal]:
+        """Geef de palen van de eerste rij terug (bijvoorbeeld P1.1, P1.2, P1.3, etc.),
+        gesorteerd op paal_nummer_main."""
+
+        palen = [paal for paal in self.palen if paal.paalrij_nummer == 1]
+        palen = sorted(palen, key=lambda p: p.paal_nummer_main)
+
+        return palen
+
+    @property
     def aantal_onderzochte_palen(self) -> int:
         """Aantal palen dat daadwerkelijk onderzocht is."""
         return sum(1 for paal in self.palen if paal.is_onderzocht)
