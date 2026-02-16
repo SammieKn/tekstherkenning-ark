@@ -68,19 +68,34 @@ def test_rak_alle_gebreken(mock_rak_with_gebreken: Rak):
 
     alle_gebreken = rak.alle_gebreken
 
-    # Should have gebreken from: paal1 (1), kesp1 (1), rakdeel (1) = 3 total
-    assert len(alle_gebreken) == 3
+    # Should have gebreken from: bovenbouw (1), paal1 (1), kesp1 (1), rakdeel (1) = 4 total
+    assert len(alle_gebreken) == 4
 
     # Check that all expected gebreken are present with their paths
     coderingen = [g.codering for path, g in alle_gebreken]
+    assert "GM1" in coderingen  # From bovenbouw
     assert "GP1" in coderingen  # From paal
     assert "GK1" in coderingen  # From kesp
     assert "GR1" in coderingen  # From rakdeel
 
     # Verify paths are properly formatted
     paths = [path for path, g in alle_gebreken]
+    assert any("bovenbouw" in path for path in paths)
     assert any("P1.1" in path for path in paths)
     assert any("K1" in path for path in paths)
+
+
+def test_bovenbouw_alle_gebreken(mock_rak_with_gebreken: Rak):
+    """Test that Bovenbouw.alle_gebreken returns only its own gebreken (no children)."""
+    rak = mock_rak_with_gebreken
+
+    alle_gebreken = rak.rakdelen[0].bovenbouw.alle_gebreken
+
+    # Bovenbouw has 1 gebrek and no children
+    assert len(alle_gebreken) == 1
+    path, gebrek = alle_gebreken[0]
+    assert gebrek.codering == "GM1"
+    assert path == "bovenbouw"
 
 
 def test_rakdeel_alle_gebreken(mock_rak_with_gebreken: Rak):
@@ -91,8 +106,9 @@ def test_rakdeel_alle_gebreken(mock_rak_with_gebreken: Rak):
     alle_gebreken = rakdeel.alle_gebreken
 
     # Should have all gebreken from the rakdeel tree
-    assert len(alle_gebreken) == 3
+    assert len(alle_gebreken) == 4
     coderingen = [g.codering for path, g in alle_gebreken]
+    assert "GM1" in coderingen
     assert "GP1" in coderingen
     assert "GK1" in coderingen
     assert "GR1" in coderingen

@@ -6,7 +6,15 @@
             "rakdeel_id": "Constructie A",
             "omschrijving": "Houten paalfundering",
             "lengte_m": 50.0,
-            "bovenbouw": {},
+            "bovenbouw": {
+                "gebreken": [
+                    {
+                        "codering": "GM1",
+                        "omschrijving": "Scheur in metselwerk",
+                        "figuurnummer": "F1"
+                    }
+                ]
+            },
             "onderbouw": {
                 "palen": [
                     {
