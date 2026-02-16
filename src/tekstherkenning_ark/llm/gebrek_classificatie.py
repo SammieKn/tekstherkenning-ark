@@ -15,7 +15,7 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 
 
-class ScheurLLM(BaseModel):
+class ScheurLLM(LLMClassifier):
     """Basis model voor scheur attributen (geen eigen systeem prompt).
 
     Attributes
@@ -25,6 +25,14 @@ class ScheurLLM(BaseModel):
     scheurwijdte_mm : float | NietBeschikbaar
         Maximale scheurwijdte in millimeters.
     """
+
+    _systeem_prompt: ClassVar[
+        str
+    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+Extraheer informatie over scheuren uit de omschrijving.
+Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
+NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
+of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
 
     lengte_cm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
@@ -36,7 +44,7 @@ class ScheurLLM(BaseModel):
     )
 
 
-class ScheurMetselwerkLLM(ScheurLLM, LLMClassifier):
+class ScheurMetselwerkLLM(ScheurLLM):
     """LLM model voor scheur in metselwerk classificatie.
 
     Attributes
@@ -87,7 +95,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class ScheurHoutLLM(ScheurLLM, LLMClassifier):
+class ScheurHoutLLM(ScheurLLM):
     """LLM model voor scheur in hout classificatie.
 
     Attributes

@@ -14,6 +14,7 @@ from tekstherkenning_ark.utils import (
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.llm.gebrek_classificatie import (
+    ScheurLLM,
     ScheurMetselwerkLLM,
     ScheurHoutLLM,
     GrondVoerendGatLLM,
@@ -125,7 +126,12 @@ class Gebrek(BaseModel):
                     **gebrek.model_dump(),
                     **llm_result.model_dump(),
                 )
-            # TODO: Implementeer een algemene scheur classificatie indien nodig
+            else:
+                llm_result = await ScheurLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return Scheur(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
 
         # logica voor grondvoerend gat
         if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
