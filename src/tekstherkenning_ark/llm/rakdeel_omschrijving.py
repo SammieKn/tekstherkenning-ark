@@ -68,7 +68,7 @@ class RakdeelOmschrijving(LLMClassifier):
     )
     materiaal_onderbouw: MateriaalOnderbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles boven de fundering onder de kade.",
+        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles boven de fundering en onder de kade.",
     )
     materiaal_bovenbouw: MateriaalBovenbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
