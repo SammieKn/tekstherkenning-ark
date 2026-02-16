@@ -10,6 +10,11 @@ on:
       - main
       - develop
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   test:
     name: Run PyTest with uv on Python ${{ matrix.python-version }}
