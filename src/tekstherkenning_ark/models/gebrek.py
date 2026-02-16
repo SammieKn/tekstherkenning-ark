@@ -182,6 +182,9 @@ class Scheur(Gebrek):
 
     Attributes
     ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters. Te vinden in de omschrijving
+        van de gebrekentabel, bijv. "Op X meter vanaf start rak...".
     lengte_cm : float | NietBeschikbaar
         Lengte van de scheur in centimeters. Te vinden in de omschrijving
         van de gebrekentabel.
@@ -190,8 +193,9 @@ class Scheur(Gebrek):
         van de gebrekentabel, vaak als 'SW'.
     """
 
-    lengte_cm: float | NietBeschikbaar
-    scheurwijdte_mm: float | NietBeschikbaar
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    lengte_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    scheurwijdte_mm: float | NietBeschikbaar = NietBeschikbaar.LEEG
 
 
 class ScheurMetselwerk(Scheur):
@@ -199,9 +203,6 @@ class ScheurMetselwerk(Scheur):
 
     Attributes
     ----------
-    afstand_van_startrak_m : float | NietBeschikbaar
-        Afstand van het startrak in meters. Te vinden in de omschrijving
-        van de gebrekentabel, bijv. "Op X meter vanaf start rak...".
     afstand_van_waterlijn_cm : float | NietBeschikbaar
         Afstand van de waterlijn in centimeters.
     afstand_van_deksloof_cm : float | NietBeschikbaar

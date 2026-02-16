@@ -20,6 +20,8 @@ class ScheurLLM(LLMClassifier):
 
     Attributes
     ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
     lengte_cm : float | NietBeschikbaar
         Lengte van de scheur in centimeters.
     scheurwijdte_mm : float | NietBeschikbaar
@@ -34,9 +36,17 @@ Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
 of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
 
+    afstand_van_startrak_m: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="""
+        Afstand van het startrak in meters. 
+        - Zoek naar 'Op X meter vanaf start rak' of 'vanaf startrak'.
+        - Als een object genoemd wordt, zoals een brug, dan is dat het startrak.
+        """,
+    )
     lengte_cm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Lengte van de scheur in centimeters. Zoek naar termen zoals 'lengte' of 'L'.",
+        description="De lengte van de scheur in centimeters. Kan aangegeven worden als 'lengte', 'hoogte', ... Belangrijkste is dat de dimensie toegewezen wordt aan de scheur",
     )
     scheurwijdte_mm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
@@ -73,10 +83,6 @@ Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
 of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
 
-    afstand_van_startrak_m: float | NietBeschikbaar = Field(
-        default=NietBeschikbaar.LEEG,
-        description="Afstand van het startrak in meters. Zoek naar 'Op X meter vanaf start rak' of 'vanaf startrak'.",
-    )
     afstand_van_waterlijn_cm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
         description="Afstand van de waterlijn in centimeters. Zoek naar 'waterlijn' of 'WL'.",
