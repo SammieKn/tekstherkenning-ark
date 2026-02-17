@@ -125,7 +125,7 @@ class Rakdeel(RakBaseModel):
                 )
 
             # Check if hoh_afstand_cm is available for the current paal
-            if isinstance(current_paal.hoh_afstand_cm, NietBeschikbaar) or current_paal.hoh_afstand_cm is None:
+            if not current_paal.hoh_afstand_cm:
                 return OnverwachtResultaat(
                     waarde=None,
                     onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
