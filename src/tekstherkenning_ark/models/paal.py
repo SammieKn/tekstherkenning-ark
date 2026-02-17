@@ -3,7 +3,7 @@ from typing import Any
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
-from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, ScheurHout
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.logger import get_logger
@@ -95,6 +95,11 @@ class Paal(RakBaseModel):
         """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
 
         return int(self.paal_nummer.split(".")[1])
+
+    @property
+    def n_scheuren(self) -> int:
+        """Geef het aantal scheuren terug dat is geconstateerd in deze paal."""
+        return len([gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)])
 
     @classmethod
     def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Paal]]:
