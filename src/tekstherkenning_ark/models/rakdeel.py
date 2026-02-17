@@ -214,10 +214,12 @@ class Rakdeel(RakBaseModel):
 
         # Assign toestandsbepalingen to children based on CONSTRUCTIEONDERDEEL_MAPPING
         for toestand_onderdeel in self.toestand_onderdelen:
-
-            if self.onderbouw.vloer and toestand_onderdeel.is_vloer():
-                self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
-
+            if toestand_onderdeel.is_vloer():
+                if not self.onderbouw.vloer:
+                    self.onderbouw.vloer = Vloer(materiaal=NietBeschikbaar.LEEG)
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
+                else:
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
             elif self.onderbouw and toestand_onderdeel.is_onderbouw():
                 self.onderbouw.toestand_onderdelen.append(toestand_onderdeel)
 
