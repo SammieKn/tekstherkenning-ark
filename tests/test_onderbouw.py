@@ -207,3 +207,17 @@ def test_get_consecutive_palen_propagates_get_next_paal_error(mock_rakdeel: Rakd
     assert isinstance(result, OnverwachtResultaat)
     assert result.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
     assert "Meerdere palen verwijzen naar hetzelfde hoh_paalnummer" in result.details
+
+
+def test_get_consecutive_palen_no_hoh_afstand_cm(mock_rakdeel: Rakdeel):
+    """Test dat get_consecutive_palen een OnverwachtResultaat teruggeeft als een paal geen hoh_afstand_cm heeft."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Verwijder hoh_afstand_cm van een paal
+    onderbouw.palen[1].hoh_afstand_cm = None
+
+    result = onderbouw.get_consecutive_palen()
+
+    assert isinstance(result, OnverwachtResultaat)
+    assert result.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+    assert "Ontbrekende hoh_afstand_cm voor paal" in result.details

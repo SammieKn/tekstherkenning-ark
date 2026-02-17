@@ -124,8 +124,9 @@ class Onderbouw(RakBaseModel):
         list[Paal] | None | OnverwachtResultaat
         - list[Paal]: de palen in de eerste rij van de onderbouw, in volgorde van hoh_paalnummer
         - OnverwachtResultaat: als de paal data fouten bevat, bijvoorbeeld:
-          - Cyclische paalreferenties via hoh_paalnummer
-          - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
+            - Ontbrekende hoh_afstand_cm voor een paal
+            - Cyclische paalreferenties via hoh_paalnummer
+            - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
         """
 
         if not self.eerste_rij_palen:
@@ -142,6 +143,14 @@ class Onderbouw(RakBaseModel):
                     waarde=None,
                     onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
                     details=f"Cyclische paalreferenties gedetecteerd bij Rakdeel: paal {current_paal.paal_nummer} verwijst terug naar een eerder verwerkte paal.",
+                )
+
+            # Check if hoh_afstand_cm is available for the current paal
+            if not current_paal.hoh_afstand_cm:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Ontbrekende hoh_afstand_cm voor paal {current_paal.paal_nummer} in Rakdeel",
                 )
 
             consecutive_palen.append(current_paal)
