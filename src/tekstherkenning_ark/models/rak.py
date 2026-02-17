@@ -190,14 +190,14 @@ class Rak(RakBaseModel):
 
             # Sheet: Onderdeel Aantasting (hiërarchisch)
             aantasting_rows = []
-            for pad, onderdeel, waarde in self.alle_toestandsbepalingen:
+            for pad, toestandonderdeel in self.alle_toestandsbepalingen:
                 rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
                 aantasting_rows.append(
                     {
                         "rakdeel_id": rakdeel_id,
                         "model_pad": model_pad,
-                        "onderdeel": onderdeel,
-                        "aangetast": _waarde_naar_excel(waarde),
+                        "onderdeel": toestandonderdeel.constructie_onderdeel,
+                        "aangetast": _waarde_naar_excel(toestandonderdeel.aangetast),
                     }
                 )
 
