@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import Type, TypeVar, get_args, get_origin, Union, Annotated, Any, Union
+from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, Any, Union
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 
-T = TypeVar("T", Gebrek, OnverwachtResultaat)
+T = TypeVar("T", Gebrek, OnverwachtResultaat, ToestandOnderdeel)
 
 
 def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
@@ -34,6 +35,7 @@ class RakBaseModel(BaseModel):
 
     gebreken: list[Gebrek] = []
     opmerkingen: str = ""
+    toestand_onderdelen: list[ToestandOnderdeel] = []
 
     @property
     def identifier(self) -> str:
@@ -110,6 +112,8 @@ class RakBaseModel(BaseModel):
             obj_list = self.gebreken
         elif obj_type == OnverwachtResultaat:
             obj_list = self.onverwachte_resultaten
+        elif obj_type == ToestandOnderdeel:
+            obj_list = self.toestand_onderdelen
         else:
             raise ValueError(f"obj_type should be either `Gebrek` or `OnverwachtResultaat`, not '{obj_type}'")
         result = [(current_path, gebrek) for gebrek in obj_list]
@@ -118,7 +122,7 @@ class RakBaseModel(BaseModel):
         for child in self.children:
             result.extend(child._get_all_with_path(obj_type=obj_type, prefix=current_path))
 
-        return result
+        return cast(list[tuple[str, T]], result)
 
     @property
     def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
@@ -137,3 +141,12 @@ class RakBaseModel(BaseModel):
         e.g., 'raknaam/rakdeel_id/onderbouw/paal_nummer'.
         """
         return self._get_all_with_path(obj_type=Gebrek)
+
+    @property
+    def alle_toestandsbepalingen(self) -> list[tuple[str, ToestandOnderdeel]]:
+        """Return a list of tuples (path, toestand_onderdeel) for all ToestandOnderdeel objects in this model and its children.
+
+        The path is a slash-separated string of identifiers showing the hierarchy,
+        e.g., 'raknaam/rakdeel_id/onderbouw/vloer'.
+        """
+        return self._get_all_with_path(obj_type=ToestandOnderdeel)

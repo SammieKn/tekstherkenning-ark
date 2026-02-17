@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import TypeVar
 
-from tekstherkenning_ark import utils
+from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.document.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
@@ -50,7 +51,6 @@ class Rakdeel(RakBaseModel):
 
     # De constructie omschrijving
     omschrijving: str = ""
-    onderdeel_is_aangetast: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
 
     # Te vinden in paragraaf 5.x, eerste zin.
     lengte_m_omschrijving: float | None = None
@@ -65,6 +65,11 @@ class Rakdeel(RakBaseModel):
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
+
+    def model_post_init(self, __context) -> None:
+        """Classificeer toestandsbepaling direct na initialisatie."""
+        if self.toestand_onderdelen:
+            self.assign_toestandsbepalingen_to_children()
 
     # @property
     # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
@@ -191,7 +196,7 @@ class Rakdeel(RakBaseModel):
                 omschrijving += paragraaf.content + "\n"
         rakdeel_omschrijving = await RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
-        onderdeel_is_aangetast = cls.from_toestandbepaling_table(section.toestand_tabel)
+        toestand_onderdelen = ToestandOnderdeel.from_toestandbepaling_table(section.toestand_tabel)
 
         # Parse gebrekentabel
         gebreken = await Gebrek.from_doc_tables(section.gebreken_tabel)
@@ -221,7 +226,7 @@ class Rakdeel(RakBaseModel):
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,
             omschrijving=omschrijving,
-            onderdeel_is_aangetast=onderdeel_is_aangetast,
+            toestand_onderdelen=toestand_onderdelen,
         )
 
         # Add gebreken to rakdeel and subcomponents
@@ -283,52 +288,38 @@ class Rakdeel(RakBaseModel):
 
         return obj_dict.get(key, [])
 
-    @staticmethod
-    def from_toestandbepaling_table(
-        structured_table: StructuredTable | None,
-    ) -> dict[str, bool | NietBeschikbaar | OnverwachtResultaat]:
-        """Parse toestandsbepaling table from structured table.
+    def assign_toestandsbepalingen_to_children(self):
+        """Classificeer toestandstabel en verdeel onder de onderdelen van het rakdeel
+        (vloer, onderbouw, bovenbouw, onderloopsheidscherm). Toestandbepalingen die niet
+        geclassificeerd kunnen worden worden aan het rakdeel zelf toegevoegd."""
 
-        Parameters
-        ----------
-        structured_table : StructuredTable | None
-            Structured table containing toestandsbepaling data.
+        rakdeel_toestand_onderdelen = []
 
-        Returns
-        -------
-        dict[str, bool | NietBeschikbaar | OnverwachtResultaat]
-            Dictionary mapping construction components to their condition status.
-        """
-        dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
+        # TODO @Sammie wat doen we hier als een toestandonderdeel wel matcht op bijv. vloer,
+        # maar er geen vloer object is binnen dit rakdeel? Vloer aanmaken of negeren? - Matthias
 
-        if structured_table is None:
-            logger.warning("Geen toestandsbepaling tabel gevonden")
-            return dict_toestandsbepaling
-
-        # Get columns
-        constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
-        aangetast_col = structured_table.get_column(header_in="Aangetast")
-
-        if not constructieonderdeel_col and not aangetast_col:
-            logger.error("Could not find required columns in toestandsbepaling table")
-            return dict_toestandsbepaling
-
-        num_rows = len(constructieonderdeel_col.values)
-
-        for row_idx in range(num_rows):
-            constructieonderdeel = utils.clean_string(constructieonderdeel_col.values[row_idx])
-            aangetast = utils.clean_string(aangetast_col.values[row_idx])
-
-            if constructieonderdeel:  # Skip empty rows
-                aangetast_clean = utils.parse_ja_nee(aangetast)
-                if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
-                    dict_toestandsbepaling[constructieonderdeel] = aangetast_clean
+        # Assign toestandsbepalingen to children based on CONSTRUCTIEONDERDEEL_MAPPING
+        for toestand_onderdeel in self.toestand_onderdelen:
+            if toestand_onderdeel.is_vloer():
+                if not self.onderbouw.vloer:
+                    self.onderbouw.vloer = Vloer(materiaal=NietBeschikbaar.LEEG)
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
                 else:
-                    logger.warning(
-                        f"Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel}', wordt overgeslagen."
-                    )
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
+            elif self.onderbouw and toestand_onderdeel.is_onderbouw():
+                self.onderbouw.toestand_onderdelen.append(toestand_onderdeel)
 
-        return dict_toestandsbepaling
+            elif self.bovenbouw and toestand_onderdeel.is_bovenbouw():
+                self.bovenbouw.toestand_onderdelen.append(toestand_onderdeel)
+
+            elif self.onderbouw.onderloopsheidscherm and toestand_onderdeel.is_onderloopsheidscherm():
+                self.onderbouw.onderloopsheidscherm.toestand_onderdelen.append(toestand_onderdeel)
+
+            else:
+                rakdeel_toestand_onderdelen.append(toestand_onderdeel)
+
+        # Assign toestandsbepalingen that could not be classified to the rakdeel itself
+        self.toestand_onderdelen = rakdeel_toestand_onderdelen
 
     def assign_overige_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken
