@@ -3,11 +3,11 @@ from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, 
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 
-from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 
-T = TypeVar("T", Gebrek, OnverwachtResultaat)
+T = TypeVar("T", Gebrek, OnverwachtResultaat, ToestandOnderdeel)
 
 
 def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
@@ -35,7 +35,7 @@ class RakBaseModel(BaseModel):
 
     gebreken: list[Gebrek] = []
     opmerkingen: str = ""
-    toestand_onderdelen: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
+    toestand_onderdelen: list[ToestandOnderdeel] = []
 
     @property
     def identifier(self) -> str:
@@ -96,7 +96,7 @@ class RakBaseModel(BaseModel):
 
         return children
 
-    def _get_all_gebrek_with_path(self, obj_type: Type[T], prefix: str = "") -> list[tuple[str, T]]:
+    def _get_all_with_path(self, obj_type: Type[T], prefix: str = "") -> list[tuple[str, T]]:
         """Helper method to recursively collect gebreken with their identifier paths.
 
         Args:
@@ -112,27 +112,17 @@ class RakBaseModel(BaseModel):
             obj_list = self.gebreken
         elif obj_type == OnverwachtResultaat:
             obj_list = self.onverwachte_resultaten
+        elif obj_type == ToestandOnderdeel:
+            obj_list = self.toestand_onderdelen
         else:
             raise ValueError(f"obj_type should be either `Gebrek` or `OnverwachtResultaat`, not '{obj_type}'")
         result = [(current_path, gebrek) for gebrek in obj_list]
 
         # Recursively collect from children
         for child in self.children:
-            result.extend(child._get_all_gebrek_with_path(obj_type=obj_type, prefix=current_path))
+            result.extend(child._get_all_with_path(obj_type=obj_type, prefix=current_path))
 
         return cast(list[tuple[str, T]], result)
-
-    def _get_all_toestand_with_path(
-        self, prefix: str = ""
-    ) -> list[tuple[str, str, bool | NietBeschikbaar | OnverwachtResultaat]]:
-        """Verzamel alle toestandsbepalingen met hiërarchisch pad."""
-        current_path = f"{prefix}/{self.identifier}" if prefix else self.identifier
-        result = [(current_path, onderdeel, waarde) for onderdeel, waarde in self.toestand_onderdelen.items()]
-
-        for child in self.children:
-            result.extend(child._get_all_toestand_with_path(prefix=current_path))
-
-        return result
 
     @property
     def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
@@ -141,7 +131,7 @@ class RakBaseModel(BaseModel):
         The path is a slash-separated string of identifiers showing the hierarchy,
         e.g., 'raknaam/rakdeel_id/bovenbouw/metselwerk'.
         """
-        return self._get_all_gebrek_with_path(obj_type=OnverwachtResultaat)
+        return self._get_all_with_path(obj_type=OnverwachtResultaat)
 
     @property
     def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
@@ -150,12 +140,13 @@ class RakBaseModel(BaseModel):
         The path is a slash-separated string of identifiers showing the hierarchy,
         e.g., 'raknaam/rakdeel_id/onderbouw/paal_nummer'.
         """
-        return self._get_all_gebrek_with_path(obj_type=Gebrek)
+        return self._get_all_with_path(obj_type=Gebrek)
 
     @property
-    def alle_toestandsbepalingen(self) -> list[tuple[str, str, bool | NietBeschikbaar | OnverwachtResultaat]]:
-        """Return alle toestandsbepalingen als `(pad, onderdeel, waarde)`.
+    def alle_toestandsbepalingen(self) -> list[tuple[str, ToestandOnderdeel]]:
+        """Return a list of tuples (path, toestand_onderdeel) for all ToestandOnderdeel objects in this model and its children.
 
-        Het pad is slash-gescheiden en volgt dezelfde hiërarchie als `alle_gebreken`.
+        The path is a slash-separated string of identifiers showing the hierarchy,
+        e.g., 'raknaam/rakdeel_id/onderbouw/vloer'.
         """
-        return self._get_all_toestand_with_path()
+        return self._get_all_with_path(obj_type=ToestandOnderdeel)

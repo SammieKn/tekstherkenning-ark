@@ -10,14 +10,17 @@ Output: Excel-bestand in `data/toestandsbepaling` met kolommen:
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
+from typing import Any
 import pandas as pd
+from pydantic import BaseModel
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.models.rak import Rak
 
 
-def waarde_naar_serieel(waarde):
+def waarde_naar_serieel(waarde: bool | BaseModel | Enum | Any):
     """Converteer verschillende waardetypen naar iets dat in Excel kan staan.
 
     Houd booleans als booleans, conversie voor enums/objects naar hun waarde/repr.
@@ -60,17 +63,17 @@ def main():
 
         print(f"Verwerken: {file.name}")
         doc = SmartDocument.from_pdf(file)
-        rak = Rak.from_smart_document(doc, use_caching=True)
+        rak = Rak.from_smart_document(doc, use_caching=False)
 
         rak_id = rak.raknaam
 
-        for pad, onderdeel, aangetast in rak.alle_toestandsbepalingen:
+        for pad, toestand_onderdeel in rak.alle_toestandsbepalingen:
             resultaten.append(
                 {
                     "rak_id": rak_id,
                     "rakdeel_id": haal_rakdeel_id_uit_pad(pad),
-                    "onderdeel": onderdeel,
-                    "aangetast": waarde_naar_serieel(aangetast),
+                    "onderdeel": toestand_onderdeel.constructie_onderdeel,
+                    "aangetast": waarde_naar_serieel(toestand_onderdeel.aangetast),
                 }
             )
 
