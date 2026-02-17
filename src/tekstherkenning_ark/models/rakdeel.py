@@ -66,19 +66,52 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
-    def model_post_init(self, __context) -> None:
-        """Classificeer toestandsbepaling direct na initialisatie."""
-        if self.toestand_onderdelen:
-            self.assign_toestandsbepalingen_to_children()
+    @property
+    def maximaal_aantal_scheuren_per_10_m(self) -> int | OnverwachtResultaat | None:
+        """Aantal scheuren genormaliseerd naar 10 meter lengte."""
+        if not self.lengte_m:
+            return self.lengte_m
 
-    # @property
-    # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
-    # def maximaal_aantal_scheuren_per_10_m(self) -> int | None:
-    #     """Aantal scheuren genormaliseerd naar 10 meter lengte."""
-    #     if self.lengte_m is None or self.lengte_m == 0:
-    #         return None
-    #     aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
-    #     return round((aantal_scheuren / self.lengte_m) * 10)
+        # 1. Verkrijg de eerste rij opeenvolgende palen
+        consecutive_palen = self.onderbouw.get_consecutive_palen()
+        if not consecutive_palen:
+            return consecutive_palen
+
+        # 2. Verkrijg de palen uit de andere rijen en koppel deze aan de palen uit de eerste rij
+        andere_rij_palen = [paal for paal in self.onderbouw.palen if paal.paalrij_nummer != 1]
+
+        palen_koppels = [
+            [paal] + [p for p in andere_rij_palen if p.paal_nummer_main == paal.paal_nummer_main]
+            for paal in consecutive_palen
+        ]
+
+        # 3. Tel het aantal scheuren per paalrij-koppel
+        n_scheuren = [sum(paal.n_scheuren for paal in koppel) for koppel in palen_koppels]
+
+        # 4. Verkrijg de afstanden tussen de palen in de eerste rij.
+        # Specifiek voor deze "window" aanpak beginnen we bij de hoh_afstand van de tweede
+        # paal, omdat deze de afstand tot de eerste paal bevat.We voegen 0 toe aan het einde
+        # om te voorkomen dat de loop breekt bij de laatste paal
+        afstanden_cm = [paal.hoh_afstand_cm for paal in consecutive_palen[1:]] + [0]
+
+        # 5. Voor elke paal, bereken het aantal scheuren per 10 meter en neem het maximum over alle palen
+        max_scheuren_per_10_m = 0
+
+        for i in range(len(consecutive_palen)):
+
+            # Bepaal het aantal scheuren in de 10 meter window vanaf paal `i`
+            n_scheuren_in_window = 0
+            window_size_cm = 0
+            j = i
+            while window_size_cm < 1000 and j < len(consecutive_palen):
+                n_scheuren_in_window += n_scheuren[j]
+                window_size_cm += afstanden_cm[j]
+                j += 1
+
+            # update max_scheuren_per_10_m met het aantal scheuren in deze window
+            max_scheuren_per_10_m = max(max_scheuren_per_10_m, n_scheuren_in_window)
+
+        return max_scheuren_per_10_m
 
     @property
     def lengte_m(self) -> float | None | OnverwachtResultaat:
@@ -99,36 +132,23 @@ class Rakdeel(RakBaseModel):
         - float: de opgetelde hoh_afstanden van de palen in de eerste rij van de onderbouw, omgerekend naar meters
         - None: als er geen palen in de onderbouw zijn
         - OnverwachtResultaat: als de paal data fouten bevat, bijvoorbeeld:
-          - Ontbrekende hoh_afstand_cm voor een paal
-          - Cyclische paalreferenties via hoh_paalnummer
-          - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
+            - Ontbrekende hoh_afstand_cm voor een paal
+            - Cyclische paalreferenties via hoh_paalnummer
+            - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
         """
 
         # Get consecutive palen in the first row
         consecutive_palen = self.onderbouw.get_consecutive_palen()
 
-        if isinstance(consecutive_palen, OnverwachtResultaat):
+        if not consecutive_palen:
             return consecutive_palen
 
-        if not consecutive_palen:
-            return None
-
         # Calculate total distance between palen
-        total_length_cm = 0.0
-
-        for paal in consecutive_palen:
-            # Check if hoh_afstand_cm is available for the current paal
-            if isinstance(paal.hoh_afstand_cm, NietBeschikbaar) or paal.hoh_afstand_cm is None:
-                return OnverwachtResultaat(
-                    waarde=None,
-                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                    details=f"Ontbrekende hoh_afstand_cm voor paal {paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
-                )
-
-            total_length_cm += paal.hoh_afstand_cm
+        total_length_cm = sum(paal.hoh_afstand_cm for paal in consecutive_palen)
 
         # Convert to meters
         total_length_m = total_length_cm / 100.0
+
         return total_length_m
 
     @property
@@ -139,6 +159,11 @@ class Rakdeel(RakBaseModel):
 
         aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
         return round(aantal_scheuren / self.lengte_m, 2)
+
+    def model_post_init(self, __context) -> None:
+        """Classificeer toestandsbepaling direct na initialisatie."""
+        if self.toestand_onderdelen:
+            self.assign_toestandsbepalingen_to_children()
 
     @classmethod
     async def from_smart_doc_section(
