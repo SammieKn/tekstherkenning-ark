@@ -30,36 +30,6 @@ def test_lengte_m_afgeleid_no_data(mock_rakdeel: Rakdeel):
     assert mock_rakdeel.lengte_m_afgeleid is None
 
 
-def test_lengte_m_afgeleid_circular_reference(mock_rakdeel: Rakdeel):
-    """Test that lengte_m_afgeleid correctly detects a circular reference in hoh_paalnummer."""
-
-    # Create a circular reference by setting hoh_paalnummer to create a loop
-    mock_rakdeel.onderbouw.palen[0].hoh_paalnummer = "P1.3"
-
-    # In this case, we expect lengte_m_afgeleid to be an OnverwachtResultaat indicating that there is a circular reference in the paal references.
-    assert isinstance(mock_rakdeel.lengte_m_afgeleid, OnverwachtResultaat)
-    assert (
-        mock_rakdeel.lengte_m_afgeleid.onverwacht_resultaat_type
-        is OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
-    )
-    assert "Cyclische paalreferenties gedetecteerd bij Rakdeel" in mock_rakdeel.lengte_m_afgeleid.details
-
-
-def test_lengte_m_afgeleid_duplicate_reference(mock_rakdeel: Rakdeel):
-    """Test that lengte_m_afgeleid correctly detects a duplicate reference in hoh_paalnummer."""
-
-    # Create a duplicate reference by setting hoh_paalnummer to the same value for multiple palen
-    mock_rakdeel.onderbouw.palen[0].hoh_paalnummer = "P1.2"
-
-    # In this case, we expect lengte_m_afgeleid to be an OnverwachtResultaat indicating that there are multiple palen referencing the same hoh_paalnummer.
-    assert isinstance(mock_rakdeel.lengte_m_afgeleid, OnverwachtResultaat)
-    assert (
-        mock_rakdeel.lengte_m_afgeleid.onverwacht_resultaat_type
-        is OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
-    )
-    assert "Meerdere palen verwijzen naar hetzelfde hoh_paalnummer" in mock_rakdeel.lengte_m_afgeleid.details
-
-
 def test_lengte_m_afgeleid_no_hoh_afstand_cm(mock_rakdeel: Rakdeel):
     """Test that lengte_m_afgeleid correctly handles palen without hoh_afstand_cm."""
 
@@ -73,20 +43,3 @@ def test_lengte_m_afgeleid_no_hoh_afstand_cm(mock_rakdeel: Rakdeel):
         is OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
     )
     assert "Ontbrekende hoh_afstand_cm voor paal" in mock_rakdeel.lengte_m_afgeleid.details
-
-
-def test_lengte_m_afgeleid_not_all_palen_processed(mock_rakdeel: Rakdeel):
-    """Test that lengte_m_afgeleid correctly handles the case where the reference chain is interrupted
-    and thus not alle palen have been processed."""
-
-    # The last paal is missing a reference and will thus not be found in the chain of references,
-    # which should lead to an OnverwachtResultaat indicating that not all palen have been processed.
-    mock_rakdeel.onderbouw.palen[3].hoh_paalnummer = ""
-
-    # In this case, we expect lengte_m_afgeleid to be an OnverwachtResultaat indicating that there is an incomplete processing of palen for the Rakdeel.
-    assert isinstance(mock_rakdeel.lengte_m_afgeleid, OnverwachtResultaat)
-    assert (
-        mock_rakdeel.lengte_m_afgeleid.onverwacht_resultaat_type
-        is OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
-    )
-    assert "Onvolledige verwerking van palen bij Rakdeel" in mock_rakdeel.lengte_m_afgeleid.details

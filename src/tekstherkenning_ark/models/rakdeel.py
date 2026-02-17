@@ -104,65 +104,30 @@ class Rakdeel(RakBaseModel):
           - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
         """
 
-        # Leid lengte af uit hoh-aftanden tussen onderliggende palen
-        eerste_rij_palen = self.onderbouw.eerste_rij_palen
+        # Get consecutive palen in the first row
+        consecutive_palen = self.onderbouw.get_consecutive_palen()
 
-        if not eerste_rij_palen:
+        if isinstance(consecutive_palen, OnverwachtResultaat):
+            return consecutive_palen
+
+        if not consecutive_palen:
             return None
 
-        processed_paal_nummers: set[str] = set()
-        current_paal = eerste_rij_palen[0]
+        # Calculate total distance between palen
         total_length_cm = 0.0
 
-        while current_paal:
-
-            # Check for cyclical references to prevent infinite loops
-            if current_paal.paal_nummer in processed_paal_nummers:
-                return OnverwachtResultaat(
-                    waarde=None,
-                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                    details=f"Cyclische paalreferenties gedetecteerd bij Rakdeel {self.rakdeel_id}",
-                )
-
+        for paal in consecutive_palen:
             # Check if hoh_afstand_cm is available for the current paal
-            if isinstance(current_paal.hoh_afstand_cm, NietBeschikbaar) or current_paal.hoh_afstand_cm is None:
+            if isinstance(paal.hoh_afstand_cm, NietBeschikbaar) or paal.hoh_afstand_cm is None:
                 return OnverwachtResultaat(
                     waarde=None,
                     onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                    details=f"Ontbrekende hoh_afstand_cm voor paal {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
+                    details=f"Ontbrekende hoh_afstand_cm voor paal {paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
                 )
 
-            # Actually add the length of the current paal to the total length
-            total_length_cm += current_paal.hoh_afstand_cm
-            processed_paal_nummers.add(current_paal.paal_nummer)
+            total_length_cm += paal.hoh_afstand_cm
 
-            # Determine the next paal in the sequence based on hoh_paalnummer.
-            palen_that_refer_to_current_paal = [
-                p for p in eerste_rij_palen if p.hoh_paalnummer == current_paal.paal_nummer
-            ]
-
-            # Check if there are multiple palen that refer to the same hoh_paalnummer, which would indicate a data issue
-            if len(palen_that_refer_to_current_paal) > 1:
-                return OnverwachtResultaat(
-                    waarde=None,
-                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                    details=f"Meerdere palen verwijzen naar hetzelfde hoh_paalnummer {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
-                )
-
-            if len(palen_that_refer_to_current_paal) == 1:
-                current_paal = palen_that_refer_to_current_paal[0]
-            else:
-                # No next paal
-                current_paal = None
-
-        # Validate that we have processed the expected number of palen based on the first row palen in onderbouw
-        if not len(processed_paal_nummers) == len(eerste_rij_palen):
-            return OnverwachtResultaat(
-                waarde=None,
-                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                details=f"Onvolledige verwerking van palen bij Rakdeel {self.rakdeel_id}: {len(processed_paal_nummers)} van {len(eerste_rij_palen)} palen verwerkt. Dit kan duiden op onvolledige data of een gebroken reeks.",
-            )
-
+        # Convert to meters
         total_length_m = total_length_cm / 100.0
         return total_length_m
 
