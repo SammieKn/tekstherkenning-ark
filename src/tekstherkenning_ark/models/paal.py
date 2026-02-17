@@ -85,6 +85,11 @@ class Paal(RakBaseModel):
         return str(self.paal_nummer)
 
     @property
+    def paalrij_nummer(self) -> int:
+        """Geef het nummer van de paalrij terug als string. (P1.12 -> 1)"""
+        return int(self.paal_nummer.split(".")[0].replace("P", ""))
+
+    @property
     def paal_nummer_main(self) -> int | None:
         """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
 
