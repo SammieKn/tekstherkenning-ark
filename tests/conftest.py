@@ -45,9 +45,7 @@ def get_rak_kzg0202(doc_pkl_path: Path) -> Rak:
     # load data
     doc_from_cache = pickle.loads(doc_pkl_path.read_bytes())
 
-    loaded_doc = SmartDocument(
-        pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"], analyze_result=None
-    )
+    loaded_doc = SmartDocument(pdf_path=doc_pkl_path, sections=doc_from_cache["sections"], analyze_result=None)
     # rak
     rak = Rak.from_smart_document(loaded_doc, use_caching=False)  # use cached LLM parts but not rak itself
     return rak
