@@ -1,3 +1,4 @@
+from typing import Literal
 from tekstherkenning_ark.flexibele_enum import FlexibeleEnum
 
 
@@ -46,6 +47,10 @@ class NietBeschikbaar(FlexibeleEnum):
     NIET_VAN_TOEPASSING = "NVT"
     NIET_MEETBAAR = "NM"
     LEEG = ""
+
+    def __bool__(self):
+        """Niet beschikbaar waarden worden als False beschouwd in een boolean context, net als None, lege string, etc."""
+        return False
 
 
 class AansluitingStatus(FlexibeleEnum):
