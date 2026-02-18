@@ -413,6 +413,7 @@ def vergelijk_rakdeel(
         "onderbouw.vloer.is_beschadigd": "onderbouw.vloer.is_beschadigd",
         "onderbouw.onderloopsheidscherm.is_aanwezig": "onderbouw.onderloopsheidscherm.is_beschadigd",
         "onderbouw.onderloopsheidscherm.is_beschadigd": "onderbouw.onderloopsheidscherm.is_beschadigd",
+        "vloer.bovenkant_vloer_cm_tov_nap": "onderbouw.vloer.bovenkant_vloer_cm_tov_nap",
         "lengte_rakdeel_m": "lengte_m",
         "rakdeel.bouwjaar": "bouwjaar",
         "rak.aantal_rakdelen": "rak.aantal_rakdelen",
@@ -490,7 +491,7 @@ def exporteer_naar_excel(statistieken: VergelijkingsStatistieken, output_path: P
     def safe_excel_value(val: Any) -> Any:
         """Convert values not supported by openpyxl to Excel-friendly types."""
         # pandas NA
-        if pd.isna(val):
+        if pd.isna(val) or not val:
             return ""
         # Enums -> use their value or name
         try:
