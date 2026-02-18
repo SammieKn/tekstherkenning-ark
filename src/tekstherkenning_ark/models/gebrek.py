@@ -14,6 +14,7 @@ from tekstherkenning_ark.utils import (
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.llm.gebrek_classificatie import (
+    ScheurLLM,
     ScheurMetselwerkLLM,
     ScheurHoutLLM,
     GrondVoerendGatLLM,
@@ -125,7 +126,12 @@ class Gebrek(BaseModel):
                     **gebrek.model_dump(),
                     **llm_result.model_dump(),
                 )
-            # TODO: Implementeer een algemene scheur classificatie indien nodig
+            else:
+                llm_result = await ScheurLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return Scheur(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
 
         # logica voor grondvoerend gat
         if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
@@ -150,6 +156,9 @@ class Gebrek(BaseModel):
                 **llm_result.model_dump(),
             )
 
+        if "scherm" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+            return OnderloopsheidschermBeschadigd(**gebrek.model_dump())
+
         # logica voor lokaal verdwenen metselwerk
         synonyms = [
             "ontbreekt metselwerk",
@@ -173,6 +182,9 @@ class Scheur(Gebrek):
 
     Attributes
     ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters. Te vinden in de omschrijving
+        van de gebrekentabel, bijv. "Op X meter vanaf start rak...".
     lengte_cm : float | NietBeschikbaar
         Lengte van de scheur in centimeters. Te vinden in de omschrijving
         van de gebrekentabel.
@@ -181,8 +193,9 @@ class Scheur(Gebrek):
         van de gebrekentabel, vaak als 'SW'.
     """
 
-    lengte_cm: float | NietBeschikbaar
-    scheurwijdte_mm: float | NietBeschikbaar
+    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    lengte_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    scheurwijdte_mm: float | NietBeschikbaar = NietBeschikbaar.LEEG
 
 
 class ScheurMetselwerk(Scheur):
@@ -190,9 +203,6 @@ class ScheurMetselwerk(Scheur):
 
     Attributes
     ----------
-    afstand_van_startrak_m : float | NietBeschikbaar
-        Afstand van het startrak in meters. Te vinden in de omschrijving
-        van de gebrekentabel, bijv. "Op X meter vanaf start rak...".
     afstand_van_waterlijn_cm : float | NietBeschikbaar
         Afstand van de waterlijn in centimeters.
     afstand_van_deksloof_cm : float | NietBeschikbaar
@@ -203,7 +213,6 @@ class ScheurMetselwerk(Scheur):
         Oriëntatie van de scheur.
     """
 
-    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
     afstand_van_waterlijn_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
     afstand_van_deksloof_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
     is_inprikbaar: bool | NietBeschikbaar = NietBeschikbaar.LEEG
@@ -297,3 +306,9 @@ class LokaalVerdwenenMetselwerk(Gebrek):
     breedte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
     hoogte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
     diepte_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
+
+
+class OnderloopsheidschermBeschadigd(Gebrek):
+    """Model voor een onderloopsheidscherm."""
+
+    is_beschadigd: bool = True

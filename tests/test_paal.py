@@ -2,6 +2,7 @@
 Module to test methods related to Paal model.
 """
 
+from tekstherkenning_ark.enums import NietBeschikbaar, SchoorStand
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from azure.ai.documentintelligence.models import DocumentTable
@@ -58,3 +59,21 @@ def test_n_scheuren(mock_rakdeel_with_scheuren: Rakdeel):
     scheuren_count = [paal.n_scheuren for paal in palen]
 
     assert scheuren_count == expected_scheuren_counts
+
+
+def test_paal_is_ongewenste_schoorstand_neutraal(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = SchoorStand.NEUTRAAL
+    assert paal.is_ongewenste_schoorstand == False
+
+
+def test_paal_is_ongewenste_schoorstand_pna(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = SchoorStand.NEGATIEF
+    assert paal.is_ongewenste_schoorstand == True
+
+
+def test_paal_is_ongewenste_schoorstand_niet_beschikbaar(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = NietBeschikbaar.NIET_VAN_TOEPASSING
+    assert paal.is_ongewenste_schoorstand is None

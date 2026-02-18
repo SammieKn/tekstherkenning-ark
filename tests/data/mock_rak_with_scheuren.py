@@ -6,7 +6,7 @@ from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.vloer import Vloer
-from tekstherkenning_ark.models.gebrek import ScheurHout
+from tekstherkenning_ark.models.gebrek import Scheur, ScheurHout
 
 
 def create_mock_rak_with_scheuren() -> Rak:
@@ -27,7 +27,68 @@ def create_mock_rak_with_scheuren() -> Rak:
                 lengte_m_omschrijving=20.0,
                 bovenbouw=Bovenbouw(
                     materiaal="Metselwerk",
-                    gebreken=[],
+                    gebreken=[
+                        Scheur(
+                            codering="S1",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=0,
+                        ),
+                        Scheur(
+                            codering="S2",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=2,
+                        ),
+                        Scheur(
+                            codering="S3",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=5,
+                        ),
+                        Scheur(
+                            codering="S4",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=12,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=18,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=19,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=20,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=21,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=40,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=56,
+                        ),
+                    ],
                 ),
                 onderbouw=Onderbouw(
                     palen=[

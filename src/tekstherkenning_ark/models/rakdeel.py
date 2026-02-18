@@ -17,6 +17,8 @@ from tekstherkenning_ark.models.gebrek import (
     Gebrek,
     GrondVoerendGat,
     LokaalVerdwenenMetselwerk,
+    OnderloopsheidschermBeschadigd,
+    Scheur,
     ScheurHout,
     ScheurMetselwerk,
 )
@@ -67,52 +69,31 @@ class Rakdeel(RakBaseModel):
         return str(self.rakdeel_id)
 
     @property
-    def maximaal_aantal_scheuren_per_10_m(self) -> int | OnverwachtResultaat | None:
+    def maximaal_aantal_scheuren_per_10_m(self) -> int:
         """Aantal scheuren genormaliseerd naar 10 meter lengte."""
-        if not self.lengte_m:
-            return self.lengte_m
 
-        # 1. Verkrijg de eerste rij opeenvolgende palen
-        consecutive_palen = self.onderbouw.get_consecutive_palen()
+        # Verkrijg de scheur-afstanden in de bovenbouw
+        scheur_afstanden = sorted(
+            [
+                s.afstand_van_startrak_m
+                for s in self.bovenbouw.scheuren
+                if isinstance(s.afstand_van_startrak_m, (int, float))
+            ]
+        )
 
-        if consecutive_palen == []:
-            return 0
-        if not consecutive_palen:
-            return consecutive_palen
+        if len(scheur_afstanden) != len(self.bovenbouw.scheuren):
+            logger.warning(
+                f"{len(self.bovenbouw.scheuren) - len(scheur_afstanden)} / {len(self.bovenbouw.scheuren)} scheuren"
+                f" in rakdeel {self.rakdeel_id} hebben geen geldige afstand_van_startrak_m waarde en worden genegeerd "
+                f"in de maximaal_aantal_scheuren_per_10_m berekening."
+            )
 
-        # 2. Verkrijg de palen uit de andere rijen en koppel deze aan de palen uit de eerste rij
-        andere_rij_palen = [paal for paal in self.onderbouw.palen if paal.paalrij_nummer != 1]
-
-        palen_koppels = [
-            [paal] + [p for p in andere_rij_palen if p.paal_nummer_main == paal.paal_nummer_main]
-            for paal in consecutive_palen
-        ]
-
-        # 3. Tel het aantal scheuren per paalrij-koppel
-        n_scheuren = [sum(paal.n_scheuren for paal in koppel) for koppel in palen_koppels]
-
-        # 4. Verkrijg de afstanden tussen de palen in de eerste rij.
-        # Specifiek voor deze "window" aanpak beginnen we bij de hoh_afstand van de tweede
-        # paal, omdat deze de afstand tot de eerste paal bevat.We voegen 0 toe aan het einde
-        # om te voorkomen dat de loop breekt bij de laatste paal
-        afstanden_cm = [paal.hoh_afstand_cm for paal in consecutive_palen[1:]] + [0]
-
-        # 5. Voor elke paal, bereken het aantal scheuren per 10 meter en neem het maximum over alle palen
+        # Loop over de scheuren, en bepaal het aantal scheuren in elke 10 meter window
         max_scheuren_per_10_m = 0
 
-        for i in range(len(consecutive_palen)):
-
-            # Bepaal het aantal scheuren in de 10 meter window vanaf paal `i`
-            n_scheuren_in_window = 0
-            window_size_cm = 0
-            j = i
-            while window_size_cm < 1000 and j < len(consecutive_palen):
-                n_scheuren_in_window += n_scheuren[j]
-                window_size_cm += afstanden_cm[j]
-                j += 1
-
-            # update max_scheuren_per_10_m met het aantal scheuren in deze window
-            max_scheuren_per_10_m = max(max_scheuren_per_10_m, n_scheuren_in_window)
+        for i, scheur_locatie in enumerate(scheur_afstanden):
+            n_scheuren = len([s for s in scheur_afstanden if scheur_locatie <= s < scheur_locatie + 10])
+            max_scheuren_per_10_m = max(max_scheuren_per_10_m, n_scheuren)
 
         return max_scheuren_per_10_m
 
@@ -208,6 +189,7 @@ class Rakdeel(RakBaseModel):
             onderloopsheidscherm=Onderloopsheidscherm.from_rakdeel_omschrijving(rakdeel_omschrijving),
             vloer=Vloer.from_rakdeel_omschrijving(rakdeel_omschrijving),
             materiaal=rakdeel_omschrijving.materiaal_onderbouw,
+            materiaal_fundering=rakdeel_omschrijving.materiaal_fundering,
         )
         bovenbouw = Bovenbouw(
             materiaal=rakdeel_omschrijving.materiaal_bovenbouw,
@@ -331,13 +313,18 @@ class Rakdeel(RakBaseModel):
             gebrek_assigned = False
 
             # Match gebreken to onderdeel
-            if isinstance(gebrek, (ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
+            if isinstance(gebrek, (Scheur, ScheurMetselwerk, LokaalVerdwenenMetselwerk)):
                 self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
 
             elif isinstance(gebrek, (GrondVoerendGat, BuikInWand)):
                 self.bovenbouw.gebreken.append(gebrek)
                 gebrek_assigned = True
+
+            elif isinstance(gebrek, OnderloopsheidschermBeschadigd):
+                if self.onderbouw.onderloopsheidscherm:
+                    self.onderbouw.onderloopsheidscherm.gebreken.append(gebrek)
+                    gebrek_assigned = True
 
             if not gebrek_assigned:
                 self.gebreken.append(gebrek)

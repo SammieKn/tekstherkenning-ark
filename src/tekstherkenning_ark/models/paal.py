@@ -104,6 +104,14 @@ class Paal(RakBaseModel):
         """Geef het aantal scheuren terug dat is geconstateerd in deze paal."""
         return len([gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)])
 
+    @property
+    def is_ongewenste_schoorstand(self) -> bool | None:
+        """Check of de schoor richting PNA is. Als er geen schoor richting is, return None."""
+
+        if not self.schoor_richting:
+            return None
+        return self.schoor_richting is SchoorStand.NEGATIEF
+
     @classmethod
     def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Paal]]:
         """Parse and return a list of Paal objects from a structured table.

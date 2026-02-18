@@ -7,7 +7,7 @@ from typing import ClassVar
 from pydantic import Field
 
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
-from tekstherkenning_ark import constants
+from tekstherkenning_ark.constants import NAP_CM_HOOGTE_WATERLIJN
 from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
 from tekstherkenning_ark.enums import (
     MateriaalBovenbouw,
@@ -68,7 +68,7 @@ class RakdeelOmschrijving(LLMClassifier):
     )
     materiaal_onderbouw: MateriaalOnderbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles boven de fundering onder de kade.",
+        description="Het materiaal van de onderbouw van het rakdeel. Dit is alles boven de fundering en onder de kade.",
     )
     materiaal_bovenbouw: MateriaalBovenbouw | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
@@ -76,7 +76,8 @@ class RakdeelOmschrijving(LLMClassifier):
     )
     # benodigd voor onderbouw/fundering
     materiaal_vloer: MateriaalVloer | NietBeschikbaar = Field(
-        default=NietBeschikbaar.LEEG, description="Het materiaal van de vloer van het rakdeel."
+        default=NietBeschikbaar.LEEG,
+        description="Het materiaal van de vloer van het rakdeel. Als is aangegeven dat palen erin zijn gestort, dan is het een betonnen vloer.",
     )
 
     # onderloopsheidscherm aanwezig ja/nee
@@ -89,10 +90,27 @@ class RakdeelOmschrijving(LLMClassifier):
     bovenkant_deksteen_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="De hoogte van de bovenkant van de kademuur in centimeters ten opzichte van de waterlijn. Ook wel kerende hoogte genoemd. De bovenkant wordt vaak aangegeven door deksteen, metselwerk of maaiveld.",
+        description=f"""
+        Geef de hoogte van de bovenkant van de kademuur in centimeters ten opzichte van NAP.
+        Definities:
+        - waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm: hoogte van de waterlijn (cm t.o.v. NAP). Positief = boven NAP, negatief = onder NAP.
+        - delta: verticale afstand van de waterlijn naar de bovenkant van de kade (cm). Positief als de kade boven de waterlijn ligt, negatief als de kade onder de waterlijn ligt.
+        Formule:
+        top_kade_NAP = waterlijn_NAP + delta
+        Als de bovenkant aangeduid wordt door deksteen/metselwerk/maaiveld, gebruik die waarde voor delta (met correct teken).
+        Voorbeeld: waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm, delta = 80 (kade ligt 80 cm boven waterlijn) → top_kade_NAP = -{NAP_CM_HOOGTE_WATERLIJN} + 80 = {80 - NAP_CM_HOOGTE_WATERLIJN} cm.""",
     )
     bovenkant_vloer_cm: float | None = Field(
-        gt=0.0,
+        lt=0.0,
         default=None,
-        description="De hoogte van de waterlijn tot de bovenkant van de funderingsvloer. Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer.",
+        description=f"""
+        Geef de hoogte ten opzichte van NAP van de bovenkant van de funderingsvloer (cm).
+        Definities:
+        - De waterlijn bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm ten opzichte van NAP.
+        - De hoogte is negatief (onder NAP).
+        Berekening:
+        - Tel alle onderdelen vanaf de onderzijde van de constructie op (bijvoorbeeld fundering, kespen, balken) tot aan de bovenkant van de vloer.
+        - De som van deze diktes, samen met de hoogte van de onderzijde van de constructie ten opzichte van NAP, geeft de hoogte van de bovenkant vloer.
+        Voorbeeld:
+        Onderzijde constructie op -{NAP_CM_HOOGTE_WATERLIJN + 50} cm, constructiedikte 30 cm → bovenkant vloer = (-{NAP_CM_HOOGTE_WATERLIJN + 50}) + 30 = -{(NAP_CM_HOOGTE_WATERLIJN + 20)} cm.""",
     )

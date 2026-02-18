@@ -5,6 +5,7 @@ from tekstherkenning_ark.models.gebrek import (
     GrondVoerendGat,
     LokaalVerdwenenMetselwerk,
     Scheefstand,
+    Scheur,
     ScheurMetselwerk,
 )
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
@@ -46,28 +47,27 @@ class Bovenbouw(RakBaseModel):
         return "bovenbouw"
 
     @property
+    def scheuren(self) -> list[Scheur]:
+        """Return a list of all Scheur gebreken in this Bovenbouw."""
+        return [gebrek for gebrek in self.gebreken or [] if isinstance(gebrek, Scheur)]
+
+    @property
     def totaal_aantal_scheuren(self) -> int:
         """Totaal aantal scheuren in het metselwerk."""
 
-        return sum(1 for gebrek in self.gebreken if isinstance(gebrek, ScheurMetselwerk))
+        return len(self.scheuren)
 
     @property
     def maximale_scheurwijdte_mm(self) -> float | None:
-        """Grootste scheurwijdte uit alle ScheurMetselwerk gebreken."""
+        """Grootste scheurwijdte uit alle Scheur gebreken."""
 
-        return max(self.lijst_scheurwijdtes) if self.lijst_scheurwijdtes else None
-
-    @property
-    def lijst_scheurwijdtes(self) -> list[float]:
-        """Alle geconstateerde scheurwijdtes voor analyse."""
-        if not self.gebreken:
-            return []
-
-        return [
+        scheurwijdtes = [
             float(gebrek.scheurwijdte_mm)
-            for gebrek in self.gebreken
-            if isinstance(gebrek, ScheurMetselwerk) and isinstance(gebrek.scheurwijdte_mm, (int, float))
+            for gebrek in self.scheuren
+            if isinstance(gebrek.scheurwijdte_mm, (int, float))
         ]
+
+        return max(scheurwijdtes) if scheurwijdtes else None
 
     @property
     def is_buik_in_wand_aanwezig(self) -> bool:
