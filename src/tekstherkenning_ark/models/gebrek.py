@@ -213,7 +213,6 @@ class ScheurMetselwerk(Scheur):
         Oriëntatie van de scheur.
     """
 
-    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
     afstand_van_waterlijn_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
     afstand_van_deksloof_cm: float | NietBeschikbaar = NietBeschikbaar.LEEG
     is_inprikbaar: bool | NietBeschikbaar = NietBeschikbaar.LEEG
