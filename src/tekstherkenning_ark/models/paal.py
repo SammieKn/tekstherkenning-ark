@@ -104,6 +104,7 @@ class Paal(RakBaseModel):
         """Geef het aantal scheuren terug dat is geconstateerd in deze paal."""
         return len([gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)])
 
+    @property
     def is_ongewenste_schoorstand(self) -> bool | None:
         """Check of de schoor richting PNA is. Als er geen schoor richting is, return None."""
 
