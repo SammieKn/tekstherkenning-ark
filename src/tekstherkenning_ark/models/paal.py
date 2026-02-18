@@ -1,9 +1,8 @@
 from __future__ import annotations
-from typing import Any
 
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
-from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, ScheurHout
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.logger import get_logger
@@ -86,10 +85,24 @@ class Paal(RakBaseModel):
         return str(self.paal_nummer)
 
     @property
-    def paal_nummer_main(self) -> int:
+    def paalrij_nummer(self) -> int:
+        """Geef het nummer van de paalrij terug als string. (P1.12 -> 1)"""
+        return int(self.paal_nummer.split(".")[0].replace("P", ""))
+
+    @property
+    def paal_nummer_main(self) -> int | None:
         """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
 
-        return int(self.paal_nummer.split(".")[1])
+        try:
+            return int(self.paal_nummer.split(".")[1])
+        except:
+            logger.warning(f"Failed to extract main nummer from paal nummer {self.paal_nummer}")
+            return None
+
+    @property
+    def n_scheuren(self) -> int:
+        """Geef het aantal scheuren terug dat is geconstateerd in deze paal."""
+        return len([gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)])
 
     @classmethod
     def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Paal]]:
@@ -149,19 +162,20 @@ class Paal(RakBaseModel):
                     paal_dict[current_constructie_id] = []
                 paal_dict[current_constructie_id].append(paal)
 
+        # If one or more palen were found without a constructie ID, remove all construction ids
+        if "" in paal_dict:
+            logger.warning("One or more palen found without constructie ID. Removing all constructie IDs for palen.")
+            paal_dict = utils.remove_constructie_id(paal_dict)
+
         # Validate paal nummers are sequential within each constructie ID
         prev_main_paal_nummer = 0
 
-        for constructie_id, palen in paal_dict.items():
-            for paal in palen:
-                if not paal.paal_nummer_main in [prev_main_paal_nummer, prev_main_paal_nummer + 1]:
-                    logger.warning(
-                        f"Paal nummers are not sequential within constructie ID {constructie_id}. Expected {prev_main_paal_nummer} or {prev_main_paal_nummer + 1}, got {paal.paal_nummer_main} for {paal.paal_nummer}"
-                    )
-                prev_main_paal_nummer = paal.paal_nummer_main
-
-        if "" in paal_dict:
-            logger.warning(f"{len(paal_dict[''])} palen found with constructie ID missing.")
+        for paal in utils.dict_items_flat(paal_dict):
+            if not paal.paal_nummer_main in [prev_main_paal_nummer, prev_main_paal_nummer + 1]:
+                logger.warning(
+                    f"Non-sequential paal nummers found. Expected Px.{prev_main_paal_nummer + 1} after Px.{prev_main_paal_nummer} but instead got {paal.paal_nummer}"
+                )
+            prev_main_paal_nummer = paal.paal_nummer_main
 
         return paal_dict
 

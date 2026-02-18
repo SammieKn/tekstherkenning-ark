@@ -7,7 +7,9 @@ from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypeVar
+
+from tekstherkenning_ark.logger import get_logger
 
 if TYPE_CHECKING:
     from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
@@ -18,6 +20,10 @@ KESP_ID_PATTERN = r"\bK\d+\b"
 RAK_ID_PATTERN = r"([A-Z]{3}\d{4})(-\d{2})?"
 CONSTRUCTIE_PATTERN = r"constructie [a-z]"
 ALGEMEEN_GEBREK_PATTERN = r"^GB\d{1,3}$"
+
+logger = get_logger(__name__)
+
+T = TypeVar("T")
 
 
 def get_table_content(table: DocumentTable) -> list[list[str]]:
@@ -75,8 +81,8 @@ def clean_paal_id(value: str) -> str:
     """Correct for common errors in paal ID's.
 
     Known and accepted exceptions:
-    - P.2.163
-    - 21.169
+    - P.2.163 -> P2.163
+    - 21.169 -> P2.169
     """
 
     value = clean_string(value)
@@ -89,18 +95,44 @@ def clean_paal_id(value: str) -> str:
     return exceptions_dict.get(value, value)
 
 
+def clean_kesp_id(value: str) -> str:
+    """Correct for common errors in kesp ID's.
+
+    Known and accepted exceptions:
+    - Kg -> K9
+    """
+
+    value = clean_string(value)
+
+    exceptions_dict = {
+        "Kg": "K9",
+    }
+
+    return exceptions_dict.get(value, value)
+
+
 def contains_paal_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'P\d.\d+' (e.g., P1.1, P2.10)"""
 
     value = clean_paal_id(clean_string(value))
+    found = bool(re.search(PAAL_ID_PATTERN, value))
 
-    return bool(re.search(PAAL_ID_PATTERN, value.strip()))
+    if not found and value.strip().lower().startswith("p"):
+        logger.warning(f"Waarschijnlijk paal ID gevonden dat niet voldoet aan patroon: '{value}'")
+
+    return found
 
 
 def contains_kesp_id(value: str) -> bool:
     r"""Check if a string contains the pattern 'K\d+' (e.g., K1, K24)"""
 
-    return bool(re.search(KESP_ID_PATTERN, value.strip()))
+    value = clean_kesp_id(clean_string(value))
+    found = bool(re.search(KESP_ID_PATTERN, value))
+
+    if not found and value.strip().lower().startswith("k"):
+        logger.warning(f"Waarschijnlijk kesp ID gevonden dat niet voldoet aan patroon: '{value}'")
+
+    return found
 
 
 def get_paal_id(value: str) -> str | None:
@@ -116,9 +148,9 @@ def get_paal_id(value: str) -> str | None:
     str | None
         The extracted paal ID or None if not found
     """
-    value = clean_paal_id(clean_string(value))
 
-    match = re.search(PAAL_ID_PATTERN, value.strip())
+    value = clean_paal_id(clean_string(value))
+    match = re.search(PAAL_ID_PATTERN, value)
 
     return match.group(0) if match else None
 
@@ -136,9 +168,9 @@ def get_kesp_id(value: str) -> str | None:
     str | None
         The extracted kesp ID or None if not found
     """
-    value = clean_string(value)
 
-    match = re.search(KESP_ID_PATTERN, value.strip())
+    value = clean_kesp_id(clean_string(value))
+    match = re.search(KESP_ID_PATTERN, value)
 
     return match.group(0) if match else None
 
@@ -279,3 +311,16 @@ def is_table_type_by_id_func(
 
     matching_cells = sum(1 for cell in first_col_cells if id_func(cell) is not None)
     return (matching_cells / len(first_col_cells)) > threshold
+
+
+def dict_items_flat(item_dict: dict[str, list[T]]) -> list[T]:
+    """Flatten the values of a dictionary into a single list."""
+    return [item for sublist in item_dict.values() for item in sublist]
+
+
+def remove_constructie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
+    """Als er palen of kespen unassigned zijn, maak dan alle palen of kespen unassigned.
+
+    Een deel unassigned is indicatie dat de tabel niet klopt. In dit geval moet dus alles unassigned blijven."""
+    all_items = dict_items_flat(item_dict)
+    return {"": all_items}

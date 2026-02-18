@@ -20,6 +20,8 @@ from tekstherkenning_ark.utils import (
     is_algemeen_gebrek,
     is_houtmonster_id,
     clean_string,
+    dict_items_flat,
+    remove_constructie_id,
 )
 
 
@@ -208,3 +210,57 @@ def test_clean_combined():
     """Test cleaning with multiple transformations"""
     assert clean_string('  "café:test:"  ') == "cafe"
     assert clean_string("'  test  '") == "test"
+
+
+def test_dict_items_flat_normal():
+    """Test flattening a normal dictionary with multiple keys"""
+    item_dict = {
+        "Constructie A": ["item1", "item2"],
+        "Constructie B": ["item3", "item4", "item5"],
+        "Constructie C": ["item6"],
+    }
+    result = dict_items_flat(item_dict)
+    assert result == ["item1", "item2", "item3", "item4", "item5", "item6"]
+
+
+def test_dict_items_flat_empty():
+    """Test flattening an empty dictionary"""
+    result = dict_items_flat({})
+    assert result == []
+
+
+def test_dict_items_flat_with_empty_lists():
+    """Test flattening a dictionary containing empty lists"""
+    item_dict = {
+        "Constructie A": ["item1", "item2"],
+        "Constructie B": [],
+        "Constructie C": ["item3"],
+    }
+    result = dict_items_flat(item_dict)
+    assert result == ["item1", "item2", "item3"]
+
+
+def test_remove_constructie_id_normal():
+    """Test that remove_constructie_id returns all items under empty key"""
+    item_dict = {
+        "Constructie A": ["item1", "item2"],
+        "Constructie B": ["item3", "item4"],
+    }
+    result = remove_constructie_id(item_dict)
+    assert result == {"": ["item1", "item2", "item3", "item4"]}
+
+
+def test_remove_constructie_id_with_unassigned():
+    """Test remove_constructie_id when there are already unassigned items"""
+    item_dict = {
+        "": ["item1"],
+        "Constructie A": ["item2", "item3"],
+    }
+    result = remove_constructie_id(item_dict)
+    assert result == {"": ["item1", "item2", "item3"]}
+
+
+def test_remove_constructie_id_empty():
+    """Test remove_constructie_id with an empty dictionary"""
+    result = remove_constructie_id({})
+    assert result == {"": []}

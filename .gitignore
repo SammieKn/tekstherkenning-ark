@@ -144,9 +144,6 @@ cython_debug/
 # Streamlit
 .streamlit/secrets.toml
 
-# GitHub Actions
-.github
-
 # Data files
 /data*
 /.idea/.gitignore
