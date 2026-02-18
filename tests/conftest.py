@@ -17,9 +17,9 @@ TEST_DIR = Path(__file__).parent
 TEST_DATA_DIR = TEST_DIR / "data"
 
 # Import mock data creators
-from tests.data.mock_rak_with_gebreken import create_mock_rak_with_gebreken
-from tests.data.mock_rak_with_onverwachte_resultaten import create_mock_rak_with_onverwachte_resultaten
-from tests.data.mock_rak_with_scheuren import create_mock_rak_with_scheuren
+from data.mock_rak_with_gebreken import create_mock_rak_with_gebreken
+from data.mock_rak_with_onverwachte_resultaten import create_mock_rak_with_onverwachte_resultaten
+from data.mock_rak_with_scheuren import create_mock_rak_with_scheuren
 
 
 @pytest.fixture()
