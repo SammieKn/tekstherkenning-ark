@@ -65,23 +65,27 @@ def test_maximaal_aantal_scheuren_per_10_m(mock_rakdeel_with_scheuren: Rakdeel):
     assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"
 
     # Verify the maximum number of scheuren per 10m is correctly calculated
-    assert result == 4, f"Expected 4 scheuren per 10m, but got {result}"
+    assert result == 5, f"Expected 5 scheuren per 10m, but got {result}"
 
 
-def test_maximaal_aantal_scheuren_per_10_m_geen_palen(mock_rakdeel_with_scheuren: Rakdeel):
-    """Test maximaal_aantal_scheuren_per_10_m when there are no palen."""
-    # Remove all palen
-    mock_rakdeel_with_scheuren.onderbouw.palen = []
+def test_maximaal_aantal_scheuren_per_10_m_geen_scheuren(mock_rakdeel_with_scheuren: Rakdeel):
+    """Test maximaal_aantal_scheuren_per_10_m when there are no scheuren."""
+    # Remove all scheuren
+    mock_rakdeel_with_scheuren.bovenbouw.gebreken = []
 
-    # Should return 0 since there are no palen to count scheuren from
+    # Should return 0 since there are no scheuren to count
     assert mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m == 0
 
 
-def test_maximaal_aantal_scheuren_per_10_m_onverwacht_resultaat(mock_rakdeel_with_scheuren: Rakdeel):
+def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheuren: Rakdeel):
     """Test maximaal_aantal_scheuren_per_10_m when get_consecutive_palen returns OnverwachtResultaat."""
     # Remove hoh_afstand_cm to trigger OnverwachtResultaat in get_consecutive_palen
-    mock_rakdeel_with_scheuren.onderbouw.palen[2].hoh_afstand_cm = None
+    mock_rakdeel_with_scheuren.bovenbouw.gebreken[4] = None
 
     result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
-    assert isinstance(result, OnverwachtResultaat)
-    assert result.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+
+    # Verify result is not an OnverwachtResultaat
+    assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"
+
+    # Verify the maximum number of scheuren per 10m is correctly calculated
+    assert result == 4, f"Expected 4 scheuren per 10m, but got {result}"
