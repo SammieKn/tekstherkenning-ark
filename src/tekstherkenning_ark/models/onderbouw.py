@@ -1,7 +1,7 @@
 from tekstherkenning_ark.enums import (
     AansluitingStatus,
     MateriaalOnderbouw,
-    MateriaalVloer,
+    MateriaalFundering,
     NietBeschikbaar,
 )
 from tekstherkenning_ark.models.kesp import Kesp
@@ -34,6 +34,7 @@ class Onderbouw(RakBaseModel):
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: MateriaalOnderbouw | NietBeschikbaar = NietBeschikbaar.LEEG
+    materiaal_fundering: MateriaalFundering | NietBeschikbaar = NietBeschikbaar.LEEG
 
     @property
     def identifier(self) -> str:

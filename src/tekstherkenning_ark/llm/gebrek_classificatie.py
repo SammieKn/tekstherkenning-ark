@@ -15,20 +15,38 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 
 
-class ScheurLLM(BaseModel):
+class ScheurLLM(LLMClassifier):
     """Basis model voor scheur attributen (geen eigen systeem prompt).
 
     Attributes
     ----------
+    afstand_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters.
     lengte_cm : float | NietBeschikbaar
         Lengte van de scheur in centimeters.
     scheurwijdte_mm : float | NietBeschikbaar
         Maximale scheurwijdte in millimeters.
     """
 
+    _systeem_prompt: ClassVar[
+        str
+    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+Extraheer informatie over scheuren uit de omschrijving.
+Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
+NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
+of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
+
+    afstand_van_startrak_m: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="""
+        Afstand van het startrak in meters. 
+        - Zoek naar 'Op X meter vanaf start rak' of 'vanaf startrak'.
+        - Als een object genoemd wordt, zoals een brug, dan is dat het startrak.
+        """,
+    )
     lengte_cm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Lengte van de scheur in centimeters. Zoek naar termen zoals 'lengte' of 'L'.",
+        description="De lengte van de scheur in centimeters. Kan aangegeven worden als 'lengte', 'hoogte', ... Belangrijkste is dat de dimensie toegewezen wordt aan de scheur",
     )
     scheurwijdte_mm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
@@ -36,7 +54,7 @@ class ScheurLLM(BaseModel):
     )
 
 
-class ScheurMetselwerkLLM(ScheurLLM, LLMClassifier):
+class ScheurMetselwerkLLM(ScheurLLM):
     """LLM model voor scheur in metselwerk classificatie.
 
     Attributes
@@ -65,10 +83,6 @@ Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
 of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
 
-    afstand_van_startrak_m: float | NietBeschikbaar = Field(
-        default=NietBeschikbaar.LEEG,
-        description="Afstand van het startrak in meters. Zoek naar 'Op X meter vanaf start rak' of 'vanaf startrak'.",
-    )
     afstand_van_waterlijn_cm: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
         description="Afstand van de waterlijn in centimeters. Zoek naar 'waterlijn' of 'WL'.",
@@ -87,7 +101,7 @@ of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
     )
 
 
-class ScheurHoutLLM(ScheurLLM, LLMClassifier):
+class ScheurHoutLLM(ScheurLLM):
     """LLM model voor scheur in hout classificatie.
 
     Attributes

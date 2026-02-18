@@ -9,6 +9,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 TEST_PDF_PATH = DUIKRAPPORTEN_DIR / "HEG0801_Houtmonstername&VisueleInspectie_V1.1_20220311.pdf"
 
+NAP_CM_HOOGTE_WATERLIJN = 40
 # Constructieonderdeel mapping
 CONSTRUCTIE_ONDERDELEN_VLOER = ["vloer"]
 CONSTRUCTIE_ONDERDELEN_ONDERBOUW = [
