@@ -18,10 +18,15 @@ class OnverwachtResultaatType(Enum):
     INCORRECT_TYPE = "incorrect_type"
     PARSING_FOUT = "parsing_fout"
     ONBEKEND = "onbekend"
+    ONDERLIGGENDE_DATA_INCORRECT = "onderliggende_data_incorrect"
 
 
 class OnverwachtResultaat(BaseModel):
-    """OnverwachtResultaat.
+    """Dit model wordt gebruikt om onverwachte resultaten te representeren die kunnen optreden
+    tijdens het verwerken van data, zoals parsing fouten, ontbrekende data, of data van een incorrect type.
+    Het biedt een gestructureerde manier om deze situaties te loggen en af te handelen zonder dat het hele proces faalt.
+
+    Speciaal gedrag: voor een `not` check (bijv. if not resultaat) zal een OnverwachtResultaat als False worden beschouwd net als None, lege string, etc.
 
     Parameters
     -----------
@@ -46,3 +51,7 @@ class OnverwachtResultaat(BaseModel):
             f"Value: {self.waarde}, Details: {self.details}"
         )
         return self
+
+    def __bool__(self):
+        """Een OnverwachtResultaat wordt als False beschouwd in een boolean context, net als None, lege string, etc."""
+        return False

@@ -8,10 +8,8 @@ import pandas as pd
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
@@ -21,6 +19,34 @@ from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import get_rak_id
 
 logger = get_logger(__name__)
+
+
+def _waarde_naar_excel(waarde):
+    """Converteer toestandwaarde naar een Excel-vriendelijk type."""
+    if isinstance(waarde, bool):
+        return waarde
+
+    if hasattr(waarde, "model_dump"):
+        try:
+            return waarde.model_dump()
+        except Exception:
+            return str(waarde)
+
+    if hasattr(waarde, "value"):
+        return waarde.value
+
+    return str(waarde)
+
+
+def _haal_rakdeel_id_en_model_pad(pad: str) -> tuple[str, str]:
+    """Haal `rakdeel_id` en `model_pad` uit hiërarchisch pad."""
+    delen = [deel for deel in pad.split("/") if deel]
+    if len(delen) < 2:
+        return "", ""
+
+    rakdeel_id = delen[1]
+    model_pad = "/".join(delen[2:]) if len(delen) > 2 else "rakdeel"
+    return rakdeel_id, model_pad
 
 
 class Rak(RakBaseModel):
@@ -162,12 +188,19 @@ class Rak(RakBaseModel):
                 df.to_excel(writer, sheet_name=sheet_naam, index=False)
                 sheets_geschreven += 1
 
-            # Sheet: Onderdeel Aantasting
+            # Sheet: Onderdeel Aantasting (hiërarchisch)
             aantasting_rows = []
-            for rakdeel in self.rakdelen:
-                row: dict[str, str | bool | NietBeschikbaar | OnverwachtResultaat] = {"rakdeel_id": rakdeel.rakdeel_id}
-                row.update(rakdeel.onderdeel_is_aangetast)
-                aantasting_rows.append(row)
+            for pad, toestandonderdeel in self.alle_toestandsbepalingen:
+                rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+                aantasting_rows.append(
+                    {
+                        "rakdeel_id": rakdeel_id,
+                        "model_pad": model_pad,
+                        "onderdeel": toestandonderdeel.constructie_onderdeel,
+                        "aangetast": _waarde_naar_excel(toestandonderdeel.aangetast),
+                    }
+                )
+
             if aantasting_rows:
                 df_aantasting = pd.DataFrame(aantasting_rows)
                 df_aantasting.to_excel(writer, sheet_name="Onderdeel_Aantasting", index=False)
@@ -280,7 +313,9 @@ class Rak(RakBaseModel):
         rakdeel_ids = sorted([rd.rakdeel_id for rd in rakdelen])
         gevonden_constructie_ids = sorted(list(set(list(palen_dict.keys()) + list(kespen_dict.keys()))))
         for constructie_id in gevonden_constructie_ids:
-            if not any(constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids):
+            if constructie_id and not any(
+                constructie_id.lower().startswith(rakdeel_id.lower()) for rakdeel_id in rakdeel_ids
+            ):
                 logger.warning(f"Constructie ID '{constructie_id}' found in palen/kespen but not in rakdelen")
 
         # Create rak instance

@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import TypeVar
 
-from tekstherkenning_ark import utils
+from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.document.smart_document import RakdeelSectie
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
@@ -39,7 +40,7 @@ class Rakdeel(RakBaseModel):
         rakdeel_id: Unieke identificatie van het rakdeel.
         bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
         constructietype: Type constructie van het rakdeel (bijvoorbeeld houten paalfundering, betonnen L-wand, etc.).
-        lengte_m: Lengte van het rakdeel in meters.
+        lengte_m_omschrijving: Lengte van het rakdeel in meters uitgelezen uit de omschrijving.
         onderbouw: Object met alle eigenschappen van de onderbouw van het rakdeel.
         rakdeel_id: Unieke identificatie van het rakdeel, bijvoorbeeld 'Constructie A' of 'Constructie B'.
         bouwjaar: Bouwjaar van het rakdeel.
@@ -52,10 +53,9 @@ class Rakdeel(RakBaseModel):
 
     # De constructie omschrijving
     omschrijving: str = ""
-    onderdeel_is_aangetast: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
 
     # Te vinden in paragraaf 5.x, eerste zin.
-    lengte_m: float | None = None
+    lengte_m_omschrijving: float | None = None
 
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None
@@ -68,6 +68,11 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    def model_post_init(self, __context) -> None:
+        """Classificeer toestandsbepaling direct na initialisatie."""
+        if self.toestand_onderdelen:
+            self.assign_toestandsbepalingen_to_children()
+
     # @property
     # # TODO: Checken met geert of we dit wel willen implementeren, nu kan nog niet.
     # def maximaal_aantal_scheuren_per_10_m(self) -> int | None:
@@ -76,6 +81,92 @@ class Rakdeel(RakBaseModel):
     #         return None
     #     aantal_scheuren = self.bovenbouw.totaal_aantal_scheuren
     #     return round((aantal_scheuren / self.lengte_m) * 10)
+
+    @property
+    def lengte_m(self) -> float | None | OnverwachtResultaat:
+        """Lengte van het rakdeel in meters.
+
+        Als lengte_m_omschrijving beschikbaar is, wordt deze gebruikt, anders wordt de lengte afgeleid a.d.h.v. de paalafstanden in de onderbouw.
+        """
+
+        return self.lengte_m_omschrijving or self.lengte_m_afgeleid
+
+    @property
+    def lengte_m_afgeleid(self) -> float | None | OnverwachtResultaat:
+        """Lengte van het rakdeel in meters afgeleid a.d.h.v. de paalafstanden in de onderbouw.
+
+        Returns
+        -------
+        float | None | OnverwachtResultaat
+        - float: de opgetelde hoh_afstanden van de palen in de eerste rij van de onderbouw, omgerekend naar meters
+        - None: als er geen palen in de onderbouw zijn
+        - OnverwachtResultaat: als de paal data fouten bevat, bijvoorbeeld:
+          - Ontbrekende hoh_afstand_cm voor een paal
+          - Cyclische paalreferenties via hoh_paalnummer
+          - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
+        """
+
+        # Leid lengte af uit hoh-aftanden tussen onderliggende palen
+        eerste_rij_palen = self.onderbouw.eerste_rij_palen
+
+        if not eerste_rij_palen:
+            return None
+
+        processed_paal_nummers: set[str] = set()
+        current_paal = eerste_rij_palen[0]
+        total_length_cm = 0.0
+
+        while current_paal:
+
+            # Check for cyclical references to prevent infinite loops
+            if current_paal.paal_nummer in processed_paal_nummers:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Cyclische paalreferenties gedetecteerd bij Rakdeel {self.rakdeel_id}",
+                )
+
+            # Check if hoh_afstand_cm is available for the current paal
+            if not current_paal.hoh_afstand_cm:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Ontbrekende hoh_afstand_cm voor paal {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
+                )
+
+            # Actually add the length of the current paal to the total length
+            total_length_cm += current_paal.hoh_afstand_cm
+            processed_paal_nummers.add(current_paal.paal_nummer)
+
+            # Determine the next paal in the sequence based on hoh_paalnummer.
+            palen_that_refer_to_current_paal = [
+                p for p in eerste_rij_palen if p.hoh_paalnummer == current_paal.paal_nummer
+            ]
+
+            # Check if there are multiple palen that refer to the same hoh_paalnummer, which would indicate a data issue
+            if len(palen_that_refer_to_current_paal) > 1:
+                return OnverwachtResultaat(
+                    waarde=None,
+                    onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    details=f"Meerdere palen verwijzen naar hetzelfde hoh_paalnummer {current_paal.paal_nummer} in Rakdeel {self.rakdeel_id}",
+                )
+
+            if len(palen_that_refer_to_current_paal) == 1:
+                current_paal = palen_that_refer_to_current_paal[0]
+            else:
+                # No next paal
+                current_paal = None
+
+        # Validate that we have processed the expected number of palen based on the first row palen in onderbouw
+        if not len(processed_paal_nummers) == len(eerste_rij_palen):
+            return OnverwachtResultaat(
+                waarde=None,
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                details=f"Onvolledige verwerking van palen bij Rakdeel {self.rakdeel_id}: {len(processed_paal_nummers)} van {len(eerste_rij_palen)} palen verwerkt. Dit kan duiden op onvolledige data of een gebroken reeks.",
+            )
+
+        total_length_m = total_length_cm / 100.0
+        return total_length_m
 
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
@@ -107,7 +198,7 @@ class Rakdeel(RakBaseModel):
                 omschrijving += paragraaf.content + "\n"
         rakdeel_omschrijving = await RakdeelOmschrijving.classificeer_omschrijving(omschrijving)
 
-        onderdeel_is_aangetast = cls.from_toestandbepaling_table(section.toestand_tabel)
+        toestand_onderdelen = ToestandOnderdeel.from_toestandbepaling_table(section.toestand_tabel)
 
         # Parse gebrekentabel
         gebreken = await Gebrek.from_doc_tables(section.gebreken_tabel)
@@ -133,12 +224,12 @@ class Rakdeel(RakBaseModel):
 
         rakdeel = Rakdeel(
             bovenbouw=bovenbouw,
-            lengte_m=rakdeel_omschrijving.lengte_rakdeel,
+            lengte_m_omschrijving=rakdeel_omschrijving.lengte_rakdeel,
             onderbouw=onderbouw,
             rakdeel_id=section.constructie_naam,
             bouwjaar=rakdeel_omschrijving.bouwjaar,
             omschrijving=omschrijving,
-            onderdeel_is_aangetast=onderdeel_is_aangetast,
+            toestand_onderdelen=toestand_onderdelen,
         )
 
         # Add gebreken to rakdeel and subcomponents
@@ -200,52 +291,38 @@ class Rakdeel(RakBaseModel):
 
         return obj_dict.get(key, [])
 
-    @staticmethod
-    def from_toestandbepaling_table(
-        structured_table: StructuredTable | None,
-    ) -> dict[str, bool | NietBeschikbaar | OnverwachtResultaat]:
-        """Parse toestandsbepaling table from structured table.
+    def assign_toestandsbepalingen_to_children(self):
+        """Classificeer toestandstabel en verdeel onder de onderdelen van het rakdeel
+        (vloer, onderbouw, bovenbouw, onderloopsheidscherm). Toestandbepalingen die niet
+        geclassificeerd kunnen worden worden aan het rakdeel zelf toegevoegd."""
 
-        Parameters
-        ----------
-        structured_table : StructuredTable | None
-            Structured table containing toestandsbepaling data.
+        rakdeel_toestand_onderdelen = []
 
-        Returns
-        -------
-        dict[str, bool | NietBeschikbaar | OnverwachtResultaat]
-            Dictionary mapping construction components to their condition status.
-        """
-        dict_toestandsbepaling: dict[str, bool | NietBeschikbaar | OnverwachtResultaat] = {}
+        # TODO @Sammie wat doen we hier als een toestandonderdeel wel matcht op bijv. vloer,
+        # maar er geen vloer object is binnen dit rakdeel? Vloer aanmaken of negeren? - Matthias
 
-        if structured_table is None:
-            logger.warning("Geen toestandsbepaling tabel gevonden")
-            return dict_toestandsbepaling
-
-        # Get columns
-        constructieonderdeel_col = structured_table.get_column(header_in="Constructieonderdeel")
-        aangetast_col = structured_table.get_column(header_in="Aangetast")
-
-        if not constructieonderdeel_col and not aangetast_col:
-            logger.error("Could not find required columns in toestandsbepaling table")
-            return dict_toestandsbepaling
-
-        num_rows = len(constructieonderdeel_col.values)
-
-        for row_idx in range(num_rows):
-            constructieonderdeel = utils.clean_string(constructieonderdeel_col.values[row_idx])
-            aangetast = utils.clean_string(aangetast_col.values[row_idx])
-
-            if constructieonderdeel:  # Skip empty rows
-                aangetast_clean = utils.parse_ja_nee(aangetast)
-                if isinstance(aangetast_clean, (bool, NietBeschikbaar, OnverwachtResultaat)):
-                    dict_toestandsbepaling[constructieonderdeel] = aangetast_clean
+        # Assign toestandsbepalingen to children based on CONSTRUCTIEONDERDEEL_MAPPING
+        for toestand_onderdeel in self.toestand_onderdelen:
+            if toestand_onderdeel.is_vloer():
+                if not self.onderbouw.vloer:
+                    self.onderbouw.vloer = Vloer(materiaal=NietBeschikbaar.LEEG)
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
                 else:
-                    logger.warning(
-                        f"Onverwacht resultaat '{aangetast_clean}' voor '{constructieonderdeel}', wordt overgeslagen."
-                    )
+                    self.onderbouw.vloer.toestand_onderdelen.append(toestand_onderdeel)
+            elif self.onderbouw and toestand_onderdeel.is_onderbouw():
+                self.onderbouw.toestand_onderdelen.append(toestand_onderdeel)
 
-        return dict_toestandsbepaling
+            elif self.bovenbouw and toestand_onderdeel.is_bovenbouw():
+                self.bovenbouw.toestand_onderdelen.append(toestand_onderdeel)
+
+            elif self.onderbouw.onderloopsheidscherm and toestand_onderdeel.is_onderloopsheidscherm():
+                self.onderbouw.onderloopsheidscherm.toestand_onderdelen.append(toestand_onderdeel)
+
+            else:
+                rakdeel_toestand_onderdelen.append(toestand_onderdeel)
+
+        # Assign toestandsbepalingen that could not be classified to the rakdeel itself
+        self.toestand_onderdelen = rakdeel_toestand_onderdelen
 
     def assign_overige_gebreken_to_children(self, gebreken: list[Gebrek]) -> None:
         """Voeg gebreken toe aan het model. Indien mogelijk worden gebreken

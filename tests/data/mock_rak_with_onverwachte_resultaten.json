@@ -5,7 +5,7 @@
         {
             "rakdeel_id": "Constructie A",
             "omschrijving": "Houten paalfundering",
-            "lengte_m": 50.0,
+            "lengte_m_omschrijving": 50.0,
             "bovenbouw": {
                 "bovenkant_deksteen_cm_tov_nap": "niet gemeten"
             },
