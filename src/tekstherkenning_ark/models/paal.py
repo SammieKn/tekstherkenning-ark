@@ -99,6 +99,14 @@ class Paal(RakBaseModel):
             logger.warning(f"Failed to extract main nummer from paal nummer {self.paal_nummer}")
             return None
 
+    @property
+    def is_ongewenste_schoorstand(self) -> bool | None:
+        """Check of de schoor richting PNA is. Als er geen schoor richting is, return None."""
+
+        if not self.schoor_richting:
+            return None
+        return self.schoor_richting is SchoorStand.NEGATIEF
+
     @classmethod
     def from_doc_tables(cls, structured_table: StructuredTable | None) -> dict[str, list[Paal]]:
         """Parse and return a list of Paal objects from a structured table.

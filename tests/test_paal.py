@@ -1,3 +1,4 @@
+from tekstherkenning_ark.enums import NietBeschikbaar, SchoorStand
 from tekstherkenning_ark.models.paal import Paal
 
 
@@ -19,3 +20,21 @@ def test_paal_nummer_main(mock_palen: list[Paal]):
     ):
         assert paal.paal_nummer == expected_nummer
         assert paal.paal_nummer_main == expected_nummer_main
+
+
+def test_paal_is_ongewenste_schoorstand_neutraal(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = SchoorStand.NEUTRAAL
+    assert paal.is_ongewenste_schoorstand == False
+
+
+def test_paal_is_ongewenste_schoorstand_pna(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = SchoorStand.NEGATIEF
+    assert paal.is_ongewenste_schoorstand == True
+
+
+def test_paal_is_ongewenste_schoorstand_niet_beschikbaar(mock_palen: list[Paal]):
+    paal = mock_palen[0]
+    paal.schoor_richting = NietBeschikbaar.NIET_VAN_TOEPASSING
+    assert paal.is_ongewenste_schoorstand is None
