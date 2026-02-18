@@ -1,5 +1,6 @@
 from tekstherkenning_ark.enums import NietBeschikbaar, SchoorStand
 from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rakdeel import Rakdeel
 
 
 def test_paalrij_nummer(mock_palen: list[Paal]):
@@ -20,6 +21,18 @@ def test_paal_nummer_main(mock_palen: list[Paal]):
     ):
         assert paal.paal_nummer == expected_nummer
         assert paal.paal_nummer_main == expected_nummer_main
+
+
+def test_n_scheuren(mock_rakdeel_with_scheuren: Rakdeel):
+    """Test the property n_scheuren"""
+
+    palen = mock_rakdeel_with_scheuren.onderbouw.palen
+
+    expected_scheuren_counts = [2, 1, 1, 0, 0, 0, 1, 0]
+
+    scheuren_count = [paal.n_scheuren for paal in palen]
+
+    assert scheuren_count == expected_scheuren_counts
 
 
 def test_paal_is_ongewenste_schoorstand_neutraal(mock_palen: list[Paal]):
