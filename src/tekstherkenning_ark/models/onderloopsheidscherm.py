@@ -20,10 +20,14 @@ class Onderloopsheidscherm(RakBaseModel):
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
-    # Te vinden in de toestandstabel (figuur 1.11) of als 'algemeen' gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
-    is_beschadigd: bool | None = None
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None  # TODO
+
+    @property
+    def is_beschadigd(self) -> bool:
+        heeft_gebrek = bool(self.gebreken)
+        is_beschadigd = any(toestand for toestand in self.toestand_onderdelen)
+        return heeft_gebrek or is_beschadigd
 
     @property
     def identifier(self) -> str:
