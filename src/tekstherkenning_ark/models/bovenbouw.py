@@ -5,6 +5,7 @@ from tekstherkenning_ark.models.gebrek import (
     GrondVoerendGat,
     LokaalVerdwenenMetselwerk,
     Scheefstand,
+    Scheur,
     ScheurMetselwerk,
 )
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
@@ -49,11 +50,11 @@ class Bovenbouw(RakBaseModel):
     def totaal_aantal_scheuren(self) -> int:
         """Totaal aantal scheuren in het metselwerk."""
 
-        return sum(1 for gebrek in self.gebreken if isinstance(gebrek, ScheurMetselwerk))
+        return sum(1 for gebrek in self.gebreken if isinstance(gebrek, Scheur))
 
     @property
     def maximale_scheurwijdte_mm(self) -> float | None:
-        """Grootste scheurwijdte uit alle ScheurMetselwerk gebreken."""
+        """Grootste scheurwijdte uit alle Scheur gebreken."""
 
         return max(self.lijst_scheurwijdtes) if self.lijst_scheurwijdtes else None
 
@@ -66,7 +67,7 @@ class Bovenbouw(RakBaseModel):
         return [
             float(gebrek.scheurwijdte_mm)
             for gebrek in self.gebreken
-            if isinstance(gebrek, ScheurMetselwerk) and isinstance(gebrek.scheurwijdte_mm, (int, float))
+            if isinstance(gebrek, Scheur) and isinstance(gebrek.scheurwijdte_mm, (int, float))
         ]
 
     @property
