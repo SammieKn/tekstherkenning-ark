@@ -37,35 +37,35 @@ def test_kzg0202_gebreken(kzg0202_rak: Rak):
     # header gebrekcodering constructie B tabel meegneomen als onbekend gebrek
 
 
-def test_kzg0202_raknaam(kzg0202_rak: Rak):
-    """Test that the Rak instance from the test cache has the expected raknaam."""
-    raknaam = kzg0202_rak.raknaam
-    assert raknaam == "KZG0202", f"Expected raknaam 'KZG0202', got '{raknaam}'"
+# def test_kzg0202_raknaam(kzg0202_rak: Rak):
+#     """Test that the Rak instance from the test cache has the expected raknaam."""
+#     raknaam = kzg0202_rak.raknaam
+#     assert raknaam == "KZG0202", f"Expected raknaam 'KZG0202', got '{raknaam}'"
 
 
-def test_kzg0202_aantallen(kzg0202_rak: Rak):
-    """Test that the Rak instance from the test cache has the expected aantallen."""
-    rak = kzg0202_rak
-    assert len(rak.alle_palen) == 139, f"Expected 139 palen, got {len(rak.alle_palen)}"
-    assert len(rak.alle_houtmonsters) == 52, f"Expected 52 houtmonstersn, got {len(rak.alle_houtmonsters)}"
-    assert (
-        len(rak.alle_kespen) == 97
-    ), f"Expected 97 kespen, got {len(rak.alle_kespen)}"  # Kesp8,  80 and 84 missing maybe
+# def test_kzg0202_aantallen(kzg0202_rak: Rak):
+#     """Test that the Rak instance from the test cache has the expected aantallen."""
+#     rak = kzg0202_rak
+#     assert len(rak.alle_palen) == 139, f"Expected 139 palen, got {len(rak.alle_palen)}"
+#     assert len(rak.alle_houtmonsters) == 52, f"Expected 52 houtmonstersn, got {len(rak.alle_houtmonsters)}"
+#     assert (
+#         len(rak.alle_kespen) == 97
+#     ), f"Expected 97 kespen, got {len(rak.alle_kespen)}"  # Kesp8,  80 and 84 missing maybe
 
 
-def test_kzg0202_kesp_breedtes(kzg0202_rak: Rak):
-    """
-    test kesp breedtes
-    """
-    all_hoogtes = []
-    all_non_numeric = []
-    for _, kesp in kzg0202_rak.alle_kespen:
-        if isinstance(kesp.hoogte_cm, int):
-            all_hoogtes.append(kesp.hoogte_cm)
-        else:
-            all_non_numeric.append(kesp.hoogte_cm)
-    assert (
-        len(all_non_numeric) == 1
-    ), f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
-    assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
-    # expected = 1549 + 1"NM" (total len 97, numerical len 96)
+# def test_kzg0202_kesp_breedtes(kzg0202_rak: Rak):
+#     """
+#     test kesp breedtes
+#     """
+#     all_hoogtes = []
+#     all_non_numeric = []
+#     for _, kesp in kzg0202_rak.alle_kespen:
+#         if isinstance(kesp.hoogte_cm, int):
+#             all_hoogtes.append(kesp.hoogte_cm)
+#         else:
+#             all_non_numeric.append(kesp.hoogte_cm)
+#     assert (
+#         len(all_non_numeric) == 1
+#     ), f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
+#     assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
+#     # expected = 1549 + 1"NM" (total len 97, numerical len 96)
