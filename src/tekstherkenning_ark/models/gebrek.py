@@ -14,6 +14,7 @@ from tekstherkenning_ark.utils import (
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.llm.gebrek_classificatie import (
+    GebrekTypeDetectieLLM,
     ScheurLLM,
     ScheurMetselwerkLLM,
     ScheurHoutLLM,
@@ -99,6 +100,10 @@ class Gebrek(BaseModel):
     async def classify_gebrek(gebrek: Gebrek) -> Gebrek:
         """Classificeer een Gebrek instantie naar een specifiek subtype.
 
+        Deze methode gebruikt een LLM om te bepalen welk type gebrek
+        aanwezig is in de omschrijving, en classificeert vervolgens
+        naar het juiste subtype met geëxtraheerde attributen.
+
         Parameters
         ----------
         gebrek : Gebrek
@@ -110,9 +115,12 @@ class Gebrek(BaseModel):
             Een specifiek subtype van Gebrek met geëxtraheerde attributen.
         """
         omschrijving = gebrek.omschrijving.lower()
+        
+        # Gebruik LLM om gebrektype(n) te detecteren
+        type_detectie = await GebrekTypeDetectieLLM.classificeer_omschrijving(gebrek.omschrijving)
 
-        # logica voor scheur
-        if "scheur" in omschrijving:
+        # Logica voor scheur - hoogste prioriteit
+        if type_detectie.is_scheur:
             # Gebruik LLM voor classificatie van scheuren
             if contains_paal_id(omschrijving) or contains_kesp_id(gebrek.codering):
                 llm_result = await ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
@@ -133,46 +141,41 @@ class Gebrek(BaseModel):
                     **llm_result.model_dump(),
                 )
 
-        # logica voor grondvoerend gat
-        if "grondvoerend" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return GrondVoerendGat(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+        # Logica voor grondvoerend gat of verdwenen metselwerk (gecombineerd)
+        if type_detectie.is_grondvoerend_gat_of_verdwenen_metselwerk and is_algemeen_gebrek(gebrek.codering):
+            # Bepaal of het specifiek grondvoerend is, anders gebruik verdwenen metselwerk
+            if "grondvoerend" in omschrijving:
+                llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return GrondVoerendGat(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
+            else:
+                llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return LokaalVerdwenenMetselwerk(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
 
-        # logica voor buikinwand
-        if "buik" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return BuikInWand(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
-        # logica voor scheefstand
-        if "scheefstand" in omschrijving and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return Scheefstand(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+        # Logica voor buik in wand of scheefstand (gecombineerd)
+        if type_detectie.is_buik_of_scheefstand and is_algemeen_gebrek(gebrek.codering):
+            # Bepaal of het specifiek een buik is, anders gebruik scheefstand
+            if "buik" in omschrijving or "uitbuiging" in omschrijving:
+                llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return BuikInWand(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
+            else:
+                llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
+                return Scheefstand(
+                    **gebrek.model_dump(),
+                    **llm_result.model_dump(),
+                )
 
-        if "scherm" in omschrijving and is_algemeen_gebrek(gebrek.codering):
+        # Logica voor onderloopsheidscherm
+        if type_detectie.is_onderloopsheidscherm and is_algemeen_gebrek(gebrek.codering):
             return OnderloopsheidschermBeschadigd(**gebrek.model_dump())
-
-        # logica voor lokaal verdwenen metselwerk
-        synonyms = [
-            "ontbreekt metselwerk",
-            "vermist metselwerk",
-            "uitgespoeld metselwerk",
-            "gat in metselwerk",
-            "lokale beschadiging metselwerk",
-        ]
-        if any(synonym in omschrijving for synonym in synonyms) and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return LokaalVerdwenenMetselwerk(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
 
         return gebrek  # Retourneer het originele gebrek als geen subtype herkend is
 
