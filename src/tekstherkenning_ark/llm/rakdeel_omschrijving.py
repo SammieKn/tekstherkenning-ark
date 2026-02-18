@@ -91,19 +91,26 @@ class RakdeelOmschrijving(LLMClassifier):
         gt=0.0,
         default=None,
         description=f"""
-        De hoogte van de bovenkant van de kademuur in centimeters **ten opzichte van het NAP**. \n
-        - De bovenkant wordt vaak aangegeven door deksteen, metselwerk of maaiveld.\n
-        - Als de bovenkant deksteen niet direct gemeld wordt, kan deze berekend worden door de onderdelen boven de waterlijn op te tellen.
-        - De waterlijn bevindt zich op {NAP_CM_HOOGTE_WATERLIJN} cm boven NAP.\n
-        - NAP bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm.""",
+        Geef de hoogte van de bovenkant van de kademuur in centimeters ten opzichte van NAP.
+        Definities:
+        - waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm: hoogte van de waterlijn (cm t.o.v. NAP). Positief = boven NAP, negatief = onder NAP.
+        - delta: verticale afstand van de waterlijn naar de bovenkant van de kade (cm). Positief als de kade boven de waterlijn ligt, negatief als de kade onder de waterlijn ligt.
+        Formule:
+        top_kade_NAP = waterlijn_NAP + delta
+        Als de bovenkant aangeduid wordt door deksteen/metselwerk/maaiveld, gebruik die waarde voor delta (met correct teken).
+        Voorbeeld: waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm, delta = 80 (kade ligt 80 cm boven waterlijn) → top_kade_NAP = -{NAP_CM_HOOGTE_WATERLIJN} + 80 = {80 - NAP_CM_HOOGTE_WATERLIJN} cm.""",
     )
     bovenkant_vloer_cm: float | None = Field(
         lt=0.0,
         default=None,
         description=f"""
-        De hoogte **ten opzichte van NAP** tot de bovenkant van de funderingsvloer.\n
-        - Als meerdere elementen onder de waterlijn worden vermeldt, dan tel je die op tot de vloer.\n
-        - Als de onderzijde van de constructie wordt vermeldt, dan tel je de dikte van de vloer en onderliggende constructie zoals kespen of balken op tot de vloer.\n
-        - De waterlijn bevindt zich op {NAP_CM_HOOGTE_WATERLIJN} cm boven NAP.\n,
-        - NAP bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm.""",
+        Geef de hoogte ten opzichte van NAP van de bovenkant van de funderingsvloer (cm).
+        Definities:
+        - De waterlijn bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm ten opzichte van NAP.
+        - De hoogte is negatief (onder NAP).
+        Berekening:
+        - Tel alle onderdelen vanaf de onderzijde van de constructie op (bijvoorbeeld fundering, kespen, balken) tot aan de bovenkant van de vloer.
+        - De som van deze diktes, samen met de hoogte van de onderzijde van de constructie ten opzichte van NAP, geeft de hoogte van de bovenkant vloer.
+        Voorbeeld:
+        Onderzijde constructie op -{NAP_CM_HOOGTE_WATERLIJN + 50} cm, constructiedikte 30 cm → bovenkant vloer = (-{NAP_CM_HOOGTE_WATERLIJN + 50}) + 30 = -{(NAP_CM_HOOGTE_WATERLIJN + 20)} cm.""",
     )
