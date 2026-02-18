@@ -74,6 +74,9 @@ class Rakdeel(RakBaseModel):
 
         # 1. Verkrijg de eerste rij opeenvolgende palen
         consecutive_palen = self.onderbouw.get_consecutive_palen()
+
+        if consecutive_palen == []:
+            return 0
         if not consecutive_palen:
             return consecutive_palen
 
@@ -140,6 +143,8 @@ class Rakdeel(RakBaseModel):
         # Get consecutive palen in the first row
         consecutive_palen = self.onderbouw.get_consecutive_palen()
 
+        if consecutive_palen == []:
+            return None
         if not consecutive_palen:
             return consecutive_palen
 

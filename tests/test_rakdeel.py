@@ -80,7 +80,7 @@ def test_maximaal_aantal_scheuren_per_10_m_geen_palen(mock_rakdeel_with_scheuren
 def test_maximaal_aantal_scheuren_per_10_m_onverwacht_resultaat(mock_rakdeel_with_scheuren: Rakdeel):
     """Test maximaal_aantal_scheuren_per_10_m when get_consecutive_palen returns OnverwachtResultaat."""
     # Remove hoh_afstand_cm to trigger OnverwachtResultaat in get_consecutive_palen
-    mock_rakdeel_with_scheuren.onderbouw.palen[1].hoh_afstand_cm = None
+    mock_rakdeel_with_scheuren.onderbouw.palen[2].hoh_afstand_cm = None
 
     result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
     assert isinstance(result, OnverwachtResultaat)
