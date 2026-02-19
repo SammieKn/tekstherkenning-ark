@@ -26,12 +26,14 @@ class GebrekTypeDetectieLLM(LLMClassifier):
     ----------
     is_scheur : bool
         Indicatie of er sprake is van een scheur.
-    is_grondvoerend_gat_of_verdwenen_metselwerk : bool
-        Indicatie of er sprake is van een grondvoerend gat of lokaal
-        verdwenen metselwerk (gat, uitgespoeld, ontbrekend metselwerk).
-    is_buik_of_scheefstand : bool
-        Indicatie of er sprake is van een buik in de wand of scheefstand
-        (uitbuiging, afwijking van verticaal).
+    is_grondvoerend_gat : bool
+        Indicatie of er sprake is van een grondvoerend gat.
+    is_verdwenen_metselwerk : bool
+        Indicatie of er sprake is van verdwenen of ontbrekend metselwerk.
+    is_buik_in_wand : bool
+        Indicatie of er sprake is van een buik in de wand.
+    is_scheefstand : bool
+        Indicatie of er sprake is van scheefstand.
     is_onderloopsheidscherm : bool
         Indicatie of er sprake is van een beschadigd onderloopsheidscherm.
     """
@@ -41,46 +43,66 @@ class GebrekTypeDetectieLLM(LLMClassifier):
     ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Bepaal welke type(n) gebrek(en) aanwezig zijn in de omschrijving.
 
-Een omschrijving kan meerdere types bevatten. Analyseer de tekst zorgvuldig:
+Een omschrijving kan meerdere types bevatten. Analyseer de tekst zorgvuldig en maak
+onderscheid tussen de verschillende nuances:
 
-1. **Scheur**: Zoek naar termen als "scheur", "scheuren", "barst", "spleet"
+1. **Scheur**: Een scheur, barst of spleet in het materiaal.
+   Zoek naar: "scheur", "scheuren", "barst", "spleet"
 
-2. **Grondvoerend gat of verdwenen metselwerk**: Dit zijn gaten of ontbrekend metselwerk.
-   Zoek naar:
-   - "grondvoerend" (gat waar grond doorheen stroomt)
+2. **Grondvoerend gat**: Een gat achter het metselwerk waar grond doorheen stroomt of kan stromen.
+   Dit is specifiek een gat met grondvoerende werking.
+   Zoek naar: "grondvoerend", "grondvoerend gat"
+   
+3. **Verdwenen metselwerk**: Metselwerk dat ontbreekt, is uitgespoeld of lokaal beschadigd is,
+   ZONDER dat expliciet wordt vermeld dat het grondvoerend is.
+   Zoek naar: 
    - "ontbreekt", "ontbrekend" (metselwerk)
    - "uitgebroken", "uitgespoeld" (metselwerk)
    - "verdwenen" (metselwerk)
-   - "gat in metselwerk"
+   - "gat in metselwerk" (zonder grondvoerend)
    - "vermist metselwerk"
    - "lokale beschadiging metselwerk"
 
-3. **Buik in wand of scheefstand**: Dit zijn afwijkingen van de verticale stand.
-   Zoek naar:
-   - "buik", "uitbuiging"
+4. **Buik in wand**: Een uitbuiging of buik in de kademuur. De wand heeft een convexe vorm 
+   naar buiten toe.
+   Zoek naar: "buik", "uitbuiging", "buigt uit", "uitgebogen"
+
+5. **Scheefstand**: De wand staat niet verticaal maar wijkt af van de loodrechte stand,
+   ZONDER dat er sprake is van een duidelijke buik.
+   Zoek naar: 
    - "scheefstand", "scheef"
-   - "wijkt af", "afwijking"
-   - "buigt uit", "uitgebogen"
+   - "wijkt af", "afwijking" (van verticaal)
    - "naar het water" (in context van afwijking)
    - "niet verticaal", "niet loodrecht"
+   - "overhelt", "schuin"
 
-4. **Onderloopsheidscherm**: Beschadigd onderloopsheidscherm.
+6. **Onderloopsheidscherm**: Beschadigd onderloopsheidscherm.
    Zoek naar: "scherm", "onderloopsheidscherm"
 
-LET OP: Een omschrijving kan meerdere gebrektypes bevatten. Analyseer de volledige
-tekst en markeer alle relevante types als True."""
+LET OP: 
+- Een omschrijving kan meerdere gebrektypes bevatten.
+- Maak onderscheid tussen grondvoerend gat en verdwenen metselwerk op basis van expliciete vermelding van "grondvoerend".
+- Maak onderscheid tussen buik in wand en scheefstand: een buik is een uitbuiging, scheefstand is een afwijking van verticaal."""
 
     is_scheur: bool = Field(
         default=False,
         description="True als de omschrijving een scheur beschrijft",
     )
-    is_grondvoerend_gat_of_verdwenen_metselwerk: bool = Field(
+    is_grondvoerend_gat: bool = Field(
         default=False,
-        description="True als de omschrijving een grondvoerend gat of verdwenen/ontbrekend metselwerk beschrijft",
+        description="True als de omschrijving een grondvoerend gat beschrijft (gat waar grond doorheen stroomt)",
     )
-    is_buik_of_scheefstand: bool = Field(
+    is_verdwenen_metselwerk: bool = Field(
         default=False,
-        description="True als de omschrijving een buik in de wand of scheefstand beschrijft",
+        description="True als de omschrijving verdwenen/ontbrekend metselwerk beschrijft (zonder grondvoerende werking)",
+    )
+    is_buik_in_wand: bool = Field(
+        default=False,
+        description="True als de omschrijving een buik of uitbuiging in de wand beschrijft",
+    )
+    is_scheefstand: bool = Field(
+        default=False,
+        description="True als de omschrijving scheefstand of afwijking van verticaal beschrijft (zonder buik)",
     )
     is_onderloopsheidscherm: bool = Field(
         default=False,

@@ -141,37 +141,37 @@ class Gebrek(BaseModel):
                     **llm_result.model_dump(),
                 )
 
-        # Logica voor grondvoerend gat of verdwenen metselwerk (gecombineerd)
-        if type_detectie.is_grondvoerend_gat_of_verdwenen_metselwerk and is_algemeen_gebrek(gebrek.codering):
-            # Bepaal of het specifiek grondvoerend is, anders gebruik verdwenen metselwerk
-            if "grondvoerend" in omschrijving:
-                llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return GrondVoerendGat(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
-            else:
-                llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return LokaalVerdwenenMetselwerk(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
+        # Logica voor grondvoerend gat - LLM bepaalt dit
+        if type_detectie.is_grondvoerend_gat and is_algemeen_gebrek(gebrek.codering):
+            llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return GrondVoerendGat(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
 
-        # Logica voor buik in wand of scheefstand (gecombineerd)
-        if type_detectie.is_buik_of_scheefstand and is_algemeen_gebrek(gebrek.codering):
-            # Bepaal of het specifiek een buik is, anders gebruik scheefstand
-            if "buik" in omschrijving or "uitbuiging" in omschrijving:
-                llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return BuikInWand(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
-            else:
-                llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return Scheefstand(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
+        # Logica voor verdwenen metselwerk - LLM bepaalt dit
+        if type_detectie.is_verdwenen_metselwerk and is_algemeen_gebrek(gebrek.codering):
+            llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return LokaalVerdwenenMetselwerk(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+
+        # Logica voor buik in wand - LLM bepaalt dit
+        if type_detectie.is_buik_in_wand and is_algemeen_gebrek(gebrek.codering):
+            llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return BuikInWand(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
+
+        # Logica voor scheefstand - LLM bepaalt dit
+        if type_detectie.is_scheefstand and is_algemeen_gebrek(gebrek.codering):
+            llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
+            return Scheefstand(
+                **gebrek.model_dump(),
+                **llm_result.model_dump(),
+            )
 
         # Logica voor onderloopsheidscherm
         if type_detectie.is_onderloopsheidscherm and is_algemeen_gebrek(gebrek.codering):

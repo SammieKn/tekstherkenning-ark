@@ -38,8 +38,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=True,
-                    is_buik_of_scheefstand=False,
+                    is_grondvoerend_gat=True,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -64,7 +66,7 @@ class TestGebrekTypeDetectie:
         anyio.run(run_test)
 
     def test_verdwenen_metselwerk_detectie(self):
-        """Test detectie van verdwenen metselwerk via LLM (zonder 'grondvoerend')."""
+        """Test detectie van verdwenen metselwerk via LLM."""
 
         async def run_test():
             gebrek = Gebrek(
@@ -80,8 +82,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=True,
-                    is_buik_of_scheefstand=False,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=True,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -121,8 +125,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=False,
-                    is_buik_of_scheefstand=True,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=True,
+                    is_scheefstand=False,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -144,7 +150,7 @@ class TestGebrekTypeDetectie:
         anyio.run(run_test)
 
     def test_scheefstand_detectie(self):
-        """Test detectie van scheefstand via LLM (zonder 'buik')."""
+        """Test detectie van scheefstand via LLM."""
 
         async def run_test():
             gebrek = Gebrek(
@@ -160,8 +166,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=False,
-                    is_buik_of_scheefstand=True,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=True,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -199,8 +207,10 @@ class TestGebrekTypeDetectie:
                 # Simuleer dat zowel scheur als ander type gedetecteerd worden
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=True,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=False,
-                    is_buik_of_scheefstand=False,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -243,8 +253,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=False,
-                    is_buik_of_scheefstand=True,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=True,
                     is_onderloopsheidscherm=False,
                 )
 
@@ -272,8 +284,10 @@ class TestGebrekTypeDetectie:
             ) as mock_type:
                 mock_type.return_value = GebrekTypeDetectieLLM(
                     is_scheur=False,
-                    is_grondvoerend_gat_of_verdwenen_metselwerk=False,
-                    is_buik_of_scheefstand=False,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
                     is_onderloopsheidscherm=False,
                 )
 
