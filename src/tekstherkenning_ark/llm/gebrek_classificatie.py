@@ -63,9 +63,7 @@ onderscheid tussen de verschillende nuances:
    - "vermist metselwerk"
    - "lokale beschadiging metselwerk"
 
-4. **Buik in wand**: Een uitbuiging of buik in de kademuur. De wand heeft een convexe vorm 
-   naar buiten toe.
-   Zoek naar: "buik", "uitbuiging", "buigt uit", "uitgebogen"
+4. **Buik in wand**: Een uitbuiging of buik in de kademuur. Zoek naar woorden als: "buik", "uitbuiging", "buigt uit", "uitgebogen"
 
 5. **Scheefstand**: De wand staat niet verticaal maar wijkt af van de loodrechte stand,
    ZONDER dat er sprake is van een duidelijke buik.
@@ -98,11 +96,11 @@ LET OP:
     )
     is_buik_in_wand: bool = Field(
         default=False,
-        description="True als de omschrijving een buik of uitbuiging in de wand beschrijft",
+        description="True als de omschrijving een buik of uitbuiging in de wand beschrijft.",
     )
     is_scheefstand: bool = Field(
         default=False,
-        description="True als de omschrijving scheefstand of afwijking van verticaal beschrijft (zonder buik)",
+        description="True als de omschrijving scheefstand of afwijking beschrijft (zonder buik).",
     )
     is_onderloopsheidscherm: bool = Field(
         default=False,

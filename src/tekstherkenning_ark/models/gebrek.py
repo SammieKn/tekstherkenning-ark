@@ -115,7 +115,7 @@ class Gebrek(BaseModel):
             Een specifiek subtype van Gebrek met geëxtraheerde attributen.
         """
         omschrijving = gebrek.omschrijving.lower()
-        
+
         # Gebruik LLM om gebrektype(n) te detecteren
         type_detectie = await GebrekTypeDetectieLLM.classificeer_omschrijving(gebrek.omschrijving)
 
