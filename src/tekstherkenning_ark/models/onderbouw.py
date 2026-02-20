@@ -70,18 +70,14 @@ class Onderbouw(RakBaseModel):
         aantal_slecht = sum(1 for paal in self.palen if paal.is_aantasting)
         return round((aantal_slecht / len(self.palen)) * 100, 2)
 
-    # TODO: Checken met Geert hoe een ongewenste schoorstand gedefinieerd is en of dit veld in de meettabel palen staat.
-    # @property
-    # def percentage_ongewenste_schoorstand(self) -> float | None:
-    #     """Percentage palen met ongewenste/afwijkende schoorstand."""
-    #     if not self.palen:
-    #         return None
+    @property
+    def percentage_ongewenste_schoorstand(self) -> float | None:
+        """Percentage palen met ongewenste/afwijkende schoorstand."""
+        if not self.palen:
+            return None
 
-    #     # Tel palen met significante schoorstand (> 15 graden als voorbeeld)
-    #     aantal_ongewenst = sum(
-    #         1 for paal in self.palen if paal.schoorstand_graden is not None and abs(paal.schoorstand_graden) > 15
-    #     )
-    #     return round((aantal_ongewenst / len(self.palen)) * 100, 2)
+        aantal_ongewenst = sum(1 for paal in self.palen if paal.is_ongewenste_schoorstand and paal.paalrij_nummer == 1)
+        return round((aantal_ongewenst / len(self.palen)) * 100, 2)
 
     @property
     def aantal_palen_met_scheefstand(self) -> int:
