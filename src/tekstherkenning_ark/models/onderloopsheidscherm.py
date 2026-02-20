@@ -45,7 +45,7 @@ class Onderloopsheidscherm(RakBaseModel):
             Onderloopsheidscherm | None: Een leeg Onderloopsheidscherm model, of None als er geen onderloopsheidscherm is.
         """
 
-        if not omschrijving.onderloopsheidscherm:
+        if omschrijving.onderloopsheidscherm:
             return cls()
 
         return None
