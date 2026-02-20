@@ -1,7 +1,57 @@
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
-from tekstherkenning_ark.enums import AansluitingStatus
+from tekstherkenning_ark.enums import AansluitingStatus, SchoorStand
+
+
+def test_percentage_ongewenste_schoorstand_geen(mock_rakdeel: Rakdeel):
+    """Test dat percentage_ongewenste_schoorstand 0% geeft als geen enkele paal PNA heeft."""
+    # Alle mock palen hebben schoor_richting="PNV" (geen ongewenste schoorstand)
+    assert mock_rakdeel.onderbouw.percentage_ongewenste_schoorstand == 0.0
+
+
+def test_percentage_ongewenste_schoorstand_een_paal(mock_rakdeel: Rakdeel):
+    """Test dat percentage_ongewenste_schoorstand correct berekent als één eerste-rij paal PNA heeft."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet P1.1 (eerste rij) op ongewenste schoorstand
+    p1_1 = next(paal for paal in onderbouw.palen if paal.paal_nummer == "P1.1")
+    p1_1.schoor_richting = SchoorStand.NEGATIEF
+
+    # 1 van 4 palen = 25.0%
+    assert onderbouw.percentage_ongewenste_schoorstand == 25.0
+
+
+def test_percentage_ongewenste_schoorstand_alle_eerste_rij(mock_rakdeel: Rakdeel):
+    """Test dat percentage_ongewenste_schoorstand correct berekent als alle eerste-rij palen PNA hebben."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet alle eerste-rij palen (P1.1, P1.2, P1.3) op ongewenste schoorstand
+    for paal in onderbouw.palen:
+        if paal.paalrij_nummer == 1:
+            paal.schoor_richting = SchoorStand.NEGATIEF
+
+    # 3 van 4 palen = 75.0%
+    assert onderbouw.percentage_ongewenste_schoorstand == 75.0
+
+
+def test_percentage_ongewenste_schoorstand_tweede_rij_telt_niet_mee(mock_rakdeel: Rakdeel):
+    """Test dat palen buiten de eerste rij niet meetellen bij ongewenste schoorstand."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet alleen P2.2 (tweede rij) op ongewenste schoorstand
+    p2_2 = next(paal for paal in onderbouw.palen if paal.paal_nummer == "P2.2")
+    p2_2.schoor_richting = SchoorStand.NEGATIEF
+
+    # Tweede-rij palen tellen niet mee → 0%
+    assert onderbouw.percentage_ongewenste_schoorstand == 0.0
+
+
+def test_percentage_ongewenste_schoorstand_geen_palen(mock_rakdeel: Rakdeel):
+    """Test dat percentage_ongewenste_schoorstand None geeft als er geen palen zijn."""
+    mock_rakdeel.onderbouw.palen = []
+
+    assert mock_rakdeel.onderbouw.percentage_ongewenste_schoorstand is None
 
 
 def test_eerste_rij_palen(mock_rakdeel: Rakdeel):
