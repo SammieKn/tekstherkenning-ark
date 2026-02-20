@@ -411,7 +411,7 @@ def vergelijk_rakdeel(
         "onderbouw.materiaal_fundering": "onderbouw.materiaal_fundering",
         "onderbouw.materiaal_onderbouw": "onderbouw.materiaal",
         "onderbouw.vloer.is_beschadigd": "onderbouw.vloer.is_beschadigd",
-        "onderbouw.onderloopsheidscherm.is_aanwezig": "onderbouw.onderloopsheidscherm.is_beschadigd",
+        "onderbouw.onderloopsheidscherm.is_aanwezig": "onderbouw.onderloopsheidscherm",
         "onderbouw.onderloopsheidscherm.is_beschadigd": "onderbouw.onderloopsheidscherm.is_beschadigd",
         "vloer.bovenkant_vloer_cm_tov_nap": "onderbouw.vloer.bovenkant_vloer_cm_tov_nap",
         "lengte_rakdeel_m": "lengte_m",
@@ -450,7 +450,14 @@ def vergelijk_rakdeel(
         except Exception:
             pass
 
-        # Bepaal of waarden overeen komen
+        # Als het verwachte type bool is en de waarde een object is (geen scalair),
+        # reduceer dan naar True/False op basis van aanwezigheid (niet-None = True)
+        if (
+            mapping.datatype == bool
+            and gekregen_waarde is not None
+            and not isinstance(gekregen_waarde, (bool, int, float, str))
+        ):
+            gekregen_waarde = True
         is_correct: bool | None = None
         verwacht_missing = pd.isna(verwachte_waarde) or verwachte_waarde is None
         gekregen_missing = gekregen_waarde is None or pd.isna(gekregen_waarde)
@@ -663,36 +670,42 @@ def main():
 
     print("\nStap 2: Vergelijken rakken...")
     for rak_id in unieke_rak_ids:
-        print(f"\n  Verwerken: {rak_id}")
+        if rak_id == "OVW0401":  # Voorbeeld van een RAK ID die mogelijk problemen geeft
+            print(f"\n  Verwerken: {rak_id}")
 
-        # Laad gecachte Rak
-        rak = laad_gecachte_rak(rak_id)
-        if rak is None:
-            print(f"    ⚠️  Geen gecachte Rak gevonden - overslaan")
-            continue
+            # Laad gecachte Rak
+            rak = laad_gecachte_rak(rak_id)
+            if rak is None:
+                print(f"    ⚠️  Geen gecachte Rak gevonden - overslaan")
+                continue
 
-        print(f"    ✓ Gecachte Rak geladen ({len(rak.rakdelen)} rakdelen)")
+            print(f"    ✓ Gecachte Rak geladen ({len(rak.rakdelen)} rakdelen)")
 
-        # Filter testset rijen voor deze RAK
-        testset_rijen = df_testset[df_testset["rak_id"] == rak_id]
+            # Filter testset rijen voor deze RAK
+            testset_rijen = df_testset[df_testset["rak_id"] == rak_id]
 
-        # Vergelijk elk rakdeel
-        all_ids = list(testset_rijen["rakdeel_id"])
-        for idx, (_, rij) in enumerate(testset_rijen.iterrows()):
-            rakdeel_id = rij["rakdeel_id"]
-            print(f"      - Vergelijken rakdeel: {rakdeel_id}")
+            # Vergelijk elk rakdeel
+            all_ids = list(testset_rijen["rakdeel_id"])
+            for idx, (_, rij) in enumerate(testset_rijen.iterrows()):
+                rakdeel_id = rij["rakdeel_id"]
+                print(f"      - Vergelijken rakdeel: {rakdeel_id}")
 
-            vergelijking = vergelijk_rakdeel(
-                rij, rak, rakdeel_id, ARK_KOLOM_MAPPINGS, testset_rakdeel_index=idx, all_testset_rakdeel_ids=all_ids
-            )
-            if vergelijking:
-                statistieken.rakdeel_vergelijkingen.append(vergelijking)
-                print(
-                    f"        Resultaat: {vergelijking.aantal_correct} correct, "
-                    f"{vergelijking.aantal_fout} fout, "
-                    f"{vergelijking.aantal_ontbrekend} ontbrekend "
-                    f"({vergelijking.accuratie_percentage}% accuratie)"
+                vergelijking = vergelijk_rakdeel(
+                    rij,
+                    rak,
+                    rakdeel_id,
+                    ARK_KOLOM_MAPPINGS,
+                    testset_rakdeel_index=idx,
+                    all_testset_rakdeel_ids=all_ids,
                 )
+                if vergelijking:
+                    statistieken.rakdeel_vergelijkingen.append(vergelijking)
+                    print(
+                        f"        Resultaat: {vergelijking.aantal_correct} correct, "
+                        f"{vergelijking.aantal_fout} fout, "
+                        f"{vergelijking.aantal_ontbrekend} ontbrekend "
+                        f"({vergelijking.accuratie_percentage}% accuratie)"
+                    )
 
     # Print samenvatting
     print("\n" + "=" * 80)
