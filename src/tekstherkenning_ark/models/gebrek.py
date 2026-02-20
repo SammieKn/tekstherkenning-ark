@@ -91,18 +91,19 @@ class Gebrek(BaseModel):
 
         # Classificeer elk gebrek naar een specifiek subtype indien mogelijk (parallel)
         classificatie_taken = [cls.classify_gebrek(gebrek) for gebrek in list_gebreken]
-        geclassificeerde_gebreken = await asyncio.gather(*classificatie_taken)
-        list_gebreken = list(geclassificeerde_gebreken)
+        resultaten = await asyncio.gather(*classificatie_taken)
+        list_gebreken = [g for sublijst in resultaten for g in sublijst]
 
         return list_gebreken
 
     @staticmethod
-    async def classify_gebrek(gebrek: Gebrek) -> Gebrek:
-        """Classificeer een Gebrek instantie naar een specifiek subtype.
+    async def classify_gebrek(gebrek: Gebrek) -> list[Gebrek]:
+        """Classificeer een Gebrek instantie naar een of meer specifieke subtypes.
 
-        Deze methode gebruikt een LLM om te bepalen welk type gebrek
-        aanwezig is in de omschrijving, en classificeert vervolgens
-        naar het juiste subtype met geëxtraheerde attributen.
+        Deze methode gebruikt een LLM om te bepalen welk(e) type(n) gebrek(en)
+        aanwezig zijn in de omschrijving. Wanneer meerdere types gedetecteerd
+        worden, wordt voor elk type een apart subtype-object aangemaakt.
+        LLM classificaties worden parallel uitgevoerd.
 
         Parameters
         ----------
@@ -111,73 +112,73 @@ class Gebrek(BaseModel):
 
         Returns
         -------
-        Gebrek
-            Een specifiek subtype van Gebrek met geëxtraheerde attributen.
+        list[Gebrek]
+            Een lijst van specifieke subtypes van Gebrek met geëxtraheerde
+            attributen. Bevat het originele gebrek als geen type herkend is.
         """
         omschrijving = gebrek.omschrijving.lower()
 
         # Gebruik LLM om gebrektype(n) te detecteren
         type_detectie = await GebrekTypeDetectieLLM.classificeer_omschrijving(gebrek.omschrijving)
 
-        # Logica voor scheur - hoogste prioriteit
+        # Verzamel LLM coroutines per gedetecteerd type
+        llm_taken = []
+
         if type_detectie.is_scheur:
-            # Gebruik LLM voor classificatie van scheuren
-            if contains_paal_id(omschrijving) or contains_kesp_id(gebrek.codering):
-                llm_result = await ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return ScheurHout(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
+            if contains_paal_id(gebrek.codering) or contains_kesp_id(gebrek.codering):
+                llm_taken.append(ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving))
             elif "metselwerk" in omschrijving:
-                llm_result = await ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return ScheurMetselwerk(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
+                llm_taken.append(ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving))
             else:
-                llm_result = await ScheurLLM.classificeer_omschrijving(gebrek.omschrijving)
-                return Scheur(
-                    **gebrek.model_dump(),
-                    **llm_result.model_dump(),
-                )
+                llm_taken.append(ScheurLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Logica voor grondvoerend gat - LLM bepaalt dit
         if type_detectie.is_grondvoerend_gat and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return GrondVoerendGat(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+            llm_taken.append(GrondVoerendGatLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Logica voor verdwenen metselwerk - LLM bepaalt dit
         if type_detectie.is_verdwenen_metselwerk and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return LokaalVerdwenenMetselwerk(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+            llm_taken.append(LokaalVerdwenenMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Logica voor buik in wand - LLM bepaalt dit
         if type_detectie.is_buik_in_wand and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return BuikInWand(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+            llm_taken.append(BuikInWandLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Logica voor scheefstand - LLM bepaalt dit
         if type_detectie.is_scheefstand and is_algemeen_gebrek(gebrek.codering):
-            llm_result = await ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving)
-            return Scheefstand(
-                **gebrek.model_dump(),
-                **llm_result.model_dump(),
-            )
+            llm_taken.append(ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Logica voor onderloopsheidscherm
-        if type_detectie.is_onderloopsheidscherm and is_algemeen_gebrek(gebrek.codering):
-            return OnderloopsheidschermBeschadigd(**gebrek.model_dump())
+        # Onderloopsheidscherm vereist geen aparte LLM classificatie
+        heeft_onderloopsheidscherm = type_detectie.is_onderloopsheidscherm and is_algemeen_gebrek(gebrek.codering)
 
-        return gebrek  # Retourneer het originele gebrek als geen subtype herkend is
+        # Retourneer origineel gebrek als geen enkel type herkend is
+        if not llm_taken and not heeft_onderloopsheidscherm:
+            return [gebrek]
+
+        # Voer alle LLM classificaties parallel uit
+        llm_resultaten = list(await asyncio.gather(*llm_taken))
+
+        # Bouw lijst van geclassificeerde gebreken op via isinstance check op het LLM resultaat
+        geclassificeerde_gebreken: list[Gebrek] = []
+
+        for llm_result in llm_resultaten:
+            if isinstance(llm_result, ScheurHoutLLM):
+                geclassificeerde_gebreken.append(ScheurHout(**gebrek.model_dump(), **llm_result.model_dump()))
+            elif isinstance(llm_result, ScheurMetselwerkLLM):
+                geclassificeerde_gebreken.append(ScheurMetselwerk(**gebrek.model_dump(), **llm_result.model_dump()))
+            elif isinstance(llm_result, ScheurLLM):
+                geclassificeerde_gebreken.append(Scheur(**gebrek.model_dump(), **llm_result.model_dump()))
+            elif isinstance(llm_result, GrondVoerendGatLLM):
+                geclassificeerde_gebreken.append(GrondVoerendGat(**gebrek.model_dump(), **llm_result.model_dump()))
+            elif isinstance(llm_result, LokaalVerdwenenMetselwerkLLM):
+                geclassificeerde_gebreken.append(
+                    LokaalVerdwenenMetselwerk(**gebrek.model_dump(), **llm_result.model_dump())
+                )
+            elif isinstance(llm_result, BuikInWandLLM):
+                geclassificeerde_gebreken.append(BuikInWand(**gebrek.model_dump(), **llm_result.model_dump()))
+            elif isinstance(llm_result, ScheefstandLLM):
+                geclassificeerde_gebreken.append(Scheefstand(**gebrek.model_dump(), **llm_result.model_dump()))
+
+        if heeft_onderloopsheidscherm:
+            geclassificeerde_gebreken.append(OnderloopsheidschermBeschadigd(**gebrek.model_dump()))
+
+        return geclassificeerde_gebreken
 
 
 class Scheur(Gebrek):

@@ -43,19 +43,19 @@ class GebrekTypeDetectieLLM(LLMClassifier):
     ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Bepaal welke type(n) gebrek(en) aanwezig zijn in de omschrijving.
 
-Een omschrijving kan meerdere types bevatten. Analyseer de tekst zorgvuldig en maak
-onderscheid tussen de verschillende nuances:
+Een omschrijving kan meerdere types bevatten. Bij meerdere types staan meer waardes op True. 
+Analyseer de tekst zorgvuldig en maak onderscheid tussen de verschillende nuances:
 
 1. **Scheur**: Een scheur, barst of spleet in het materiaal.
-   Zoek naar: "scheur", "scheuren", "barst", "spleet"
+   Zoek naar woorden zoals: "scheur", "scheuren", "barst", "spleet"
 
 2. **Grondvoerend gat**: Een gat achter het metselwerk waar grond doorheen stroomt of kan stromen.
-   Dit is specifiek een gat met grondvoerende werking.
-   Zoek naar: "grondvoerend", "grondvoerend gat"
+   Dit is specifiek een gat met mogelijke grondvoerende werking.
+   Zoek naar woorden zoals: "grondvoerend", "grondvoerend gat". Bijvoorbeeld een slecht gedicht gat.
    
 3. **Verdwenen metselwerk**: Metselwerk dat ontbreekt, is uitgespoeld of lokaal beschadigd is,
    ZONDER dat expliciet wordt vermeld dat het grondvoerend is.
-   Zoek naar: 
+   Zoek naar woorden zoals: 
    - "ontbreekt", "ontbrekend" (metselwerk)
    - "uitgebroken", "uitgespoeld" (metselwerk)
    - "verdwenen" (metselwerk)
@@ -63,11 +63,11 @@ onderscheid tussen de verschillende nuances:
    - "vermist metselwerk"
    - "lokale beschadiging metselwerk"
 
-4. **Buik in wand**: Een uitbuiging of buik in de kademuur. Zoek naar woorden als: "buik", "uitbuiging", "buigt uit", "uitgebogen"
+4. **Buik in wand**: Een uitbuiging of buik in de kademuur. Zoek naar woorden als: "buik", "uitbuiging", "buigt uit", "uitgebogen", "naar voren gekomen"
 
 5. **Scheefstand**: De wand staat niet verticaal maar wijkt af van de loodrechte stand,
    ZONDER dat er sprake is van een duidelijke buik.
-   Zoek naar: 
+   Zoek naar woorden zoals: 
    - "scheefstand", "scheef"
    - "wijkt af", "afwijking" (van verticaal)
    - "naar het water" (in context van afwijking)
@@ -75,7 +75,7 @@ onderscheid tussen de verschillende nuances:
    - "overhelt", "schuin"
 
 6. **Onderloopsheidscherm**: Beschadigd onderloopsheidscherm.
-   Zoek naar: "scherm", "onderloopsheidscherm"
+   Zoek naar woorden zoals: "scherm", "onderloopsheidscherm", "grondkerend scherm"
 
 LET OP: 
 - Een omschrijving kan meerdere gebrektypes bevatten.

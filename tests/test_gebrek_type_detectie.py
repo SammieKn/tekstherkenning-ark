@@ -1,6 +1,5 @@
 """Tests voor LLM-gebaseerde gebrektype detectie."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
 import anyio
 
@@ -60,8 +59,9 @@ class TestGebrekTypeDetectie:
                     )
 
                     result = await Gebrek.classify_gebrek(gebrek)
-                    assert isinstance(result, GrondVoerendGat)
-                    assert result.breedte_cm == 30
+                    assert len(result) == 1
+                    assert isinstance(result[0], GrondVoerendGat)
+                    assert result[0].breedte_cm == 30
 
         anyio.run(run_test)
 
@@ -103,8 +103,9 @@ class TestGebrekTypeDetectie:
                     )
 
                     result = await Gebrek.classify_gebrek(gebrek)
-                    assert isinstance(result, LokaalVerdwenenMetselwerk)
-                    assert result.breedte_cm == 20
+                    assert len(result) == 1
+                    assert isinstance(result[0], LokaalVerdwenenMetselwerk)
+                    assert result[0].breedte_cm == 20
 
         anyio.run(run_test)
 
@@ -144,8 +145,9 @@ class TestGebrekTypeDetectie:
                     )
 
                     result = await Gebrek.classify_gebrek(gebrek)
-                    assert isinstance(result, BuikInWand)
-                    assert result.uitbuiking_cm == 5
+                    assert len(result) == 1
+                    assert isinstance(result[0], BuikInWand)
+                    assert result[0].uitbuiking_cm == 5
 
         anyio.run(run_test)
 
@@ -185,7 +187,8 @@ class TestGebrekTypeDetectie:
                     )
 
                     result = await Gebrek.classify_gebrek(gebrek)
-                    assert isinstance(result, Scheefstand)
+                    assert len(result) == 1
+                    assert isinstance(result[0], Scheefstand)
 
         anyio.run(run_test)
 
@@ -232,7 +235,7 @@ class TestGebrekTypeDetectie:
 
                     result = await Gebrek.classify_gebrek(gebrek)
                     # Scheur moet worden gedetecteerd
-                    assert "Scheur" in result.__class__.__name__
+                    assert any("Scheur" in g.__class__.__name__ for g in result)
 
         anyio.run(run_test)
 
@@ -262,8 +265,9 @@ class TestGebrekTypeDetectie:
 
                 result = await Gebrek.classify_gebrek(gebrek)
                 # Moet het originele Gebrek blijven omdat codering niet algemeen is
-                assert type(result) == Gebrek
-                assert result.codering == "SP1"
+                assert len(result) == 1
+                assert type(result[0]) == Gebrek
+                assert result[0].codering == "SP1"
 
         anyio.run(run_test)
 
@@ -292,7 +296,103 @@ class TestGebrekTypeDetectie:
                 )
 
                 result = await Gebrek.classify_gebrek(gebrek)
-                assert type(result) == Gebrek
-                assert result.codering == "GB10"
+                assert len(result) == 1
+                assert type(result[0]) == Gebrek
+                assert result[0].codering == "GB10"
+
+        anyio.run(run_test)
+
+    def test_onderloopsheidscherm_detectie(self):
+        """Test detectie van beschadigd onderloopsheidscherm via LLM."""
+
+        async def run_test():
+            gebrek = Gebrek(
+                codering="GB8",
+                omschrijving="Onderloopsheidscherm is beschadigd ter plaatse",
+                figuurnummer="8",
+            )
+
+            with patch.object(
+                GebrekTypeDetectieLLM,
+                "classificeer_omschrijving",
+                new_callable=AsyncMock,
+            ) as mock_type:
+                mock_type.return_value = GebrekTypeDetectieLLM(
+                    is_scheur=False,
+                    is_grondvoerend_gat=False,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
+                    is_onderloopsheidscherm=True,
+                )
+
+                result = await Gebrek.classify_gebrek(gebrek)
+                assert len(result) == 1
+                assert isinstance(result[0], OnderloopsheidschermBeschadigd)
+                assert result[0].is_beschadigd is True
+
+        anyio.run(run_test)
+
+    def test_meerdere_gebreken_in_een_omschrijving(self):
+        """Test dat meerdere gebrektypes in één omschrijving elk een apart object opleveren."""
+
+        async def run_test():
+            gebrek = Gebrek(
+                codering="GB9",
+                omschrijving="Grondvoerend gat van 20x30 cm achter de wand. Tevens een scheur van 50 cm met SW 3mm.",
+                figuurnummer="9",
+            )
+
+            with patch.object(
+                GebrekTypeDetectieLLM,
+                "classificeer_omschrijving",
+                new_callable=AsyncMock,
+            ) as mock_type:
+                mock_type.return_value = GebrekTypeDetectieLLM(
+                    is_scheur=True,
+                    is_grondvoerend_gat=True,
+                    is_verdwenen_metselwerk=False,
+                    is_buik_in_wand=False,
+                    is_scheefstand=False,
+                    is_onderloopsheidscherm=False,
+                )
+
+                with patch(
+                    "tekstherkenning_ark.models.gebrek.ScheurLLM.classificeer_omschrijving",
+                    new_callable=AsyncMock,
+                ) as mock_scheur:
+                    from tekstherkenning_ark.llm.gebrek_classificatie import ScheurLLM
+
+                    mock_scheur.return_value = ScheurLLM(
+                        afstand_van_startrak_m=NietBeschikbaar.LEEG,
+                        lengte_cm=50,
+                        scheurwijdte_mm=3.0,
+                    )
+
+                    with patch(
+                        "tekstherkenning_ark.models.gebrek.GrondVoerendGatLLM.classificeer_omschrijving",
+                        new_callable=AsyncMock,
+                    ) as mock_gat:
+                        from tekstherkenning_ark.llm.gebrek_classificatie import GrondVoerendGatLLM
+
+                        mock_gat.return_value = GrondVoerendGatLLM(
+                            afstand_van_startrak_m=NietBeschikbaar.LEEG,
+                            breedte_cm=20,
+                            hoogte_cm=30,
+                            diepte_cm=NietBeschikbaar.LEEG,
+                        )
+
+                        result = await Gebrek.classify_gebrek(gebrek)
+
+                        assert len(result) == 2
+                        typen = {type(g) for g in result}
+                        assert Scheur in typen
+                        assert GrondVoerendGat in typen
+
+                        scheur = next(g for g in result if isinstance(g, Scheur))
+                        assert scheur.scheurwijdte_mm == 3.0
+
+                        gat = next(g for g in result if isinstance(g, GrondVoerendGat))
+                        assert gat.breedte_cm == 20
 
         anyio.run(run_test)
