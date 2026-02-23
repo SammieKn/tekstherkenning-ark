@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from tekstherkenning_ark.utils import (
     clean_string,
-    get_paal_id,
     contains_kesp_id,
     contains_paal_id,
     is_algemeen_gebrek,
@@ -100,10 +99,56 @@ class Gebrek(BaseModel):
     async def classify_gebrek(gebrek: Gebrek) -> list[Gebrek]:
         """Classificeer een Gebrek instantie naar een of meer specifieke subtypes.
 
-        Deze methode gebruikt een LLM om te bepalen welk(e) type(n) gebrek(en)
-        aanwezig zijn in de omschrijving. Wanneer meerdere types gedetecteerd
-        worden, wordt voor elk type een apart subtype-object aangemaakt.
-        LLM classificaties worden parallel uitgevoerd.
+        Delegeert naar `classify_paal_kesp_gebrek` voor paal- en kespcoderingen,
+        en naar `classify_algemeen_gebrek` voor algemene gebreken.
+
+        Parameters
+        ----------
+        gebrek : Gebrek
+            Een Gebrek instantie.
+
+        Returns
+        -------
+        list[Gebrek]
+            Een lijst van specifieke subtypes van Gebrek met geëxtraheerde
+            attributen. Bevat het originele gebrek als geen type herkend is.
+        """
+        if contains_paal_id(gebrek.codering) or contains_kesp_id(gebrek.codering):
+            return await Gebrek.classify_paal_kesp_gebrek(gebrek)
+        return await Gebrek.classify_algemeen_gebrek(gebrek)
+
+    @staticmethod
+    async def classify_paal_kesp_gebrek(gebrek: Gebrek) -> list[Gebrek]:
+        """Classificeer een gebrek met een paal- of kespcodering.
+
+        Wanneer de omschrijving een scheur bevat, wordt het gebrek geclassificeerd
+        als ScheurHout via een LLM. Anders wordt het originele gebrek teruggegeven.
+
+        Parameters
+        ----------
+        gebrek : Gebrek
+            Een Gebrek instantie met een paal- of kespcodering.
+
+        Returns
+        -------
+        list[Gebrek]
+            Een lijst met één ScheurHout instantie, of het originele gebrek
+            als er geen scheur in de omschrijving staat.
+        """
+        if "scheur" not in gebrek.omschrijving.lower():
+            return [gebrek]
+
+        llm_result = await ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving)
+        return [ScheurHout(**gebrek.model_dump(), **llm_result.model_dump())]
+
+    @staticmethod
+    async def classify_algemeen_gebrek(gebrek: Gebrek) -> list[Gebrek]:
+        """Classificeer een algemeen gebrek naar een of meer specifieke subtypes.
+
+        Gebruikt een LLM om te bepalen welk(e) type(n) gebrek(en) aanwezig zijn
+        in de omschrijving. Wanneer meerdere types gedetecteerd worden, wordt voor
+        elk type een apart subtype-object aangemaakt. LLM classificaties worden
+        parallel uitgevoerd.
 
         Parameters
         ----------
@@ -118,16 +163,12 @@ class Gebrek(BaseModel):
         """
         omschrijving = gebrek.omschrijving.lower()
 
-        # Gebruik LLM om gebrektype(n) te detecteren
         type_detectie = await GebrekTypeDetectieLLM.classificeer_omschrijving(gebrek.omschrijving)
 
-        # Verzamel LLM coroutines per gedetecteerd type
         llm_taken = []
 
         if type_detectie.is_scheur:
-            if contains_paal_id(gebrek.codering) or contains_kesp_id(gebrek.codering):
-                llm_taken.append(ScheurHoutLLM.classificeer_omschrijving(gebrek.omschrijving))
-            elif "metselwerk" in omschrijving:
+            if "metselwerk" in omschrijving:
                 llm_taken.append(ScheurMetselwerkLLM.classificeer_omschrijving(gebrek.omschrijving))
             else:
                 llm_taken.append(ScheurLLM.classificeer_omschrijving(gebrek.omschrijving))
@@ -144,17 +185,39 @@ class Gebrek(BaseModel):
         if type_detectie.is_scheefstand and is_algemeen_gebrek(gebrek.codering):
             llm_taken.append(ScheefstandLLM.classificeer_omschrijving(gebrek.omschrijving))
 
-        # Onderloopsheidscherm vereist geen aparte LLM classificatie
         heeft_onderloopsheidscherm = type_detectie.is_onderloopsheidscherm and is_algemeen_gebrek(gebrek.codering)
 
-        # Retourneer origineel gebrek als geen enkel type herkend is
         if not llm_taken and not heeft_onderloopsheidscherm:
             return [gebrek]
 
-        # Voer alle LLM classificaties parallel uit
         llm_resultaten = list(await asyncio.gather(*llm_taken))
 
-        # Bouw lijst van geclassificeerde gebreken op via isinstance check op het LLM resultaat
+        geclassificeerde_gebreken = Gebrek._llm_resultaten_naar_gebreken(gebrek, llm_resultaten)
+
+        if heeft_onderloopsheidscherm:
+            geclassificeerde_gebreken.append(OnderloopsheidschermBeschadigd(**gebrek.model_dump()))
+
+        return geclassificeerde_gebreken
+
+    @staticmethod
+    def _llm_resultaten_naar_gebreken(
+        gebrek: Gebrek,
+        llm_resultaten: list,
+    ) -> list[Gebrek]:
+        """Zet LLM classificatieresultaten om naar de correcte Gebrek subtype instanties.
+
+        Parameters
+        ----------
+        gebrek : Gebrek
+            Het originele gebrek waaruit de basisattributen worden overgenomen.
+        llm_resultaten : list
+            Lijst van LLM classificatieresultaten.
+
+        Returns
+        -------
+        list[Gebrek]
+            Een lijst van Gebrek subtype instanties.
+        """
         geclassificeerde_gebreken: list[Gebrek] = []
 
         for llm_result in llm_resultaten:
@@ -174,9 +237,6 @@ class Gebrek(BaseModel):
                 geclassificeerde_gebreken.append(BuikInWand(**gebrek.model_dump(), **llm_result.model_dump()))
             elif isinstance(llm_result, ScheefstandLLM):
                 geclassificeerde_gebreken.append(Scheefstand(**gebrek.model_dump(), **llm_result.model_dump()))
-
-        if heeft_onderloopsheidscherm:
-            geclassificeerde_gebreken.append(OnderloopsheidschermBeschadigd(**gebrek.model_dump()))
 
         return geclassificeerde_gebreken
 
