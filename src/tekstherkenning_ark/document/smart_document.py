@@ -35,15 +35,15 @@ class SmartDocument:
 
     Attributes
     ----------
-    pdf_path : Path
-        Pad naar het geanalyseerde PDF document.
+    pdf_file_name : str
+        Naam van het geanalyseerde PDF document.
     sections : list[Sectie]
         Lijst van alle secties in het document.
     analyze_result : AnalyzeResult
         Het originele Azure Document Intelligence analyze result.
     """
 
-    pdf_path: Path
+    document_name: str
     analyze_result: AnalyzeResult
     sections: list[Sectie] = field(default_factory=list)
 
@@ -91,7 +91,7 @@ class SmartDocument:
             cache_file.write_bytes(pickle.dumps(result))
             logger.info(f"Results cached to: {cache_file.name}")
 
-        doc = cls(analyze_result=result, pdf_path=pdf_path)
+        doc = cls(analyze_result=result, document_name=pdf_path.stem)
         doc._parse_document()
         return doc
 

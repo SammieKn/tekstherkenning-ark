@@ -269,7 +269,7 @@ class Rak(RakBaseModel):
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
 
-        cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
+        cache_file = constants.CACHE_DIR / f"rak_{doc.document_name}.pkl"
         if cache_file.exists() and use_caching:
             logger.info(f"Loading cached Rak from {cache_file}")
             rak_instance = pickle.loads(cache_file.read_bytes())
