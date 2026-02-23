@@ -153,3 +153,5 @@ cython_debug/
 /.idea/modules.xml
 /.idea/tekstherkenning-ark.iml
 /.idea/vcs.xml
+
+*docai_result.pkl
