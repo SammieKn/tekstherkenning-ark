@@ -140,7 +140,9 @@ class TestGebrekTypeDetectie:
                     from tekstherkenning_ark.llm.gebrek_classificatie import BuikInWandLLM
 
                     mock_extract.return_value = BuikInWandLLM(
-                        afstand_van_startrak_m=NietBeschikbaar.LEEG,
+                        start_buik_van_startrak_m_ingevuld=NietBeschikbaar.LEEG,
+                        eind_buik_van_startrak_m_ingevuld=NietBeschikbaar.LEEG,
+                        lengte_buik_m_ingevuld=NietBeschikbaar.LEEG,
                         uitbuiking_cm=5,
                     )
 

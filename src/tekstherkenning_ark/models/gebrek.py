@@ -264,14 +264,20 @@ class BuikInWand(Gebrek):
 
     Attributes
     ----------
-    afstand_van_startrak_m : float | NietBeschikbaar
-        Afstand van het startrak in meters.
+    start_buik_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters bij het begin van de buik.
+    eind_buik_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters bij het einde van de buik.
+    lengte_buik_m : float | NietBeschikbaar
+        Lengte van de buik in meters.
     uitbuiking_cm : int | NietBeschikbaar
         Mate van uitbuiging in centimeters. Te vinden in de omschrijving
         van de gebrekentabel.
     """
 
-    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    start_buik_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    eind_buik_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    lengte_buik_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
     uitbuiking_cm: int | NietBeschikbaar
 
 

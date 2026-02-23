@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
@@ -287,15 +287,64 @@ Extraheer informatie over buik in wand (uitbuiging van de kademuur) uit de omsch
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
 of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
-
-    afstand_van_startrak_m: float | NietBeschikbaar = Field(
+    start_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Afstand van het startrak in meters. Zoek naar 'vanaf start rak' of 'meter'.",
+        description="Afstand van het startrak in meters waar de buik begint. Zoek naar 'buik begint op X meter vanaf start rak' of 'vanaf startrak'.",
+    )
+    eind_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="Afstand van het startrak in meters waar de buik eindigt. Zoek naar 'buik eindigt op X meter vanaf start rak' of 'vanaf startrak'.",
+    )
+    lengte_buik_m_ingevuld: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="Lengte van de buik in meters. Zoek naar 'lengte buik' of 'buik is X meter lang'.",
     )
     uitbuiking_cm: int | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
         description="Mate van uitbuiging in centimeters. Zoek naar 'uitbuiging' of 'buik'.",
     )
+
+    @computed_field
+    @property
+    def start_buik_van_startrak_m(self) -> float | NietBeschikbaar:
+        """Afstand van het startrak in meters. Wordt afgeleid van de start van de buik."""
+        if self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.start_buik_van_startrak_m_ingevuld
+        elif (
+            self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.eind_buik_van_startrak_m_ingevuld - self.lengte_buik_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
+
+    @computed_field
+    @property
+    def eind_buik_van_startrak_m(self) -> float | NietBeschikbaar:
+        """Afstand van het startrak in meters. Wordt afgeleid van het eind van de buik."""
+        if self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.eind_buik_van_startrak_m_ingevuld
+        elif (
+            self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.start_buik_van_startrak_m_ingevuld + self.lengte_buik_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
+
+    @computed_field
+    @property
+    def lengte_buik_m(self) -> float | NietBeschikbaar:
+        """Lengte van de buik in meters. Wordt afgeleid van de start en eind van de buik."""
+        if self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.lengte_buik_m_ingevuld
+        elif (
+            self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.eind_buik_van_startrak_m_ingevuld - self.start_buik_van_startrak_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
 
 
 class ScheefstandLLM(LLMClassifier):
