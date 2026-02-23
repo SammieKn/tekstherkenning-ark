@@ -26,7 +26,7 @@ class Onderloopsheidscherm(RakBaseModel):
     @property
     def is_beschadigd(self) -> bool:
         heeft_gebrek = bool(self.gebreken)
-        is_beschadigd = any(toestand for toestand in self.toestand_onderdelen)
+        is_beschadigd = any(toestand.aangetast for toestand in self.toestand_onderdelen)
         return heeft_gebrek or is_beschadigd
 
     @property
@@ -45,7 +45,7 @@ class Onderloopsheidscherm(RakBaseModel):
             Onderloopsheidscherm | None: Een leeg Onderloopsheidscherm model, of None als er geen onderloopsheidscherm is.
         """
 
-        if not omschrijving.onderloopsheidscherm:
+        if omschrijving.onderloopsheidscherm:
             return cls()
 
         return None
