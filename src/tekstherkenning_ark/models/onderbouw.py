@@ -96,13 +96,21 @@ class Onderbouw(RakBaseModel):
 
     @property
     def percentage_beschadigde_kespen(self) -> float | None:
-        # TODO: Checken met Geert hoe een beschadigde kesp gedefinieerd is en of dit veld in de meettabel kespen staat.
         """Percentage kespen met vervorming of aantasting."""
         if not self.kespen:
             return None
 
         aantal_beschadigd = sum(1 for kesp in self.kespen if kesp.is_vervormd or kesp.is_aangetast)
         return round((aantal_beschadigd / len(self.kespen)) * 100, 2)
+
+    @property
+    def percentage_vervormde_kespen(self) -> float | None:
+        """Percentage kespen met vervorming."""
+        if not self.kespen:
+            return None
+
+        aantal_vervormd = sum(1 for kesp in self.kespen if kesp.is_vervormd)
+        return round((aantal_vervormd / len(self.kespen)) * 100, 2)
 
     @property
     def percentage_beschadigde_verbinding(self) -> float | None:

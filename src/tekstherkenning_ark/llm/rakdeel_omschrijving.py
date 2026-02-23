@@ -83,7 +83,7 @@ class RakdeelOmschrijving(LLMClassifier):
     # onderloopsheidscherm aanwezig ja/nee
     onderloopsheidscherm: bool | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Geef aan of er een onderloopsheidscherm aanwezig is bij dit rakdeel door middel van boolean.",
+        description="Geef aan of er een onderloopsheidscherm aanwezig is bij dit rakdeel door middel van boolean. Herkenbaar aan woorden zoals 'grondkerend scherm', 'onderloopsheidscherm', 'scherm' in de omschrijving.",
     )
 
     # benodigd voor constructie waterbodem
