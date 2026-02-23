@@ -75,9 +75,7 @@ class ScheurMetselwerkLLM(ScheurLLM):
         Oriëntatie van de scheur.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over scheuren in metselwerk uit de omschrijving.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
@@ -116,9 +114,7 @@ class ScheurHoutLLM(ScheurLLM):
         Oriëntatie van de scheur.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over scheuren in hout (palen, kespen) uit de omschrijving.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
@@ -149,9 +145,7 @@ class GrondVoerendGatLLM(LLMClassifier):
         Diepte van het gat in centimeters.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over grondvoerende gaten uit de omschrijving.
 Dit zijn gaten achter het metselwerk waar grond doorheen kan stromen.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
@@ -187,9 +181,7 @@ class BuikInWandLLM(LLMClassifier):
         Mate van uitbuiging in centimeters.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over buik in wand (uitbuiging van de kademuur) uit de omschrijving.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
@@ -216,9 +208,7 @@ class ScheefstandLLM(LLMClassifier):
         Hoek van de scheefstand in graden.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over scheefstand uit de omschrijving.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
@@ -249,9 +239,7 @@ class LokaalVerdwenenMetselwerkLLM(LLMClassifier):
         Diepte van het verdwenen metselwerk in centimeters.
     """
 
-    _systeem_prompt: ClassVar[
-        str
-    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+    _systeem_prompt: ClassVar[str] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
 Extraheer informatie over lokaal verdwenen metselwerk uit de omschrijving.
 Dit betreft metselwerk dat ontbreekt, is uitgespoeld, of beschadigd is.
 Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
