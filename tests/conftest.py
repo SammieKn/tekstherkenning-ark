@@ -41,7 +41,7 @@ constants.CACHE_DIR = KZG_0202_TEST_DIR
 def load_kzg0202_smart_document() -> SmartDocument:
     """Load the SmartDocument for the KZG0202 test PDF from the test cache."""
 
-    doc_pkl_path = KZG_0202_TEST_DIR / f"{KZG_0202_DOC_NAME}_docai_result.pkl"
+    doc_pkl_path = KZG_0202_TEST_DIR / f"{KZG_0202_DOC_NAME}_smart_document_sanitized.pkl"
     smart_doc = pickle.loads(doc_pkl_path.read_bytes())
 
     return smart_doc
