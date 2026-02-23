@@ -88,3 +88,34 @@ class Bovenbouw(RakBaseModel):
     def is_scheefstand_aanwezig(self) -> bool:
         """Check of Scheefstand gebrek aanwezig is."""
         return any(isinstance(gebrek, Scheefstand) for gebrek in self.gebreken)
+
+    @property
+    def is_buik_met_scheur_aanwezig(self) -> bool:
+        """Check of er een BuikInWand gebrek is dat geassocieerd kan worden met een Scheur gebrek."""
+        return len(self.buik_met_scheur_in_wand) > 0
+
+    @property
+    def buik_met_scheur_in_wand(self) -> list[tuple[BuikInWand, Scheur]]:
+        """Returnt een list of tuples met BuikInWand gebreken en hun bijbehorende Scheur gebreken."""
+        buik_in_wand_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, BuikInWand)]
+        scheur_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)]
+
+        buik_met_scheur = []
+
+        for buik in buik_in_wand_gebreken:
+            for scheur in scheur_gebreken:
+                if buik.codering == scheur.codering:
+                    buik_met_scheur.append((buik, scheur))
+                elif all(
+                    isinstance(value, float)
+                    for value in (buik.start_buik_van_startrak_m, buik.eind_buik_van_startrak_m)
+                ):
+                    if (
+                        isinstance(scheur.afstand_van_startrak_m, float)
+                        and buik.start_buik_van_startrak_m
+                        <= scheur.afstand_van_startrak_m
+                        <= buik.eind_buik_van_startrak_m
+                    ):
+                        buik_met_scheur.append((buik, scheur))
+
+        return buik_met_scheur
