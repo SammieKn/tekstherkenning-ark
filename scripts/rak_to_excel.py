@@ -28,7 +28,7 @@ def main():
         if not "boor" in file.stem.lower():
 
             doc = SmartDocument.from_pdf(file)
-            print(f"Genereren van Rak object voor {doc.pdf_path.name}...")
+            print(f"Genereren van Rak object voor {doc.document_name}...")
             rak = Rak.from_smart_document(doc, use_caching=False)
             print("Exporteren naar Excel...")
             export_pad = rak.to_excel()
