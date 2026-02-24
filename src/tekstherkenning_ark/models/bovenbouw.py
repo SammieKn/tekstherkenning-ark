@@ -90,6 +90,40 @@ class Bovenbouw(RakBaseModel):
         return any(isinstance(gebrek, Scheefstand) for gebrek in self.gebreken)
 
     @property
+    def is_scheefstand_met_scheur_aanwezig(self) -> bool:
+        """Check of er een Scheefstand gebrek is dat geassocieerd kan worden met een Scheur gebrek."""
+        return len(self.scheefstand_met_scheur_in_wand) > 0
+
+    @property
+    def scheefstand_met_scheur_in_wand(self) -> list[tuple[Scheefstand, Scheur]]:
+        """Returnt een list of tuples met Scheefstand gebreken en hun bijbehorende Scheur gebreken."""
+        scheefstand_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheefstand)]
+        scheur_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)]
+
+        scheefstand_met_scheur = []
+
+        for scheefstand in scheefstand_gebreken:
+            for scheur in scheur_gebreken:
+                if scheefstand.codering == scheur.codering:
+                    scheefstand_met_scheur.append((scheefstand, scheur))
+                elif all(
+                    isinstance(value, float)
+                    for value in (
+                        scheefstand.start_scheefstand_van_startrak_m,
+                        scheefstand.eind_scheefstand_van_startrak_m,
+                    )
+                ):
+                    if (
+                        isinstance(scheur.afstand_van_startrak_m, float)
+                        and scheefstand.start_scheefstand_van_startrak_m
+                        <= scheur.afstand_van_startrak_m
+                        <= scheefstand.eind_scheefstand_van_startrak_m  # type: ignore
+                    ):
+                        scheefstand_met_scheur.append((scheefstand, scheur))
+
+        return scheefstand_met_scheur
+
+    @property
     def is_buik_met_scheur_aanwezig(self) -> bool:
         """Check of er een BuikInWand gebrek is dat geassocieerd kan worden met een Scheur gebrek."""
         return len(self.buik_met_scheur_in_wand) > 0
@@ -114,7 +148,7 @@ class Bovenbouw(RakBaseModel):
                         isinstance(scheur.afstand_van_startrak_m, float)
                         and buik.start_buik_van_startrak_m
                         <= scheur.afstand_van_startrak_m
-                        <= buik.eind_buik_van_startrak_m
+                        <= buik.eind_buik_van_startrak_m  # type: ignore
                     ):
                         buik_met_scheur.append((buik, scheur))
 
