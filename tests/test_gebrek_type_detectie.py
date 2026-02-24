@@ -184,13 +184,19 @@ class TestGebrekTypeDetectie:
                     from tekstherkenning_ark.llm.gebrek_classificatie import ScheefstandLLM
 
                     mock_extract.return_value = ScheefstandLLM(
-                        afstand_van_startrak_m=NietBeschikbaar.LEEG,
-                        hoek_graden=NietBeschikbaar.LEEG,
+                        start_scheefstand_van_startrak_m_ingevuld=10.0,
+                        eind_scheefstand_van_startrak_m_ingevuld=NietBeschikbaar.LEEG,
+                        lengte_scheefstand_m_ingevuld=4.0,
+                        hoek_graden=2,
                     )
 
                     result = await Gebrek.classify_gebrek(gebrek)
                     assert len(result) == 1
                     assert isinstance(result[0], Scheefstand)
+                    assert result[0].start_scheefstand_van_startrak_m == 10.0
+                    assert result[0].eind_scheefstand_van_startrak_m == 14.0
+                    assert result[0].lengte_scheefstand_m == 4.0
+                    assert result[0].hoek_graden == 2
 
         anyio.run(run_test)
 

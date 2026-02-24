@@ -310,8 +310,12 @@ class ScheefstandLLM(LLMClassifier):
 
     Attributes
     ----------
-    afstand_van_startrak_m : float | NietBeschikbaar
-        Afstand van het startrak in meters.
+    start_scheefstand_van_startrak_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen startafstand van het startrak in meters.
+    eind_scheefstand_van_startrak_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen eindafstand van het startrak in meters.
+    lengte_scheefstand_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen lengte van de scheefstand in meters.
     hoek_graden : int | NietBeschikbaar
         Hoek van de scheefstand in graden.
     """
@@ -324,9 +328,17 @@ Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
 NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
 of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is."""
 
-    afstand_van_startrak_m: float | NietBeschikbaar = Field(
+    start_scheefstand_van_startrak_m_ingevuld: float | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Afstand van het startrak in meters. Zoek naar 'vanaf start rak' of 'meter'.",
+        description="Afstand van het startrak in meters waar de scheefstand begint. Zoek naar 'scheefstand begint op X meter vanaf start rak' of 'vanaf startrak'.",
+    )
+    eind_scheefstand_van_startrak_m_ingevuld: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="Afstand van het startrak in meters waar de scheefstand eindigt. Zoek naar 'scheefstand eindigt op X meter vanaf start rak' of 'vanaf startrak'.",
+    )
+    lengte_scheefstand_m_ingevuld: float | NietBeschikbaar = Field(
+        default=NietBeschikbaar.LEEG,
+        description="Lengte van de scheefstand in meters. Zoek naar 'lengte scheefstand' of 'scheefstand is X meter lang'.",
     )
     hoek_graden: int | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
