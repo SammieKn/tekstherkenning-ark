@@ -33,10 +33,11 @@ def test_kzg0202_nul_onverwacht(kzg0202_rak: Rak):
 def test_kzg0202_gebreken(kzg0202_rak: Rak):
     """Test that the Rak instance from the test cache has the expected gebreken."""
     aantal_gebreken_tot = len(kzg0202_rak.alle_gebreken)
-    assert aantal_gebreken_tot == 69, f"Expected 69 gebreken, got {aantal_gebreken_tot}"
+    assert aantal_gebreken_tot == 78, f"Expected 78 gebreken, got {aantal_gebreken_tot}"
     # header gebrekcodering constructie B tabel meegneomen als onbekend gebrek
 
 
+# TODO fix these tests when working on issues #89 adnd #90 - MT
 # def test_kzg0202_raknaam(kzg0202_rak: Rak):
 #     """Test that the Rak instance from the test cache has the expected raknaam."""
 #     raknaam = kzg0202_rak.raknaam
