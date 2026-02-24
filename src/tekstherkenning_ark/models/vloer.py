@@ -50,5 +50,5 @@ class Vloer(RakBaseModel):
         """
         return cls(
             materiaal=omschrijving.materiaal_vloer,
-            bovenkant_vloer_cm_tov_nap=omschrijving.bovenkant_vloer_cm,
+            bovenkant_vloer_cm_tov_nap=omschrijving.nap_tot_bovenkant_vloer_cm,
         )
