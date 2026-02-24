@@ -36,8 +36,7 @@ class Bovenbouw(RakBaseModel):
     materiaal: MateriaalBovenbouw | NietBeschikbaar = NietBeschikbaar.LEEG
     # Te bepalen uit de gebrekentabel (paragraaf 2.3 of 5.3.3) door het aantal scheuren te tellen en te relateren aan de lengte van het rakdeel.
     maximaal_aantal_scheuren_per_10_m: int | None = None
-    # Af te leiden uit de doorsnedetekening en de toestandstabel (figuur 1.11) en de gebrekentabel (paragraaf 2.3 of 5.3.3).
-    percentage_niet_functionerend_schuifhout: float | None = None
+
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
 
@@ -83,6 +82,26 @@ class Bovenbouw(RakBaseModel):
     def is_lokaal_verdwenen_metselwerk(self) -> bool:
         """Check of LokaalVerdwenenMetselwerk gebrek aanwezig is."""
         return any(isinstance(gebrek, LokaalVerdwenenMetselwerk) for gebrek in self.gebreken)
+
+    @property
+    def is_schuifhout_beschadigd(self) -> bool:
+        """Check of er een beschadigd schuifhout gebrek aanwezig is."""
+
+        # Check for gebreken that mention schuifhout
+        schuifhout_gebreken = [
+            gebrek
+            for gebrek in self.gebreken
+            if isinstance(gebrek, Gebrek) and "schuifhout" in gebrek.omschrijving.lower()
+        ]
+
+        # Check for a toestandsbepaling about schuifhout that is aangetast
+        schuifhout_toestanden = [
+            toestand
+            for toestand in self.toestand_onderdelen
+            if "schuifhout" in toestand.constructie_onderdeel.lower() and toestand.aangetast
+        ]
+
+        return bool(schuifhout_gebreken or schuifhout_toestanden)
 
     @property
     def is_scheefstand_aanwezig(self) -> bool:
