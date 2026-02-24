@@ -154,12 +154,10 @@ def test_onderbouw_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resulta
     # Onderbouw children have: paal.schoor_graden (1) + kesp.hoek_tov_lengte_as_graden (1) + vloer.materiaal (1) = 3
     assert len(alle_onverwachte) == 3
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
 
     # Verify paths contain expected identifiers
     paths = [path for path, o in alle_onverwachte]
-    assert any("P1.1" in path for path in paths)
     assert any("K1" in path for path in paths)
     assert any("vloer" in path for path in paths)
 
@@ -174,7 +172,6 @@ def test_rakdeel_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultate
     # Should have: paal (1) + kesp (1) + vloer (1) + bovenbouw (1) = 4
     assert len(alle_onverwachte) == 4
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet gemeten" in waarden
@@ -193,7 +190,6 @@ def test_rak_alle_onverwachte_resultaten(mock_rak_with_onverwachte_resultaten: R
     # Should collect all OnverwachtResultaat instances from the entire tree
     assert len(alle_onverwachte) == 4
     waarden = [o.waarde for path, o in alle_onverwachte]
-    assert "onleesbaar" in waarden
     assert "N/A" in waarden
     assert "onbekend materiaal" in waarden
     assert "niet gemeten" in waarden

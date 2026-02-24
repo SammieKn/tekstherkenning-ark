@@ -1,6 +1,32 @@
+"""
+Module to test methods related to Paal model.
+"""
+
 from tekstherkenning_ark.enums import NietBeschikbaar, SchoorStand
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
+from azure.ai.documentintelligence.models import DocumentTable
+
+
+def test_get_palen_from_doc_tables_dict_dimensions(paal_tables: DocumentTable):
+    """check type and dimensions"""
+    palen_dict = Paal.from_doc_tables(paal_tables)
+    assert isinstance(palen_dict, dict)
+    assert len(palen_dict) == 10
+
+
+def test_get_palen_from_doc_tables_no_onverwacht_resultaat(paal_tables: DocumentTable):
+    """check no onverwacht resultaat in parsed palen"""
+
+    palen_dict = Paal.from_doc_tables(paal_tables)
+
+    total_onverwacht = 0
+    for palen in palen_dict.values():
+        for paal in palen:
+            total_onverwacht += len(paal.onverwachte_resultaten)
+    assert (
+        len(paal.onverwachte_resultaten) == 0
+    ), f"Er zijn (onverwacht !) onverwachte resultaten gevonden in de palen: {total_onverwacht}"
 
 
 def test_paalrij_nummer(mock_palen: list[Paal]):
