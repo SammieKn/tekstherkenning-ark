@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from tekstherkenning_ark.utils import (
     clean_string,
@@ -324,15 +324,71 @@ class BuikInWand(Gebrek):
 
     Attributes
     ----------
-    afstand_van_startrak_m : float | NietBeschikbaar
-        Afstand van het startrak in meters.
+    start_buik_van_startrak_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen startafstand van het startrak in meters.
+    eind_buik_van_startrak_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen eindafstand van het startrak in meters.
+    lengte_buik_m_ingevuld : float | NietBeschikbaar
+        Direct uitgelezen lengte van de buik in meters.
     uitbuiking_cm : int | NietBeschikbaar
         Mate van uitbuiging in centimeters. Te vinden in de omschrijving
         van de gebrekentabel.
+    start_buik_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters bij het begin van de buik.
+        Wordt afgeleid als niet direct beschikbaar.
+    eind_buik_van_startrak_m : float | NietBeschikbaar
+        Afstand van het startrak in meters bij het einde van de buik.
+        Wordt afgeleid als niet direct beschikbaar.
+    lengte_buik_m : float | NietBeschikbaar
+        Lengte van de buik in meters. Wordt afgeleid als niet direct beschikbaar.
     """
 
-    afstand_van_startrak_m: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    start_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    eind_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
+    lengte_buik_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
     uitbuiking_cm: int | NietBeschikbaar
+
+    @computed_field
+    @property
+    def start_buik_van_startrak_m(self) -> float | NietBeschikbaar:
+        """Afstand van het startrak in meters. Wordt afgeleid van de start van de buik."""
+        if self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.start_buik_van_startrak_m_ingevuld
+        elif (
+            self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.eind_buik_van_startrak_m_ingevuld - self.lengte_buik_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
+
+    @computed_field
+    @property
+    def eind_buik_van_startrak_m(self) -> float | NietBeschikbaar:
+        """Afstand van het startrak in meters. Wordt afgeleid van het eind van de buik."""
+        if self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.eind_buik_van_startrak_m_ingevuld
+        elif (
+            self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.start_buik_van_startrak_m_ingevuld + self.lengte_buik_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
+
+    @computed_field
+    @property
+    def lengte_buik_m(self) -> float | NietBeschikbaar:
+        """Lengte van de buik in meters. Wordt afgeleid van de start en eind van de buik."""
+        if self.lengte_buik_m_ingevuld is not NietBeschikbaar.LEEG:
+            return self.lengte_buik_m_ingevuld
+        elif (
+            self.start_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+            and self.eind_buik_van_startrak_m_ingevuld is not NietBeschikbaar.LEEG
+        ):
+            return self.eind_buik_van_startrak_m_ingevuld - self.start_buik_van_startrak_m_ingevuld
+        else:
+            return NietBeschikbaar.LEEG
 
 
 class Scheefstand(Gebrek):
