@@ -15,6 +15,99 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.llmclassifier import LLMClassifier
 
 
+class GebrekTypeDetectieLLM(LLMClassifier):
+    """LLM model voor detectie van gebrektype(n) in een omschrijving.
+
+    Dit model bepaalt welke type(n) gebrek(en) aanwezig zijn in een
+    gebrekomschrijving. Het kan meerdere types detecteren indien deze
+    samen voorkomen in één omschrijving.
+
+    Attributes
+    ----------
+    is_scheur : bool
+        Indicatie of er sprake is van een scheur.
+    is_grondvoerend_gat : bool
+        Indicatie of er sprake is van een grondvoerend gat.
+    is_verdwenen_metselwerk : bool
+        Indicatie of er sprake is van verdwenen of ontbrekend metselwerk.
+    is_buik_in_wand : bool
+        Indicatie of er sprake is van een buik in de wand.
+    is_scheefstand : bool
+        Indicatie of er sprake is van scheefstand.
+    is_onderloopsheidscherm : bool
+        Indicatie of er sprake is van een beschadigd onderloopsheidscherm.
+    """
+
+    _systeem_prompt: ClassVar[
+        str
+    ] = """Je bent een expert in het analyseren van gebrekenomschrijvingen van kademuren.
+Bepaal welke type(n) gebrek(en) aanwezig zijn in de omschrijving.
+
+Een omschrijving kan meerdere types bevatten. Bij meerdere types staan meer waardes op True. 
+Analyseer de tekst zorgvuldig en maak onderscheid tussen de verschillende nuances:
+
+1. **Scheur**: Een scheur, barst of spleet in het materiaal.
+   Zoek naar woorden zoals: "scheur", "scheuren", "barst", "spleet"
+
+2. **Grondvoerend gat**: Een gat achter het metselwerk waar grond doorheen stroomt of kan stromen.
+   Dit is specifiek een gat met mogelijke grondvoerende werking.
+   Zoek naar woorden zoals: "grondvoerend", "grondvoerend gat". Bijvoorbeeld een slecht gedicht gat.
+   
+3. **Verdwenen metselwerk**: Metselwerk dat ontbreekt, is uitgespoeld of lokaal beschadigd is,
+   ZONDER dat expliciet wordt vermeld dat het grondvoerend is.
+   Zoek naar woorden zoals: 
+   - "ontbreekt", "ontbrekend" (metselwerk)
+   - "uitgebroken", "uitgespoeld" (metselwerk)
+   - "verdwenen" (metselwerk)
+   - "gat in metselwerk" (zonder grondvoerend)
+   - "vermist metselwerk"
+   - "lokale beschadiging metselwerk"
+
+4. **Buik in wand**: Een uitbuiging of buik in de kademuur. Zoek naar woorden als: "buik", "uitbuiging", "buigt uit", "uitgebogen", "naar voren gekomen"
+
+5. **Scheefstand**: De wand staat niet verticaal maar wijkt af van de loodrechte stand,
+   ZONDER dat er sprake is van een duidelijke buik.
+   Zoek naar woorden zoals: 
+   - "scheefstand", "scheef"
+   - "wijkt af", "afwijking" (van verticaal)
+   - "naar het water" (in context van afwijking)
+   - "niet verticaal", "niet loodrecht"
+   - "overhelt", "schuin"
+
+6. **Onderloopsheidscherm**: Beschadigd onderloopsheidscherm.
+   Zoek naar woorden zoals: "scherm", "onderloopsheidscherm", "grondkerend scherm"
+
+LET OP: 
+- Een omschrijving kan meerdere gebrektypes bevatten.
+- Maak onderscheid tussen grondvoerend gat en verdwenen metselwerk op basis van expliciete vermelding van "grondvoerend".
+- Maak onderscheid tussen buik in wand en scheefstand: een buik is een uitbuiging, scheefstand is een afwijking van verticaal."""
+
+    is_scheur: bool = Field(
+        default=False,
+        description="True als de omschrijving een scheur beschrijft",
+    )
+    is_grondvoerend_gat: bool = Field(
+        default=False,
+        description="True als de omschrijving een grondvoerend gat beschrijft (gat waar grond doorheen stroomt)",
+    )
+    is_verdwenen_metselwerk: bool = Field(
+        default=False,
+        description="True als de omschrijving verdwenen/ontbrekend metselwerk beschrijft (zonder grondvoerende werking)",
+    )
+    is_buik_in_wand: bool = Field(
+        default=False,
+        description="True als de omschrijving een buik of uitbuiging in de wand beschrijft.",
+    )
+    is_scheefstand: bool = Field(
+        default=False,
+        description="True als de omschrijving scheefstand of afwijking beschrijft (zonder buik).",
+    )
+    is_onderloopsheidscherm: bool = Field(
+        default=False,
+        description="True als de omschrijving een beschadigd onderloopsheidscherm beschrijft",
+    )
+
+
 class ScheurLLM(LLMClassifier):
     """Basis model voor scheur attributen (geen eigen systeem prompt).
 
