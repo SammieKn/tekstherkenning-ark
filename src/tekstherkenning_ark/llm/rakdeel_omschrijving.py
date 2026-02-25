@@ -71,13 +71,13 @@ class RakdeelOmschrijving(LLMClassifier):
         - Afstanden worden in de tekst omschreven van boven naar beneden, dus als er meerdere afstanden worden benoemd, is de bovenste afstand de referentie voor de volgende afstand.
         """
 
-    bouwjaar: int | None = Field(
-        gt=1600, lt=2200, default=None, description="Bouwjaar van het rakdeel, houd leeg als onbekend."
+    bouwjaar: int | NietBeschikbaar = Field(
+        gt=1600, lt=2200, default=NietBeschikbaar.LEEG, description="Bouwjaar van het rakdeel, houd leeg als onbekend."
     )
 
     # Lengte van het rakdeel, wordt gebruikt om de subdelen te toetsen in lengte tov totaal.
-    lengte_rakdeel: float | None = Field(
-        gt=0.0, default=None, description="Lengte van het rakdeel in meters, houd leeg als onbekend."
+    lengte_rakdeel: float | NietBeschikbaar = Field(
+        gt=0.0, default=NietBeschikbaar.LEEG, description="Lengte van het rakdeel in meters, houd leeg als onbekend."
     )
 
     # Benodigd om type constructie te bepalen
@@ -104,34 +104,34 @@ class RakdeelOmschrijving(LLMClassifier):
         default=NietBeschikbaar.LEEG,
         description="Geef aan of er een onderloopsheidscherm aanwezig is bij dit rakdeel door middel van boolean. Herkenbaar aan woorden zoals 'grondkerend scherm', 'onderloopsheidscherm', 'scherm' in de omschrijving.",
     )
-    bovenkant_deksteen_tot_waterlijn_cm: float | None = Field(
+    bovenkant_deksteen_tot_waterlijn_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de hoogte van de bovenkant van de deksteen ten opzichte van de waterlijn (cm).",
     )
-    bovenkant_deksteen_tot_nap_cm: float | None = Field(
+    bovenkant_deksteen_tot_nap_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de hoogte van de bovenkant van de deksteen ten opzichte van NAP (cm).",
     )
-    waterlijn_tot_bovenkant_vloer_cm: float | None = Field(
+    waterlijn_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de afstand onder de waterlijn tot de bovenkant van de vloer in cm.",
     )
-    nap_tot_bovenkant_vloer_cm: float | None = Field(
+    nap_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de afstand onder NAP tot de bovenkant van de vloer in cm.",
     )
-    onderzijde_constructie_nap_cm: float | None = Field(
+    onderzijde_constructie_nap_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de afstand onder NAP tot de onderzijde van de constructie in cm. Te herkennen aan 'onderzijde constructie bevindt zich op x cm onder NAP.'",
     )
-    afstand_onderzijde_constructie_tot_bovenkant_vloer_cm: float | None = Field(
+    afstand_onderzijde_constructie_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
         gt=0.0,
-        default=None,
+        default=NietBeschikbaar.LEEG,
         description="Geef de afstand van de bovenkant vloer tot de onderzijde van de constructie in cm. Tel de hoogtes van de constructieonderdelen tussen vloer en onderzijde constructie bij elkaar op.",
     )
 
