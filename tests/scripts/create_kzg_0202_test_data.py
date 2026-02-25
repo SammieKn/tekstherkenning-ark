@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # Create SmartDocument instance from PDF
     logger.info(f"Creating SmartDocument from PDF: {DOC_SRC_PATH}")
-    smart_doc = SmartDocument.from_pdf(DOC_SRC_PATH, use_cache=False)
+    smart_doc = SmartDocument.from_pdf(DOC_SRC_PATH, use_cache=True)
 
     # Sanitize the SmartDocument
     logger.info("Sanitizing SmartDocument for test data")
