@@ -61,6 +61,9 @@ class Rak(RakBaseModel):
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
+    model_config = ConfigDict(
+        use_enum_values=True,
+    )
     # Elk rakdeel heeft een eigen constructietype.
     rakdelen: list[Rakdeel]
     # Te vinden in de rapporttitel, projectgegevens of paragraaf 2.2.1 (paspoortgegevens).
