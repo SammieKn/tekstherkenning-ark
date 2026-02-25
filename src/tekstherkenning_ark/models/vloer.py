@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pydantic import computed_field
+
 from tekstherkenning_ark.enums import MateriaalVloer, NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
@@ -29,6 +31,7 @@ class Vloer(RakBaseModel):
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None
 
+    @computed_field
     @property
     def is_beschadigd(self) -> bool:
         heeft_gebrek = bool(self.gebreken)

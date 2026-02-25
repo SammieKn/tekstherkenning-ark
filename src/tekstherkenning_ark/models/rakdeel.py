@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TypeVar
+from pydantic import computed_field
 
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -68,6 +69,7 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    @computed_field
     @property
     def maximaal_aantal_scheuren_per_10_m(self) -> int:
         """Aantal scheuren genormaliseerd naar 10 meter lengte."""
@@ -97,6 +99,7 @@ class Rakdeel(RakBaseModel):
 
         return max_scheuren_per_10_m
 
+    @computed_field
     @property
     def lengte_m(self) -> float | None | OnverwachtResultaat:
         """Lengte van het rakdeel in meters.
@@ -137,6 +140,7 @@ class Rakdeel(RakBaseModel):
 
         return total_length_m
 
+    @computed_field
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
         """Scheur-dichtheid per meter."""
