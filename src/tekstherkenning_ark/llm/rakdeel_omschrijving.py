@@ -66,6 +66,9 @@ class RakdeelOmschrijving(LLMClassifier):
         Als de hoogte ten opzichte van NAP benoemt wordt, gebruik dan de variable van NAP als referentiepunt, bijvoorbeeld:
         - bovenkant_deksteen_cm_tov_nap
         - nap_tot_bovenkant_vloer_cm
+        \n
+        - Gebruik ALLEEN verticale afstanden voor hoogte berekeningen.
+        - Afstanden worden in de tekst omschreven van boven naar beneden, dus als er meerdere afstanden worden benoemd, is de bovenste afstand de referentie voor de volgende afstand.
         """
 
     bouwjaar: int | None = Field(
@@ -114,22 +117,22 @@ class RakdeelOmschrijving(LLMClassifier):
     waterlijn_tot_bovenkant_vloer_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="Geef de hoogte van de waterlijn tot de bovenkant van de vloer in cm.",
+        description="Geef de afstand onder de waterlijn tot de bovenkant van de vloer in cm.",
     )
     nap_tot_bovenkant_vloer_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="Geef de hoogte van NAP tot de bovenkant van de vloer in cm.",
+        description="Geef de afstand onder NAP tot de bovenkant van de vloer in cm.",
     )
     onderzijde_constructie_nap_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="Geef de hoogte van de onderzijde van de constructie ten opzichte van NAP in cm.",
+        description="Geef de afstand onder NAP tot de onderzijde van de constructie in cm. Te herkennen aan 'onderzijde constructie bevindt zich op x cm onder NAP.'",
     )
     afstand_onderzijde_constructie_tot_bovenkant_vloer_cm: float | None = Field(
         gt=0.0,
         default=None,
-        description="Geef de afstand van de onderzijde van de constructie tot de bovenkant van de vloer in cm.",
+        description="Geef de afstand van de bovenkant vloer tot de onderzijde van de constructie in cm. Tel de hoogtes van de constructieonderdelen tussen vloer en onderzijde constructie bij elkaar op.",
     )
 
     @property
@@ -137,8 +140,6 @@ class RakdeelOmschrijving(LLMClassifier):
         """Bepaal de hoogte van de bovenkant van de vloer ten opzichte van NAP in cm, op basis van de beschikbare informatie."""
         if isinstance(self.nap_tot_bovenkant_vloer_cm, float):
             return self.nap_tot_bovenkant_vloer_cm
-        elif isinstance(self.waterlijn_tot_bovenkant_vloer_cm, float):
-            return self.waterlijn_tot_bovenkant_vloer_cm + NAP_CM_HOOGTE_WATERLIJN
         elif all(
             (
                 isinstance(value, float)
@@ -149,6 +150,8 @@ class RakdeelOmschrijving(LLMClassifier):
             )
         ):
             return self.onderzijde_constructie_nap_cm - self.afstand_onderzijde_constructie_tot_bovenkant_vloer_cm
+        elif isinstance(self.waterlijn_tot_bovenkant_vloer_cm, float):
+            return self.waterlijn_tot_bovenkant_vloer_cm + NAP_CM_HOOGTE_WATERLIJN
         else:
             return None
 
