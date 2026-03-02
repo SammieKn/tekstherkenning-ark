@@ -15,6 +15,7 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
@@ -100,6 +101,18 @@ def test_vijf_slechte_kespen_naast_elkaar_onderbroken(mock_rak_with_gebreken: Ra
     assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
 
 
+def test_vijf_slechte_kespen_naast_elkaar_gebrek(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met een gebrek op K1 maar K1 zelf niet aangetast."""
+
+    # Maak K3 niet aangetast maar voeg een gebrek toe
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].is_aangetast = False
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].gebreken.append(
+        Gebrek(codering="GK1", omschrijving="Beschadigd kesp", figuurnummer="F2")
+    )
+
+    assert mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
 def test_vijf_slechte_kespen_naast_elkaar_meer_dan_vijf(mock_rak_with_gebreken: Rak):
     """Test vijf_slechte_kespen_naast_elkaar met 6 consecutive aangetaste kespen."""
 
@@ -114,4 +127,40 @@ def test_vijf_slechte_kespen_naast_elkaar_geen_kespen(mock_rak_with_gebreken: Ra
     # Verwijder alle kespen
     mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen = []
 
+    assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_next_rak(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar wanneer een volgende kesp in een nieuw rakdeel zit."""
+
+    # K1-K2 niet aangetast, K3-K7 aangetast
+    for i, kesp in enumerate(mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen):
+        kesp.is_aangetast = i >= 1  # alleen de laatste 5 kespen worden aangetast
+        kesp.gebreken = []
+
+    # Check dat er nu 5 slechte kespen naast elkaar zijn
+    assert mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+    # K3 ook niet aangetast maken
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].is_aangetast = False
+
+    # Check dat er nu geen 5 slechte kespen naast elkaar zijn
+    assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+    # Voeg kesp toe, maar in volgende rakdeel
+    nieuw_rakdeel = mock_rak_with_gebreken.rakdelen[0].model_copy()
+    nieuw_rakdeel.rakdeel_id = "Constructie B"
+    nieuw_rakdeel.onderbouw.kespen = [
+        Kesp(
+            kesp_nummer="K8",
+            hoogte_cm=100,
+            breedte_cm=50,
+            lengte_uitstekend_deel_cm=30,
+            is_opsluitklos_aangetast=False,
+            is_aangetast=True,
+        )
+    ]
+    mock_rak_with_gebreken.rakdelen.append(nieuw_rakdeel)
+
+    # Check dat er nu nog steeds geen 5 slechte kespen naast elkaar zijn, omdat K8 in een nieuw rakdeel zit
     assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar

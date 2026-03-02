@@ -58,6 +58,13 @@ class Kesp(RakBaseModel):
         return self.kesp_nummer
 
     @property
+    def is_slecht(self) -> bool:
+        """Return whether the kesp is considered 'slecht' based on its properties and any associated gebreken."""
+
+        # TODO @Sammie is `is_opsluitklos_aangetast` ook relevant voor deze bepaling?
+        return self.is_aangetast or len(self.gebreken) > 0
+
+    @property
     def kesp_nummer_main(self) -> int | None:
         """Extract the main number from the kesp_nummer, which is expected to be in the format 'Kx'"""
         try:
