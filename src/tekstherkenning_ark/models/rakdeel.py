@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TypeVar
+from pydantic import computed_field
 
 from pydantic import computed_field
 
@@ -133,6 +134,7 @@ class Rakdeel(RakBaseModel):
 
         return max_scheuren_per_10_m
 
+    @computed_field
     @property
     def lengte_m(self) -> float | None | OnverwachtResultaat:
         """Lengte van het rakdeel in meters.
@@ -173,6 +175,7 @@ class Rakdeel(RakBaseModel):
 
         return total_length_m
 
+    @computed_field
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
         """Scheur-dichtheid per meter."""

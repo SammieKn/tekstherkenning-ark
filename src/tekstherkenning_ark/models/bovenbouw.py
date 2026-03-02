@@ -1,3 +1,5 @@
+from pydantic import computed_field
+
 from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import (
     BuikInWand,
@@ -50,12 +52,14 @@ class Bovenbouw(RakBaseModel):
         """Return a list of all Scheur gebreken in this Bovenbouw."""
         return [gebrek for gebrek in self.gebreken or [] if isinstance(gebrek, Scheur)]
 
+    @computed_field
     @property
     def totaal_aantal_scheuren(self) -> int:
         """Totaal aantal scheuren in het metselwerk."""
 
         return len(self.scheuren)
 
+    @computed_field
     @property
     def maximale_scheurwijdte_mm(self) -> float | None:
         """Grootste scheurwijdte uit alle Scheur gebreken."""
@@ -68,21 +72,25 @@ class Bovenbouw(RakBaseModel):
 
         return max(scheurwijdtes) if scheurwijdtes else None
 
+    @computed_field
     @property
     def is_buik_in_wand_aanwezig(self) -> bool:
         """Check of BuikInWand gebrek aanwezig is."""
         return any(isinstance(gebrek, BuikInWand) for gebrek in self.gebreken)
 
+    @computed_field
     @property
     def is_grondvoerend_gat_aanwezig(self) -> bool:
         """Check of GrondVoerendGat gebrek aanwezig is."""
         return any(isinstance(gebrek, GrondVoerendGat) for gebrek in self.gebreken)
 
+    @computed_field
     @property
     def is_lokaal_verdwenen_metselwerk(self) -> bool:
         """Check of LokaalVerdwenenMetselwerk gebrek aanwezig is."""
         return any(isinstance(gebrek, LokaalVerdwenenMetselwerk) for gebrek in self.gebreken)
 
+    @computed_field
     @property
     def is_schuifhout_beschadigd(self) -> bool:
         """Check of er een beschadigd schuifhout gebrek aanwezig is."""
@@ -108,11 +116,49 @@ class Bovenbouw(RakBaseModel):
         """Check of Scheefstand gebrek aanwezig is."""
         return any(isinstance(gebrek, Scheefstand) for gebrek in self.gebreken)
 
+    @computed_field
+    @property
+    def is_scheefstand_met_scheur_aanwezig(self) -> bool:
+        """Check of er een Scheefstand gebrek is dat geassocieerd kan worden met een Scheur gebrek."""
+        return len(self.scheefstand_met_scheur_in_wand) > 0
+
+    @computed_field
+    @property
+    def scheefstand_met_scheur_in_wand(self) -> list[tuple[Scheefstand, Scheur]]:
+        """Returnt een list of tuples met Scheefstand gebreken en hun bijbehorende Scheur gebreken."""
+        scheefstand_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheefstand)]
+        scheur_gebreken = [gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)]
+
+        scheefstand_met_scheur = []
+
+        for scheefstand in scheefstand_gebreken:
+            for scheur in scheur_gebreken:
+                if scheefstand.codering == scheur.codering:
+                    scheefstand_met_scheur.append((scheefstand, scheur))
+                elif all(
+                    isinstance(value, float)
+                    for value in (
+                        scheefstand.start_scheefstand_van_startrak_m,
+                        scheefstand.eind_scheefstand_van_startrak_m,
+                    )
+                ):
+                    if (
+                        isinstance(scheur.afstand_van_startrak_m, float)
+                        and scheefstand.start_scheefstand_van_startrak_m
+                        <= scheur.afstand_van_startrak_m
+                        <= scheefstand.eind_scheefstand_van_startrak_m  # type: ignore
+                    ):
+                        scheefstand_met_scheur.append((scheefstand, scheur))
+
+        return scheefstand_met_scheur
+
+    @computed_field
     @property
     def is_buik_met_scheur_aanwezig(self) -> bool:
         """Check of er een BuikInWand gebrek is dat geassocieerd kan worden met een Scheur gebrek."""
         return len(self.buik_met_scheur_in_wand) > 0
 
+    @computed_field
     @property
     def buik_met_scheur_in_wand(self) -> list[tuple[BuikInWand, Scheur]]:
         """Returnt een list of tuples met BuikInWand gebreken en hun bijbehorende Scheur gebreken."""
@@ -133,7 +179,7 @@ class Bovenbouw(RakBaseModel):
                         isinstance(scheur.afstand_van_startrak_m, float)
                         and buik.start_buik_van_startrak_m
                         <= scheur.afstand_van_startrak_m
-                        <= buik.eind_buik_van_startrak_m
+                        <= buik.eind_buik_van_startrak_m  # type: ignore
                     ):
                         buik_met_scheur.append((buik, scheur))
 
