@@ -99,16 +99,18 @@ def clean_kesp_id(value: str) -> str:
     """Correct for common errors in kesp ID's.
 
     Known and accepted exceptions:
-    - Kg -> K9
+    - g -> 9
+    - B -> 8
+    - O -> 0
     """
 
     value = clean_string(value)
 
-    exceptions_dict = {
-        "Kg": "K9",
-    }
+    # Correct common OCR errors for KESP ID's, but only if the value starts with 'K' to avoid overcorrecting other text
+    if value.startswith("K"):
+        return value.replace("g", "9").replace("B", "8").replace("O", "0")
 
-    return exceptions_dict.get(value, value)
+    return value
 
 
 def contains_paal_id(value: str) -> bool:
@@ -117,7 +119,7 @@ def contains_paal_id(value: str) -> bool:
     value = clean_paal_id(clean_string(value))
     found = bool(re.search(PAAL_ID_PATTERN, value))
 
-    if not found and value.strip().lower().startswith("p"):
+    if not found and value.strip().lower().startswith("p") and not value.strip() == "PALEN":
         logger.warning(f"Waarschijnlijk paal ID gevonden dat niet voldoet aan patroon: '{value}'")
 
     return found
@@ -129,7 +131,7 @@ def contains_kesp_id(value: str) -> bool:
     value = clean_kesp_id(clean_string(value))
     found = bool(re.search(KESP_ID_PATTERN, value))
 
-    if not found and value.strip().lower().startswith("k"):
+    if not found and value.strip().lower().startswith("k") and not value.strip() == "KESPEN":
         logger.warning(f"Waarschijnlijk kesp ID gevonden dat niet voldoet aan patroon: '{value}'")
 
     return found

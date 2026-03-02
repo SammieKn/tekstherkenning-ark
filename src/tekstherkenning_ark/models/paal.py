@@ -173,6 +173,8 @@ class Paal(RakBaseModel):
                 if current_constructie_id not in paal_dict:
                     paal_dict[current_constructie_id] = []
                 paal_dict[current_constructie_id].append(paal)
+            elif paal_nummer_val.strip():
+                logger.warning(f"Row {row_idx} does not contain a valid paalnummer: {paal_nummer_val}")
 
         # If one or more palen were found without a constructie ID, remove all construction ids
         if "" in paal_dict:
