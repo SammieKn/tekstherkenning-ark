@@ -82,6 +82,37 @@ class Rak(RakBaseModel):
 
     @computed_field
     @property
+    def vijf_slechte_kespen_naast_elkaar(self) -> bool:
+
+        # Get alle kespen uit alle rakdelen
+        kespen: list[Kesp] = []
+        for rakdeel in self.rakdelen:
+            kespen.extend(rakdeel.onderbouw.kespen)
+
+        # Check of er 5 slechte kespen naast elkaar staan in de lijst van kespen
+        if not kespen or len(kespen) < 5:
+            return False
+
+        # Check op 5 slechte kespen naast elkaar
+        consecutive_slecht = 0
+        last_number = None
+
+        for kesp in kespen:
+            if not last_number is None:
+                if kesp.kesp_nummer_main == last_number + 1 and kesp.is_aangetast:
+                    consecutive_slecht += 1
+                else:
+                    consecutive_slecht = 0
+
+            if consecutive_slecht >= 5:
+                return True
+
+            last_number = kesp.kesp_nummer_main
+
+        return False
+
+    @computed_field
+    @property
     def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
         return super().alle_gebreken
 
