@@ -82,7 +82,7 @@ def test_rak_alle_gebreken(mock_rak_with_gebreken: Rak):
     paths = [path for path, g in alle_gebreken]
     assert any("bovenbouw" in path for path in paths)
     assert any("P1.1" in path for path in paths)
-    assert any("K1" in path for path in paths)
+    assert any("K6" in path for path in paths)
 
 
 def test_bovenbouw_alle_gebreken(mock_rak_with_gebreken: Rak):
@@ -270,7 +270,7 @@ def test_gebreken_path_from_rak(mock_rak_with_gebreken: Rak):
 
     # Test kesp gebrek path: <raknaam>.<rakdeel_id>.onderbouw.<kesp_nummer>
     assert "GK1" in gebrek_paths
-    assert gebrek_paths["GK1"] == "Test Rak/Constructie A/onderbouw/K1"
+    assert gebrek_paths["GK1"] == "Test Rak/Constructie A/onderbouw/K6"
 
     # Test rakdeel gebrek path: <raknaam>.<rakdeel_id>
     assert "GR1" in gebrek_paths
@@ -286,7 +286,7 @@ def test_gebreken_path_from_rakdeel(mock_rak_with_gebreken: Rak):
 
     # Paths should start with rakdeel_id, not include raknaam
     assert gebrek_paths["GP1"] == "Constructie A/onderbouw/P1.1"
-    assert gebrek_paths["GK1"] == "Constructie A/onderbouw/K1"
+    assert gebrek_paths["GK1"] == "Constructie A/onderbouw/K6"
     assert gebrek_paths["GR1"] == "Constructie A"
 
 
@@ -299,7 +299,7 @@ def test_gebreken_path_from_onderbouw(mock_rak_with_gebreken: Rak):
 
     # Paths should start with 'onderbouw'
     assert gebrek_paths["GP1"] == "onderbouw/P1.1"
-    assert gebrek_paths["GK1"] == "onderbouw/K1"
+    assert gebrek_paths["GK1"] == "onderbouw/K6"
 
 
 def test_gebreken_path_from_paal(mock_rak_with_gebreken: Rak):

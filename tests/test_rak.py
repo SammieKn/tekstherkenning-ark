@@ -16,6 +16,11 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 """
 
 from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.vloer import Vloer
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -70,3 +75,43 @@ def test_kzg0202_gebreken(kzg0202_rak: Rak):
 #     ), f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
 #     assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
 #     # expected = 1549 + 1"NM" (total len 97, numerical len 96)
+
+
+def test_vijf_slechte_kespen_naast_elkaar_met_mock(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met mock data (K2-K6 zijn aangetast)."""
+
+    assert mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_minder_dan_vijf_kespen(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met minder dan 5 kespen totaal."""
+
+    # Keep only K1-K3
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen = mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[:3]
+    assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_onderbroken(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met exact 4 consecutive aangetaste kespen."""
+
+    # K3 niet aangetast
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].is_aangetast = False
+
+    assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_meer_dan_vijf(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met 6 consecutive aangetaste kespen."""
+
+    # K7 ook aangetast maken
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[6].is_aangetast = True
+
+    assert mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_geen_kespen(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met geen kespen."""
+    # Verwijder alle kespen
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen = []
+
+    assert not mock_rak_with_gebreken.vijf_slechte_kespen_naast_elkaar
