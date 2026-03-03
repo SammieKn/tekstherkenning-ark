@@ -46,7 +46,7 @@ class Onderbouw(RakBaseModel):
     @computed_field
     @property
     def aantal_palen_dwars(self) -> int:
-        """Aantal paalrijen in dwarsdoorsneden."""
+        """Aantal paalrijen in dwarsdoorsneden (maximale paalrij_nummer waarde)."""
         if not self.palen:
             return 0
         return max(paal.paalrij_nummer for paal in self.palen)
