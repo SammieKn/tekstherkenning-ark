@@ -61,7 +61,6 @@ class Kesp(RakBaseModel):
     def is_slecht(self) -> bool:
         """Return whether the kesp is considered 'slecht' based on its properties and any associated gebreken."""
 
-        # TODO @Sammie is `is_opsluitklos_aangetast` ook relevant voor deze bepaling?
         return self.is_aangetast or len(self.gebreken) > 0
 
     @property
