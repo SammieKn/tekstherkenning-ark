@@ -1,5 +1,8 @@
 from __future__ import annotations
 from typing import TypeVar
+from pydantic import computed_field
+
+from pydantic import computed_field
 
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -68,6 +71,67 @@ class Rakdeel(RakBaseModel):
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
 
+    @computed_field
+    @property
+    def percentage_niet_functionerend_schuifhout(self) -> float | OnverwachtResultaat | None:
+        """Percentage van het schuifhout dat niet functioneert,
+        afgeleid van de opsluitklossen bij de kespen in de onderbouw."""
+
+        if not self.onderbouw.kespen:
+            return None
+
+        if any(
+            isinstance(k.is_opsluitklos_aangetast, OnverwachtResultaat)
+            or isinstance(k.is_opsluitklos_aanwezig, OnverwachtResultaat)
+            for k in self.onderbouw.kespen
+        ):
+            return OnverwachtResultaat(
+                waarde="Onduidelijke staat van opsluitklossen in kesp data, kan percentage niet functionerend schuifhout niet betrouwbaar berekenen",
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+            )
+
+        inconsistente_kespen = [
+            k for k in self.onderbouw.kespen if k.is_opsluitklos_aangetast and not k.is_opsluitklos_aanwezig
+        ]
+
+        if any(inconsistente_kespen):
+            kespen_ids = ", ".join(k.kesp_nummer for k in inconsistente_kespen)
+            return OnverwachtResultaat(
+                waarde=f"Tegenstrijdige data in kespen {kespen_ids}: opsluitklos is aangetast maar ook niet aanwezig. Kan percentage niet functionerend schuifhout niet betrouwbaar berekenen",
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+            )
+
+        n_opsluitklos = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aanwezig])
+        n_opsluitklos_aangetast = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aangetast])
+        if n_opsluitklos == 0:
+            return None
+        return (n_opsluitklos - n_opsluitklos_aangetast) / (n_opsluitklos) * 100
+
+    @computed_field
+    @property
+    def vijf_slechte_kespen_naast_elkaar(self) -> bool:
+        """Check of er 5 aangetaste kespen naast elkaar staan in het rak.
+        Kespen staan naast elkaar als het kesp nummer opeenvolgend is (K1, K2, K3, etc.) en ze in hetzelfde rakdeel zitten.
+        Kespen zijn "slecht" als `Kesp.is_aangetast` True is of ze een gebrek hebben."""
+
+        consecutive_slecht = 0
+        last_number = None
+
+        for kesp in self.onderbouw.kespen:
+            if not last_number is None:
+                if kesp.kesp_nummer_main == last_number + 1 and kesp.is_slecht:
+                    consecutive_slecht += 1
+                else:
+                    consecutive_slecht = 0
+
+            if consecutive_slecht >= 5:
+                return True
+
+            last_number = kesp.kesp_nummer_main
+
+        return False
+
+    @computed_field
     @property
     def maximaal_aantal_scheuren_per_10_m(self) -> int:
         """Aantal scheuren genormaliseerd naar 10 meter lengte."""
@@ -97,6 +161,7 @@ class Rakdeel(RakBaseModel):
 
         return max_scheuren_per_10_m
 
+    @computed_field
     @property
     def lengte_m(self) -> float | None | OnverwachtResultaat:
         """Lengte van het rakdeel in meters.
@@ -137,6 +202,7 @@ class Rakdeel(RakBaseModel):
 
         return total_length_m
 
+    @computed_field
     @property
     def aantal_scheuren_per_meter(self) -> float | None:
         """Scheur-dichtheid per meter."""

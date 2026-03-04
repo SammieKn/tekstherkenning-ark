@@ -58,6 +58,12 @@ class Kesp(RakBaseModel):
         return self.kesp_nummer
 
     @property
+    def is_slecht(self) -> bool:
+        """Return whether the kesp is considered 'slecht' based on its properties and any associated gebreken."""
+
+        return self.is_aangetast or len(self.gebreken) > 0
+
+    @property
     def kesp_nummer_main(self) -> int | None:
         """Extract the main number from the kesp_nummer, which is expected to be in the format 'Kx'"""
         try:
@@ -124,6 +130,8 @@ class Kesp(RakBaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 kesp_dict[current_constructie_id].append(kesp)
+            elif kesp_nummer_val.strip():
+                logger.warning(f"Row {row_idx} does not contain a valid kespnummer: {kesp_nummer_val}")
 
         # If one or more kespen were found without a constructie ID, remove all construction ids
         if "" in kesp_dict:

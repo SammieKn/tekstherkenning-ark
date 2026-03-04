@@ -37,10 +37,18 @@ class RakdeelOmschrijving(LLMClassifier):
         Het materiaal van de vloer.
     onderloopsheidscherm : bool | NietBeschikbaar
         Indicatie of onderloopsheidscherm aanwezig is.
-    bovenkant_deksteen_cm : float | None
-        Hoogte bovenkant deksteen in cm t.o.v. waterlijn.
-    bovenkant_vloer_cm : float | None
-        Hoogte waterlijn tot bovenkant vloer in cm.
+    bovenkant_deksteen_tot_waterlijn_cm : float | None
+        Direct benoemde afstand van waterlijn tot bovenkant deksteen in cm.
+    bovenkant_deksteen_tot_nap_cm : float | None
+        Direct benoemde hoogte van bovenkant deksteen ten opzichte van NAP in cm.
+    waterlijn_tot_bovenkant_vloer_cm : float | None
+        Direct benoemde afstand van waterlijn tot bovenkant vloer in cm.
+    nap_tot_bovenkant_vloer_cm : float | None
+        Direct benoemde hoogte van bovenkant vloer ten opzichte van NAP in cm.
+    onderzijde_constructie_nap_cm : float | None
+        Direct benoemde hoogte van onderzijde constructie ten opzichte van NAP in cm.
+    afstand_onderzijde_constructie_tot_bovenkant_vloer_cm : float | None
+        Direct benoemde afstand van onderzijde constructie tot bovenkant vloer in cm.
     """
 
     _systeem_prompt: ClassVar[
@@ -50,15 +58,26 @@ class RakdeelOmschrijving(LLMClassifier):
         Gebruik NietBeschikbaar.LEEG als de informatie niet beschikbaar is,
         NietBeschikbaar.NIET_VAN_TOEPASSING als het veld niet van toepassing is,
         of NietBeschikbaar.NIET_MEETBAAR als de waarde niet meetbaar is.
+
+        Als de waterlijn benoemt wordt in afstanden, gebruik dan de variable van de waterlijn als referentiepunt, bijvoorbeeld:
+        - bovenkant_deksteen_cm_tov_waterlijn
+        - waterlijn_tot_bovenkant_vloer_cm
+
+        Als de hoogte ten opzichte van NAP benoemt wordt, gebruik dan de variable van NAP als referentiepunt, bijvoorbeeld:
+        - bovenkant_deksteen_cm_tov_nap
+        - nap_tot_bovenkant_vloer_cm
+        \n
+        - Gebruik ALLEEN verticale afstanden voor hoogte berekeningen.
+        - Afstanden worden in de tekst omschreven van boven naar beneden, dus als er meerdere afstanden worden benoemd, is de bovenste afstand de referentie voor de volgende afstand.
         """
 
-    bouwjaar: int | None = Field(
-        gt=1600, lt=2200, default=None, description="Bouwjaar van het rakdeel, houd leeg als onbekend."
+    bouwjaar: int | NietBeschikbaar = Field(
+        gt=1600, lt=2200, default=NietBeschikbaar.LEEG, description="Bouwjaar van het rakdeel, houd leeg als onbekend."
     )
 
     # Lengte van het rakdeel, wordt gebruikt om de subdelen te toetsen in lengte tov totaal.
-    lengte_rakdeel: float | None = Field(
-        gt=0.0, default=None, description="Lengte van het rakdeel in meters, houd leeg als onbekend."
+    lengte_rakdeel: float | NietBeschikbaar = Field(
+        gt=0.0, default=NietBeschikbaar.LEEG, description="Lengte van het rakdeel in meters, houd leeg als onbekend."
     )
 
     # Benodigd om type constructie te bepalen
@@ -83,34 +102,65 @@ class RakdeelOmschrijving(LLMClassifier):
     # onderloopsheidscherm aanwezig ja/nee
     onderloopsheidscherm: bool | NietBeschikbaar = Field(
         default=NietBeschikbaar.LEEG,
-        description="Geef aan of er een onderloopsheidscherm aanwezig is bij dit rakdeel door middel van boolean.",
+        description="Geef aan of er een onderloopsheidscherm aanwezig is bij dit rakdeel door middel van boolean. Herkenbaar aan woorden zoals 'grondkerend scherm', 'onderloopsheidscherm', 'scherm' in de omschrijving.",
+    )
+    bovenkant_deksteen_tot_waterlijn_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de hoogte van de bovenkant van de deksteen ten opzichte van de waterlijn (cm).",
+    )
+    bovenkant_deksteen_tot_nap_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de hoogte van de bovenkant van de deksteen ten opzichte van NAP (cm).",
+    )
+    waterlijn_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de afstand onder de waterlijn tot de bovenkant van de vloer in cm.",
+    )
+    nap_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de afstand onder NAP tot de bovenkant van de vloer in cm.",
+    )
+    onderzijde_constructie_nap_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de afstand onder NAP tot de onderzijde van de constructie in cm. Te herkennen aan 'onderzijde constructie bevindt zich op x cm onder NAP.'",
+    )
+    afstand_onderzijde_constructie_tot_bovenkant_vloer_cm: float | NietBeschikbaar = Field(
+        gt=0.0,
+        default=NietBeschikbaar.LEEG,
+        description="Geef de afstand van de bovenkant vloer tot de onderzijde van de constructie in cm. Tel de hoogtes van de constructieonderdelen tussen vloer en onderzijde constructie bij elkaar op.",
     )
 
-    # benodigd voor constructie waterbodem
-    bovenkant_deksteen_cm: float | None = Field(
-        gt=0.0,
-        default=None,
-        description=f"""
-        Geef de hoogte van de bovenkant van de kademuur in centimeters ten opzichte van NAP.
-        Definities:
-        - waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm: hoogte van de waterlijn (cm t.o.v. NAP). Positief = boven NAP, negatief = onder NAP.
-        - delta: verticale afstand van de waterlijn naar de bovenkant van de kade (cm). Positief als de kade boven de waterlijn ligt, negatief als de kade onder de waterlijn ligt.
-        Formule:
-        top_kade_NAP = waterlijn_NAP + delta
-        Als de bovenkant aangeduid wordt door deksteen/metselwerk/maaiveld, gebruik die waarde voor delta (met correct teken).
-        Voorbeeld: waterlijn_NAP = -{NAP_CM_HOOGTE_WATERLIJN} cm, delta = 80 (kade ligt 80 cm boven waterlijn) → top_kade_NAP = -{NAP_CM_HOOGTE_WATERLIJN} + 80 = {80 - NAP_CM_HOOGTE_WATERLIJN} cm.""",
-    )
-    bovenkant_vloer_cm: float | None = Field(
-        lt=0.0,
-        default=None,
-        description=f"""
-        Geef de hoogte ten opzichte van NAP van de bovenkant van de funderingsvloer (cm).
-        Definities:
-        - De waterlijn bevindt zich op -{NAP_CM_HOOGTE_WATERLIJN} cm ten opzichte van NAP.
-        - De hoogte is negatief (onder NAP).
-        Berekening:
-        - Tel alle onderdelen vanaf de onderzijde van de constructie op (bijvoorbeeld fundering, kespen, balken) tot aan de bovenkant van de vloer.
-        - De som van deze diktes, samen met de hoogte van de onderzijde van de constructie ten opzichte van NAP, geeft de hoogte van de bovenkant vloer.
-        Voorbeeld:
-        Onderzijde constructie op -{NAP_CM_HOOGTE_WATERLIJN + 50} cm, constructiedikte 30 cm → bovenkant vloer = (-{NAP_CM_HOOGTE_WATERLIJN + 50}) + 30 = -{(NAP_CM_HOOGTE_WATERLIJN + 20)} cm.""",
-    )
+    @property
+    def bovenkant_vloer_cm(self) -> float | None:
+        """Bepaal de hoogte van de bovenkant van de vloer ten opzichte van NAP in cm, op basis van de beschikbare informatie."""
+        if isinstance(self.nap_tot_bovenkant_vloer_cm, float):
+            return self.nap_tot_bovenkant_vloer_cm
+        elif all(
+            (
+                isinstance(value, float)
+                for value in [
+                    self.onderzijde_constructie_nap_cm,
+                    self.afstand_onderzijde_constructie_tot_bovenkant_vloer_cm,
+                ]
+            )
+        ):
+            return self.onderzijde_constructie_nap_cm - self.afstand_onderzijde_constructie_tot_bovenkant_vloer_cm
+        elif isinstance(self.waterlijn_tot_bovenkant_vloer_cm, float):
+            return self.waterlijn_tot_bovenkant_vloer_cm + NAP_CM_HOOGTE_WATERLIJN
+        else:
+            return None
+
+    @property
+    def bovenkant_deksteen_cm(self) -> float | None:
+        """Bepaal de hoogte van de bovenkant van de deksteen ten opzichte van NAP in cm, op basis van de beschikbare informatie."""
+        if isinstance(self.bovenkant_deksteen_tot_nap_cm, float):
+            return self.bovenkant_deksteen_tot_nap_cm
+        elif isinstance(self.bovenkant_deksteen_tot_waterlijn_cm, float):
+            return self.bovenkant_deksteen_tot_waterlijn_cm - NAP_CM_HOOGTE_WATERLIJN
+        else:
+            return None

@@ -5,11 +5,13 @@ from pathlib import Path
 import pickle
 
 import pandas as pd
+from pydantic import ConfigDict, computed_field
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
@@ -59,6 +61,9 @@ class Rak(RakBaseModel):
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
     """
 
+    model_config = ConfigDict(
+        use_enum_values=True,
+    )
     # Elk rakdeel heeft een eigen constructietype.
     rakdelen: list[Rakdeel]
     # Te vinden in de rapporttitel, projectgegevens of paragraaf 2.2.1 (paspoortgegevens).
@@ -75,6 +80,17 @@ class Rak(RakBaseModel):
         """Return a string that uniquely identifies this Rak instance."""
         return str(self.raknaam)
 
+    @computed_field
+    @property
+    def alle_gebreken(self) -> list[tuple[str, Gebrek]]:
+        return super().alle_gebreken
+
+    @computed_field
+    @property
+    def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
+        return super().alle_onverwachte_resultaten
+
+    @computed_field
     @property
     def aantal_rakdelen(self) -> int:
         """Totaal aantal rakdelen in dit rak."""
@@ -269,7 +285,7 @@ class Rak(RakBaseModel):
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
 
-        cache_file = constants.CACHE_DIR / f"rak_{doc.pdf_path.stem}.pkl"
+        cache_file = constants.CACHE_DIR / f"rak_{doc.document_name}.pkl"
         if cache_file.exists() and use_caching:
             logger.info(f"Loading cached Rak from {cache_file}")
             rak_instance = pickle.loads(cache_file.read_bytes())

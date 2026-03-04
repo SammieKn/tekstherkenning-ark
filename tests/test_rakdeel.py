@@ -1,6 +1,10 @@
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.onderbouw import Onderbouw
 
 
 def test_lengte_m_omschrijving(mock_rakdeel: Rakdeel):
@@ -89,3 +93,356 @@ def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheur
 
     # Verify the maximum number of scheuren per 10m is correctly calculated
     assert result == 4, f"Expected 4 scheuren per 10m, but got {result}"
+
+
+def test_percentage_niet_functionerend_schuifhout_geen_kespen():
+    """Test dat percentage_niet_functionerend_schuifhout None teruggeeft als er geen kespen zijn."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test A",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[],
+        ),
+    )
+
+    assert rakdeel.percentage_niet_functionerend_schuifhout is None
+
+
+def test_percentage_niet_functionerend_schuifhout_normaal():
+    """Test normale berekening: 2 van 4 opsluitklossen aangetast = 50% functionerend."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test B",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=True,
+                ),
+                Kesp(
+                    kesp_nummer="K3",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K4",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=True,
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, float)
+    assert resultaat == 50.0
+
+
+def test_percentage_niet_functionerend_schuifhout_alle_functionerend():
+    """Test wanneer alle opsluitklossen functionerend zijn = 100%."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test C",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, float)
+    assert resultaat == 100.0
+
+
+def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
+    """Test wanneer geen opsluitklossen functionerend zijn = 0%."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test D",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=True,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=True,
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, float)
+    assert resultaat == 0.0
+
+
+def test_percentage_niet_functionerend_schuifhout_geen_opsluitklos_aanwezig():
+    """Test wanneer opsluitklossen niet aanwezig zijn (worden niet meegerekend)."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test E",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K3",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=True,
+                ),
+            ],
+        ),
+    )
+
+    # 1 opsluitklos aanwezig & niet aangetast, 1 aanwezig & aangetast = 50%
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, float)
+    assert resultaat == 50.0
+
+
+def test_percentage_niet_functionerend_schuifhout_geen_enkele_opsluitklos_aanwezig_none():
+    """Test dat None wordt teruggegeven als er wel kespen zijn maar geen enkele opsluitklos aanwezig is."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test E2",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=False,
+                ),
+            ],
+        ),
+    )
+
+    assert rakdeel.percentage_niet_functionerend_schuifhout is None
+
+
+def test_percentage_niet_functionerend_schuifhout_inconsistente_data():
+    """Test dat OnverwachtResultaat wordt geretourneerd bij tegenstrijdige data."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test F",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=True,  # Tegenstrijdig: aangetast maar niet aanwezig
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, OnverwachtResultaat)
+    assert resultaat.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+    assert "K1" in resultaat.waarde
+    assert "Tegenstrijdige data" in resultaat.waarde
+
+
+def test_percentage_niet_functionerend_schuifhout_onverwacht_resultaat_in_kesp():
+    """Test dat OnverwachtResultaat wordt geretourneerd als kesp data OnverwachtResultaat bevat."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test G",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=OnverwachtResultaat(
+                        waarde="Onleesbare data",
+                        onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                    ),
+                    is_opsluitklos_aangetast=False,
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, OnverwachtResultaat)
+    assert resultaat.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+    assert "Onduidelijke staat van opsluitklossen" in resultaat.waarde
+
+
+def test_percentage_niet_functionerend_schuifhout_meerdere_inconsistente_kespen():
+    """Test dat alle inconsistente kespen worden vermeld in de foutmelding."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test H",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=True,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=True,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K3",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=True,
+                ),
+            ],
+        ),
+    )
+
+    resultaat = rakdeel.percentage_niet_functionerend_schuifhout
+    assert isinstance(resultaat, OnverwachtResultaat)
+    assert resultaat.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+    assert "K1" in resultaat.waarde
+    assert "K3" in resultaat.waarde
+
+
+def test_vijf_slechte_kespen_naast_elkaar_met_mock(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met mock data (K2-K6 zijn aangetast)."""
+
+    assert mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_minder_dan_vijf_kespen(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met minder dan 5 kespen totaal."""
+
+    # Keep only K1-K3
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen = mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[:3]
+    assert not mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_onderbroken(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met exact 4 consecutive aangetaste kespen."""
+
+    # K3 niet aangetast
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].is_aangetast = False
+
+    assert not mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_gebrek(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met een gebrek op K1 maar K1 zelf niet aangetast."""
+
+    # Maak K3 niet aangetast maar voeg een gebrek toe
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].is_aangetast = False
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[2].gebreken.append(
+        Gebrek(codering="GK1", omschrijving="Beschadigd kesp", figuurnummer="F2")
+    )
+
+    assert mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_meer_dan_vijf(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met 6 consecutive aangetaste kespen."""
+
+    # K7 ook aangetast maken
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen[6].is_aangetast = True
+
+    assert mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar
+
+
+def test_vijf_slechte_kespen_naast_elkaar_geen_kespen(mock_rak_with_gebreken: Rak):
+    """Test vijf_slechte_kespen_naast_elkaar met geen kespen."""
+    # Verwijder alle kespen
+    mock_rak_with_gebreken.rakdelen[0].onderbouw.kespen = []
+
+    assert not mock_rak_with_gebreken.rakdelen[0].vijf_slechte_kespen_naast_elkaar

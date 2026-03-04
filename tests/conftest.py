@@ -4,6 +4,7 @@ test fixtures for module tests
 tests work only local -with data dir for now- what do we want?
 """
 
+from functools import cache
 import json
 import pickle
 import pytest
@@ -28,38 +29,39 @@ from data.mock_rak_with_scheuren import create_mock_rak_with_scheuren
 TEST_DIR = Path(__file__).parent
 TEST_DATA_DIR = TEST_DIR / "data"
 
+KZG_0202_DOC_NAME = "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325"
+KZG_0202_PKL_NAME = f"{KZG_0202_DOC_NAME}_smart_document_sanitized.pkl"
 KZG_0202_TEST_DIR = TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325"
 
 # Set the CACHE_DIR to the test directory for KZG0202
 constants.CACHE_DIR = KZG_0202_TEST_DIR
 
 
-@pytest.fixture
+@cache
+def load_kzg0202_smart_document() -> SmartDocument:
+    """Load the SmartDocument for the KZG0202 test PDF from the test cache."""
+
+    doc_pkl_path = KZG_0202_TEST_DIR / f"{KZG_0202_DOC_NAME}_smart_document_sanitized.pkl"
+    smart_doc = pickle.loads(doc_pkl_path.read_bytes())
+
+    return smart_doc
+
+
+@pytest.fixture(scope="session")
 def kzg0202_rak() -> Rak:
-    doc_pkl_path = KZG_0202_TEST_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
-    return get_rak_kzg0202(doc_pkl_path)
 
+    smart_doc = load_kzg0202_smart_document()
 
-def get_rak_kzg0202(doc_pkl_path: Path) -> Rak:
-    """Get a Rak instance for the KZG0202 test PDF from the test cache."""
-    # load data
-    doc_from_cache = pickle.loads(doc_pkl_path.read_bytes())
-
-    loaded_doc = SmartDocument(pdf_path=doc_pkl_path, sections=doc_from_cache["sections"], analyze_result=None)
     # rak
-    rak = Rak.from_smart_document(loaded_doc, use_caching=False)  # use cached LLM parts but not rak itself
+    rak = Rak.from_smart_document(smart_doc, use_caching=False)  # use cached LLM parts but not rak itself
     return rak
 
 
 @pytest.fixture(scope="session")
 def paal_tables() -> DocumentTable:
     """Fixture to provide a complete mock Rak object with gebreken at various levels."""
-    doc_pkl_path = KZG_0202_TEST_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325_docai_result.pkl"
-    doc_from_cache = pickle.loads(doc_pkl_path.read_bytes())
+    loaded_doc = load_kzg0202_smart_document()
 
-    loaded_doc = SmartDocument(
-        pdf_path=doc_from_cache["pdf_path"], sections=doc_from_cache["sections"], analyze_result=None
-    )
     paal_tables = loaded_doc.get_meettabel_fundering_paal()
 
     return paal_tables

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pydantic import computed_field
+
 from tekstherkenning_ark import utils
 from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, ScheurHout
@@ -100,10 +102,17 @@ class Paal(RakBaseModel):
             return None
 
     @property
+    def is_schoorpaal(self) -> bool:
+        """Geef terug of deze paal een schoorpaal is op basis van de schoor_richting."""
+        return self.schoor_richting in (SchoorStand.POSITIEF, SchoorStand.NEGATIEF)
+
+    @computed_field
+    @property
     def n_scheuren(self) -> int:
         """Geef het aantal scheuren terug dat is geconstateerd in deze paal."""
         return len([gebrek for gebrek in self.gebreken if isinstance(gebrek, Scheur)])
 
+    @computed_field
     @property
     def is_ongewenste_schoorstand(self) -> bool | None:
         """Check of de schoor richting PNA is. Als er geen schoor richting is, return None."""
@@ -169,6 +178,8 @@ class Paal(RakBaseModel):
                 if current_constructie_id not in paal_dict:
                     paal_dict[current_constructie_id] = []
                 paal_dict[current_constructie_id].append(paal)
+            elif paal_nummer_val.strip():
+                logger.warning(f"Row {row_idx} does not contain a valid paalnummer: {paal_nummer_val}")
 
         # If one or more palen were found without a constructie ID, remove all construction ids
         if "" in paal_dict:
@@ -216,7 +227,9 @@ class Paal(RakBaseModel):
             schoor_richting=table.get_value("Schoorstand", "Richting", "[+ ]", row_idx),
             afstand_frontwand_cm=table.get_value("Afstand", "Frontwand", "[cm]", row_idx),
             is_scheefstand=utils.parse_ja_nee(table.get_value("Schades", "Scheefstand", "[Ja/Nee]", row_idx)),
-            is_paalbreuk=utils.parse_ja_nee(table.get_value("Schades", ["Paalbreuk", "Paal breuk"], "[Ja/Nee]", row_idx)),
+            is_paalbreuk=utils.parse_ja_nee(
+                table.get_value("Schades", ["Paalbreuk", "Paal breuk"], "[Ja/Nee]", row_idx)
+            ),
             is_aantasting=utils.parse_ja_nee(table.get_value("Schades", "Aantasting", "[Ja/Nee]", row_idx)),
             aansluiting_status=table.get_value("Aansluiting", "Aansluiting", "[G/S]", row_idx),
             positionering_aansluiting_cm=table.get_value("Aansluiting", "Positionering", "[+]+[cm]", row_idx),

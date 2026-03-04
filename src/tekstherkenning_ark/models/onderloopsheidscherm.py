@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pydantic import computed_field
+
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
@@ -23,10 +25,11 @@ class Onderloopsheidscherm(RakBaseModel):
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
     is_meerdere_locaties: bool | None = None  # TODO
 
+    @computed_field
     @property
     def is_beschadigd(self) -> bool:
         heeft_gebrek = bool(self.gebreken)
-        is_beschadigd = any(toestand for toestand in self.toestand_onderdelen)
+        is_beschadigd = any(toestand.aangetast for toestand in self.toestand_onderdelen)
         return heeft_gebrek or is_beschadigd
 
     @property
@@ -45,7 +48,7 @@ class Onderloopsheidscherm(RakBaseModel):
             Onderloopsheidscherm | None: Een leeg Onderloopsheidscherm model, of None als er geen onderloopsheidscherm is.
         """
 
-        if not omschrijving.onderloopsheidscherm:
+        if omschrijving.onderloopsheidscherm:
             return cls()
 
         return None

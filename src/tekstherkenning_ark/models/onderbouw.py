@@ -1,8 +1,11 @@
+from pydantic import computed_field
+
 from tekstherkenning_ark.enums import (
     AansluitingStatus,
     MateriaalOnderbouw,
     MateriaalFundering,
     NietBeschikbaar,
+    SchoorStand,
 )
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
@@ -41,6 +44,15 @@ class Onderbouw(RakBaseModel):
         """Return a string that uniquely identifies this Onderbouw instance."""
         return "onderbouw"
 
+    @computed_field
+    @property
+    def aantal_palen_dwars(self) -> int:
+        """Aantal paalrijen in dwarsdoorsneden (maximale paalrij_nummer waarde)."""
+        if not self.palen:
+            return 0
+        return max(paal.paalrij_nummer for paal in self.palen)
+
+    @computed_field
     @property
     def totaal_aantal_palen(self) -> int:
         """Totaal aantal palen in de onderbouw."""
@@ -56,11 +68,13 @@ class Onderbouw(RakBaseModel):
 
         return palen
 
+    @computed_field
     @property
     def aantal_onderzochte_palen(self) -> int:
         """Aantal palen dat daadwerkelijk onderzocht is."""
         return sum(1 for paal in self.palen if paal.is_onderzocht)
 
+    @computed_field
     @property
     def percentage_slechte_palen(self) -> float | None:
         """Percentage palen met bacteriële aantasting."""
@@ -70,37 +84,50 @@ class Onderbouw(RakBaseModel):
         aantal_slecht = sum(1 for paal in self.palen if paal.is_aantasting)
         return round((aantal_slecht / len(self.palen)) * 100, 2)
 
-    # TODO: Checken met Geert hoe een ongewenste schoorstand gedefinieerd is en of dit veld in de meettabel palen staat.
-    # @property
-    # def percentage_ongewenste_schoorstand(self) -> float | None:
-    #     """Percentage palen met ongewenste/afwijkende schoorstand."""
-    #     if not self.palen:
-    #         return None
+    @computed_field
+    @property
+    def percentage_ongewenste_schoorstand(self) -> float | None:
+        """Percentage palen met ongewenste/afwijkende schoorstand."""
+        if not self.palen:
+            return None
 
-    #     # Tel palen met significante schoorstand (> 15 graden als voorbeeld)
-    #     aantal_ongewenst = sum(
-    #         1 for paal in self.palen if paal.schoorstand_graden is not None and abs(paal.schoorstand_graden) > 15
-    #     )
-    #     return round((aantal_ongewenst / len(self.palen)) * 100, 2)
+        aantal_ongewenst = sum(1 for paal in self.palen if paal.is_ongewenste_schoorstand and paal.paalrij_nummer == 1)
+        return round((aantal_ongewenst / len(self.palen)) * 100, 2)
 
+    @computed_field
     @property
     def aantal_palen_met_scheefstand(self) -> int:
         """Aantal palen met geconstateerde scheefstand."""
         return sum(1 for paal in self.palen if paal.is_scheefstand)
 
+    @computed_field
+    @property
+    def is_schoorpalen_in_een_richting(self) -> bool | NietBeschikbaar:
+        """Controleer of alle palen met geconstateerde schoorstand in dezelfde richting staan (allemaal positief of allemaal negatief)."""
+        schoorstanden = {paal.schoor_richting for paal in self.palen if paal.is_schoorpaal}
+        return len(schoorstanden) <= 1 if schoorstanden else NietBeschikbaar.NIET_VAN_TOEPASSING
+
+    @computed_field
+    @property
+    def aantal_schoorpalen(self) -> int:
+        """Aantal palen met geconstateerde schoorstand."""
+        return sum(1 for paal in self.palen if paal.is_schoorpaal)
+
+    @computed_field
     @property
     def aantal_palen_met_paalbreuk(self) -> int:
         """Aantal palen met geconstateerde paalbreuk."""
         return sum(1 for paal in self.palen if paal.is_paalbreuk)
 
+    @computed_field
     @property
     def totaal_aantal_kespen(self) -> int:
         """Totaal aantal kespen in de onderbouw."""
         return len(self.kespen)
 
+    @computed_field
     @property
     def percentage_beschadigde_kespen(self) -> float | None:
-        # TODO: Checken met Geert hoe een beschadigde kesp gedefinieerd is en of dit veld in de meettabel kespen staat.
         """Percentage kespen met vervorming of aantasting."""
         if not self.kespen:
             return None
@@ -108,6 +135,17 @@ class Onderbouw(RakBaseModel):
         aantal_beschadigd = sum(1 for kesp in self.kespen if kesp.is_vervormd or kesp.is_aangetast)
         return round((aantal_beschadigd / len(self.kespen)) * 100, 2)
 
+    @computed_field
+    @property
+    def percentage_vervormde_kespen(self) -> float | None:
+        """Percentage kespen met vervorming."""
+        if not self.kespen:
+            return None
+
+        aantal_vervormd = sum(1 for kesp in self.kespen if kesp.is_vervormd)
+        return round((aantal_vervormd / len(self.kespen)) * 100, 2)
+
+    @computed_field
     @property
     def percentage_beschadigde_verbinding(self) -> float | None:
         """Percentage palen met slechte paal-kesp/paal-vloer aansluiting."""
