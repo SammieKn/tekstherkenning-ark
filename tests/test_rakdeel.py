@@ -266,6 +266,37 @@ def test_percentage_niet_functionerend_schuifhout_geen_opsluitklos_aanwezig():
     assert resultaat == 50.0
 
 
+def test_percentage_niet_functionerend_schuifhout_geen_enkele_opsluitklos_aanwezig_none():
+    """Test dat None wordt teruggegeven als er wel kespen zijn maar geen enkele opsluitklos aanwezig is."""
+    rakdeel = Rakdeel(
+        rakdeel_id="Test E2",
+        bovenbouw=Bovenbouw(),
+        onderbouw=Onderbouw(
+            palen=[],
+            kespen=[
+                Kesp(
+                    kesp_nummer="K1",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=False,
+                ),
+                Kesp(
+                    kesp_nummer="K2",
+                    hoogte_cm=20,
+                    breedte_cm=15,
+                    lengte_uitstekend_deel_cm=10,
+                    is_opsluitklos_aanwezig=False,
+                    is_opsluitklos_aangetast=False,
+                ),
+            ],
+        ),
+    )
+
+    assert rakdeel.percentage_niet_functionerend_schuifhout is None
+
+
 def test_percentage_niet_functionerend_schuifhout_inconsistente_data():
     """Test dat OnverwachtResultaat wordt geretourneerd bij tegenstrijdige data."""
     rakdeel = Rakdeel(

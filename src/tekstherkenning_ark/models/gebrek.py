@@ -352,49 +352,46 @@ class BuikInWand(Gebrek):
     @property
     def start_buik_van_startrak_m(self) -> float | NietBeschikbaar:
         """Afstand van het startrak in meters. Wordt afgeleid van de start van de buik."""
+
         if isinstance(self.start_buik_van_startrak_m_ingevuld, float):
             return self.start_buik_van_startrak_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (self.eind_buik_van_startrak_m_ingevuld, self.lengte_buik_m_ingevuld)
-            )
+
+        if isinstance(self.eind_buik_van_startrak_m_ingevuld, float) and isinstance(
+            self.lengte_buik_m_ingevuld, float
         ):
             return self.eind_buik_van_startrak_m_ingevuld - self.lengte_buik_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
     @computed_field
     @property
     def eind_buik_van_startrak_m(self) -> float | NietBeschikbaar:
         """Afstand van het startrak in meters. Wordt afgeleid van het eind van de buik."""
+
         if isinstance(self.eind_buik_van_startrak_m_ingevuld, float):
             return self.eind_buik_van_startrak_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (self.start_buik_van_startrak_m_ingevuld, self.lengte_buik_m_ingevuld)
-            )
+
+        if isinstance(self.start_buik_van_startrak_m_ingevuld, float) and isinstance(
+            self.lengte_buik_m_ingevuld, float
         ):
             return self.start_buik_van_startrak_m_ingevuld + self.lengte_buik_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
     @computed_field
     @property
     def lengte_buik_m(self) -> float | NietBeschikbaar:
         """Lengte van de buik in meters. Wordt afgeleid van de start en eind van de buik."""
+
         if isinstance(self.lengte_buik_m_ingevuld, float):
             return self.lengte_buik_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (self.start_buik_van_startrak_m_ingevuld, self.eind_buik_van_startrak_m_ingevuld)
-            )
+
+        if isinstance(self.start_buik_van_startrak_m_ingevuld, float) and isinstance(
+            self.eind_buik_van_startrak_m_ingevuld, float
         ):
             return self.eind_buik_van_startrak_m_ingevuld - self.start_buik_van_startrak_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
 
 class Scheefstand(Gebrek):
@@ -430,52 +427,46 @@ class Scheefstand(Gebrek):
     @property
     def start_scheefstand_van_startrak_m(self) -> float | NietBeschikbaar:
         """Afstand van het startrak in meters. Wordt afgeleid van de start van de scheefstand."""
+
         if isinstance(self.start_scheefstand_van_startrak_m_ingevuld, float):
             return self.start_scheefstand_van_startrak_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (self.eind_scheefstand_van_startrak_m_ingevuld, self.lengte_scheefstand_m_ingevuld)
-            )
+
+        if isinstance(self.eind_scheefstand_van_startrak_m_ingevuld, float) and isinstance(
+            self.lengte_scheefstand_m_ingevuld, float
         ):
             return self.eind_scheefstand_van_startrak_m_ingevuld - self.lengte_scheefstand_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
     @computed_field
     @property
     def eind_scheefstand_van_startrak_m(self) -> float | NietBeschikbaar:
         """Afstand van het startrak in meters. Wordt afgeleid van het eind van de scheefstand."""
+
         if isinstance(self.eind_scheefstand_van_startrak_m_ingevuld, float):
             return self.eind_scheefstand_van_startrak_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (self.start_scheefstand_van_startrak_m_ingevuld, self.lengte_scheefstand_m_ingevuld)
-            )
+
+        if isinstance(self.start_scheefstand_van_startrak_m_ingevuld, float) and isinstance(
+            self.lengte_scheefstand_m_ingevuld, float
         ):
             return self.start_scheefstand_van_startrak_m_ingevuld + self.lengte_scheefstand_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
     @computed_field
     @property
     def lengte_scheefstand_m(self) -> float | NietBeschikbaar:
         """Lengte van de scheefstand in meters. Wordt afgeleid van de start en eind van de scheefstand."""
+
         if isinstance(self.lengte_scheefstand_m_ingevuld, float):
             return self.lengte_scheefstand_m_ingevuld
-        elif all(
-            (
-                isinstance(value, float)
-                for value in (
-                    self.start_scheefstand_van_startrak_m_ingevuld,
-                    self.eind_scheefstand_van_startrak_m_ingevuld,
-                )
-            )
+
+        if isinstance(self.start_scheefstand_van_startrak_m_ingevuld, float) and isinstance(
+            self.eind_scheefstand_van_startrak_m_ingevuld, float
         ):
             return self.eind_scheefstand_van_startrak_m_ingevuld - self.start_scheefstand_van_startrak_m_ingevuld
-        else:
-            return NietBeschikbaar.LEEG
+
+        return NietBeschikbaar.LEEG
 
 
 class LokaalVerdwenenMetselwerk(Gebrek):

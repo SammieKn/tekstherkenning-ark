@@ -5,6 +5,7 @@ from tekstherkenning_ark.enums import (
     MateriaalOnderbouw,
     MateriaalFundering,
     NietBeschikbaar,
+    SchoorStand,
 )
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
@@ -58,14 +59,68 @@ class Onderbouw(RakBaseModel):
         return len(self.palen)
 
     @property
+    def paal_rijen(self) -> dict[int, list[Paal]]:
+        """Geef een dictionary terug waarbij de keys de paalrij_nummer zijn en de values lijsten van palen in die rij."""
+        paal_rijen_dict = {}
+        for paal in self.palen:
+            if paal.paalrij_nummer not in paal_rijen_dict:
+                paal_rijen_dict[paal.paalrij_nummer] = []
+            paal_rijen_dict[paal.paalrij_nummer].append(paal)
+
+        for rij_nummer in paal_rijen_dict:
+            paal_rijen_dict[rij_nummer] = sorted(paal_rijen_dict[rij_nummer], key=lambda p: p.paal_nummer_main)
+        return paal_rijen_dict
+
+    @property
     def eerste_rij_palen(self) -> list[Paal]:
         """Geef de palen van de eerste rij terug (bijvoorbeeld P1.1, P1.2, P1.3, etc.),
         gesorteerd op paal_nummer_main."""
 
-        palen = [paal for paal in self.palen if paal.paalrij_nummer == 1]
-        palen = sorted(palen, key=lambda p: p.paal_nummer_main)
+        return self.paal_rijen[1] if 1 in self.paal_rijen else []
 
-        return palen
+    def get_eerste_paal_met_aansluitende_statussen(
+        self,
+        aansluiting_statussen: list[AansluitingStatus],
+        include_onverwacht_resultaat: bool = False,
+    ) -> Paal | None:
+        """Geef de eerste paal terug waar een reeks van minimaal vijf aansluitende statussen is bereikt."""
+        for palen in self.paal_rijen.values():
+            aansluitende_status_count = 0
+
+            for paal in palen:
+                is_match = paal.aansluiting_status in aansluiting_statussen
+                if include_onverwacht_resultaat and isinstance(paal.aansluiting_status, OnverwachtResultaat):
+                    is_match = True
+
+                if is_match:
+                    aansluitende_status_count += 1
+                    if aansluitende_status_count >= 5:
+                        return paal
+                else:
+                    aansluitende_status_count = 0
+
+        return None
+
+    @computed_field
+    @property
+    def is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij(self) -> bool | OnverwachtResultaat:
+        """Controleer of er in een paalrij minimaal vijf aaneengesloten slechte aansluitingen voorkomen."""
+        slechte_status_reeks = self.get_eerste_paal_met_aansluitende_statussen([AansluitingStatus.SLECHT])
+        if slechte_status_reeks:
+            return True
+
+        onverwachte_status_reeks = self.get_eerste_paal_met_aansluitende_statussen(
+            [AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR],
+            include_onverwacht_resultaat=True,
+        )
+        if onverwachte_status_reeks:
+            return OnverwachtResultaat(
+                waarde=True,
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+                details=f"Onverwacht resultaat bij aansluiting van paal {onverwachte_status_reeks.paal_nummer} in rij {onverwachte_status_reeks.paalrij_nummer}. Dit kan duiden op onvolledige data of een fout in de data-extractie.",
+            )
+
+        return False
 
     @computed_field
     @property
@@ -98,6 +153,19 @@ class Onderbouw(RakBaseModel):
     def aantal_palen_met_scheefstand(self) -> int:
         """Aantal palen met geconstateerde scheefstand."""
         return sum(1 for paal in self.palen if paal.is_scheefstand)
+
+    @computed_field
+    @property
+    def is_schoorpalen_in_een_richting(self) -> bool | NietBeschikbaar:
+        """Controleer of alle palen met geconstateerde schoorstand in dezelfde richting staan (allemaal positief of allemaal negatief)."""
+        schoorstanden = {paal.schoor_richting for paal in self.palen if paal.is_schoorpaal}
+        return len(schoorstanden) <= 1 if schoorstanden else NietBeschikbaar.NIET_VAN_TOEPASSING
+
+    @computed_field
+    @property
+    def aantal_schoorpalen(self) -> int:
+        """Aantal palen met geconstateerde schoorstand."""
+        return sum(1 for paal in self.palen if paal.is_schoorpaal)
 
     @computed_field
     @property
