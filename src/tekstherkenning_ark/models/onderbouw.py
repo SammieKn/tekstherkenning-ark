@@ -79,7 +79,7 @@ class Onderbouw(RakBaseModel):
 
     def get_eerste_paal_met_aansluitende_statussen(
         self,
-        aansluiting_statussen: tuple[AansluitingStatus, ...],
+        aansluiting_statussen: list[AansluitingStatus],
         include_onverwacht_resultaat: bool = False,
     ) -> Paal | None:
         """Geef de eerste paal terug waar een reeks van minimaal vijf aansluitende statussen is bereikt."""
@@ -104,12 +104,12 @@ class Onderbouw(RakBaseModel):
     @property
     def is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij(self) -> bool | OnverwachtResultaat:
         """Controleer of er in een paalrij minimaal vijf aaneengesloten slechte aansluitingen voorkomen."""
-        slechte_status_reeks = self.get_eerste_paal_met_aansluitende_statussen((AansluitingStatus.SLECHT,))
+        slechte_status_reeks = self.get_eerste_paal_met_aansluitende_statussen([AansluitingStatus.SLECHT])
         if slechte_status_reeks:
             return True
 
         onverwachte_status_reeks = self.get_eerste_paal_met_aansluitende_statussen(
-            (AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR),
+            [AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR],
             include_onverwacht_resultaat=True,
         )
         if onverwachte_status_reeks:
