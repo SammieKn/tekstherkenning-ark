@@ -104,3 +104,11 @@ def mock_rakdeel_with_scheuren(mock_rak_with_scheuren: Rak) -> Rakdeel:
 def mock_palen(mock_rak_with_gebreken: Rak) -> list[Paal]:
     """Fixture to provide a list of Palen from the first Rakdeel of the mock Rak with gebreken."""
     return mock_rak_with_gebreken.rakdelen[0].onderbouw.palen
+
+
+@pytest.fixture()
+def mock_rak_with_scheuren_json() -> str:
+    """Fixture to provide a JSON string of a mock Rak with scheuren for testing JSON serialization."""
+
+    mock_rak_with_scheuren_json_path = TEST_DATA_DIR / "mock_rak_with_scheuren.json"
+    return mock_rak_with_scheuren_json_path.read_text()

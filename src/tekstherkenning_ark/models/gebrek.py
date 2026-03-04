@@ -346,7 +346,7 @@ class BuikInWand(Gebrek):
     start_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
     eind_buik_van_startrak_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
     lengte_buik_m_ingevuld: float | NietBeschikbaar = NietBeschikbaar.LEEG
-    uitbuiking_cm: int | NietBeschikbaar
+    uitbuiking_cm: int | NietBeschikbaar = NietBeschikbaar.LEEG
 
     @computed_field
     @property

@@ -15,13 +15,19 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
-from tekstherkenning_ark.models.gebrek import Gebrek
+import json
+
+from polyfactory.factories.pydantic_factory import ModelFactory
+import pytest
+
+from tekstherkenning_ark.models.gebrek import Gebrek, Scheur, ScheurHout
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.vloer import Vloer
+from tests.conftest import TEST_DATA_DIR
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -75,3 +81,40 @@ def test_kzg0202_kesp_breedtes(kzg0202_rak: Rak):
     ), f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
     assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
     # expected = 1549 + 1"NM" (total len 97, numerical len 96)
+
+
+class TestRakToJson:
+    def test_mock_rak_scheuren_to_json(self, mock_rak_with_scheuren: Rak, mock_rak_with_scheuren_json: str):
+        """Test that a mock Rak with scheuren can be serialized to JSON."""
+        json_str = mock_rak_with_scheuren.model_dump_json(indent=2)
+        assert json_str == mock_rak_with_scheuren_json
+
+    @pytest.mark.parametrize("gebrek_class", [Gebrek] + Gebrek.__subclasses__())
+    def test_gebrek_subclasses_to_json(self, gebrek_class: type[Gebrek]):
+        """Test that all Gebrek subclasses can be serialized to JSON."""
+
+        # Create a mock instance of the subclass using a ModelFactory,
+        # which will fill in all required fields with dummy data
+        class SubclassFactory(ModelFactory[gebrek_class]):
+            __model__ = gebrek_class
+
+        instance = SubclassFactory.build()
+
+        # Check if we actually got an instance of the correct class
+        assert isinstance(instance, gebrek_class)
+
+        # Create the JSON string from the instance
+        json_str = instance.model_dump_json(indent=2)
+
+        assert json_str is not None
+
+        # Retrieve all expected fields for the subclass
+        expected_fields = list(gebrek_class.model_fields.keys()) + list(gebrek_class.model_computed_fields.keys())
+
+        # Subclasses should have more fields than the base Gebrek class
+        if gebrek_class != Gebrek:
+            assert len(expected_fields) > len(Gebrek.model_fields) + len(Gebrek.model_computed_fields)
+
+        # Check if all expected fields are present in the JSON output
+        for field in expected_fields:
+            assert f'"{field}":' in json_str

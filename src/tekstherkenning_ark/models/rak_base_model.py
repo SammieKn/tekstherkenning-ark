@@ -3,7 +3,17 @@ from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, 
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 
-from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.gebrek import (
+    Gebrek,
+    Scheur,
+    ScheurMetselwerk,
+    ScheurHout,
+    GrondVoerendGat,
+    BuikInWand,
+    Scheefstand,
+    LokaalVerdwenenMetselwerk,
+    OnderloopsheidschermBeschadigd,
+)
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 
@@ -33,7 +43,18 @@ def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
 class RakBaseModel(BaseModel):
     """Base model for RAK related models."""
 
-    gebreken: list[Gebrek] = []
+    # We add all gebrek subtypes here for proper json serialization of gebrek subclasses
+    gebreken: list[
+        Gebrek
+        | Scheur
+        | ScheurMetselwerk
+        | ScheurHout
+        | GrondVoerendGat
+        | BuikInWand
+        | Scheefstand
+        | LokaalVerdwenenMetselwerk
+        | OnderloopsheidschermBeschadigd
+    ] = []
     opmerkingen: str = ""
     toestand_onderdelen: list[ToestandOnderdeel] = []
 

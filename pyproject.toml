@@ -18,6 +18,7 @@ dependencies = [
     "openpyxl>=3.1.5",
     "unidecode>=1.4.0",
     "pytest>=9.0.2",
+    "polyfactory>=3.3.0",
 ]
 
 [tool.black]
