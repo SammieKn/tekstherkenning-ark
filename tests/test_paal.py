@@ -82,22 +82,22 @@ def test_paal_is_ongewenste_schoorstand_niet_beschikbaar(mock_palen: list[Paal])
 def test_paal_is_schoorpaal_positief(mock_palen: list[Paal]):
     paal = mock_palen[0]
     paal.schoor_richting = SchoorStand.POSITIEF
-    assert paal.is_schoorpaal is True
+    assert paal.is_schoorpaal
 
 
 def test_paal_is_schoorpaal_negatief(mock_palen: list[Paal]):
     paal = mock_palen[0]
     paal.schoor_richting = SchoorStand.NEGATIEF
-    assert paal.is_schoorpaal is True
+    assert paal.is_schoorpaal
 
 
 def test_paal_is_schoorpaal_neutraal(mock_palen: list[Paal]):
     paal = mock_palen[0]
     paal.schoor_richting = SchoorStand.NEUTRAAL
-    assert paal.is_schoorpaal is False
+    assert not paal.is_schoorpaal
 
 
 def test_paal_is_schoorpaal_niet_van_toepassing(mock_palen: list[Paal]):
     paal = mock_palen[0]
     paal.schoor_richting = NietBeschikbaar.NIET_VAN_TOEPASSING
-    assert paal.is_schoorpaal is False
+    assert not paal.is_schoorpaal

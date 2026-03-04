@@ -97,7 +97,7 @@ def test_is_schoorpalen_in_een_richting_false(mock_rakdeel: Rakdeel):
     onderbouw.palen[0].schoor_richting = SchoorStand.POSITIEF
     onderbouw.palen[1].schoor_richting = SchoorStand.NEGATIEF
 
-    assert onderbouw.is_schoorpalen_in_een_richting is False
+    assert not onderbouw.is_schoorpalen_in_een_richting
 
 
 def test_is_schoorpalen_in_een_richting_niet_van_toepassing(mock_rakdeel: Rakdeel):
