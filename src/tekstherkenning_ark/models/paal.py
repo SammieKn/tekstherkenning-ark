@@ -104,7 +104,7 @@ class Paal(RakBaseModel):
     @property
     def is_schoorpaal(self) -> bool:
         """Geef terug of deze paal een schoorpaal is op basis van de schoor_richting."""
-        return True if self.schoor_richting in (SchoorStand.POSITIEF, SchoorStand.NEGATIEF) else False
+        return self.schoor_richting in (SchoorStand.POSITIEF, SchoorStand.NEGATIEF)
 
     @computed_field
     @property
