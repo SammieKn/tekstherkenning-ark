@@ -19,6 +19,9 @@ from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 
 T = TypeVar("T", Gebrek, OnverwachtResultaat, ToestandOnderdeel)
 
+gebrek_classes = tuple([Gebrek] + Gebrek.__subclasses__())
+T_Gebrek = TypeVar("T_Gebrek", bound=Union[gebrek_classes])
+
 
 def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
     """Validator that wraps values in OnverwachtResultaat if validation fails."""
@@ -44,17 +47,7 @@ class RakBaseModel(BaseModel):
     """Base model for RAK related models."""
 
     # We add all gebrek subtypes here for proper json serialization of gebrek subclasses
-    gebreken: list[
-        Gebrek
-        | Scheur
-        | ScheurMetselwerk
-        | ScheurHout
-        | GrondVoerendGat
-        | BuikInWand
-        | Scheefstand
-        | LokaalVerdwenenMetselwerk
-        | OnderloopsheidschermBeschadigd
-    ] = []
+    gebreken: list[T_Gebrek] = []
     opmerkingen: str = ""
     toestand_onderdelen: list[ToestandOnderdeel] = []
 

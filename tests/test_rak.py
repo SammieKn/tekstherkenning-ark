@@ -15,19 +15,11 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
-import json
-
 from polyfactory.factories.pydantic_factory import ModelFactory
 import pytest
 
-from tekstherkenning_ark.models.gebrek import Gebrek, Scheur, ScheurHout
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
-from tekstherkenning_ark.models.rakdeel import Rakdeel
-from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.onderbouw import Onderbouw
-from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.models.vloer import Vloer
-from tests.conftest import TEST_DATA_DIR
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -95,18 +87,26 @@ class TestRakToJson:
 
         # Create a mock instance of the subclass using a ModelFactory,
         # which will fill in all required fields with dummy data
-        class SubclassFactory(ModelFactory[gebrek_class]):
+        class SubclassMockFactory(ModelFactory[gebrek_class]):
             __model__ = gebrek_class
 
-        instance = SubclassFactory.build()
+        instance = SubclassMockFactory.build()
 
         # Check if we actually got an instance of the correct class
-        assert isinstance(instance, gebrek_class)
+        assert isinstance(instance, gebrek_class), f"Factory did not create an instance of {gebrek_class.__name__}"
+
+        # Put the gebrek in a Rak
+        rak = Rak(
+            raknaam="TESTRAK",
+            totale_lengte_m=10.0,
+            rakdelen=[],
+            gebreken=[instance],
+        )
 
         # Create the JSON string from the instance
-        json_str = instance.model_dump_json(indent=2)
+        json_str = rak.model_dump_json(indent=2)
 
-        assert json_str is not None
+        assert json_str is not None, f"JSON serialization failed for {gebrek_class.__name__}"
 
         # Retrieve all expected fields for the subclass
         expected_fields = list(gebrek_class.model_fields.keys()) + list(gebrek_class.model_computed_fields.keys())
@@ -117,4 +117,6 @@ class TestRakToJson:
 
         # Check if all expected fields are present in the JSON output
         for field in expected_fields:
-            assert f'"{field}":' in json_str
+            assert (
+                f'"{field}":' in json_str
+            ), f"Expected field '{field}' not found in JSON output for {gebrek_class.__name__}"
