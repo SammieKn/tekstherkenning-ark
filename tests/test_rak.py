@@ -15,7 +15,13 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.vloer import Vloer
 
 
 def test_kzg0202(kzg0202_rak: Rak):

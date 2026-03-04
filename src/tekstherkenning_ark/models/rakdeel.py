@@ -106,6 +106,31 @@ class Rakdeel(RakBaseModel):
 
         return (n_opsluitklos - n_opsluitklos_aangetast) / (n_opsluitklos) * 100
 
+    @computed_field
+    @property
+    def vijf_slechte_kespen_naast_elkaar(self) -> bool:
+        """Check of er 5 aangetaste kespen naast elkaar staan in het rak.
+        Kespen staan naast elkaar als het kesp nummer opeenvolgend is (K1, K2, K3, etc.) en ze in hetzelfde rakdeel zitten.
+        Kespen zijn "slecht" als `Kesp.is_aangetast` True is of ze een gebrek hebben."""
+
+        consecutive_slecht = 0
+        last_number = None
+
+        for kesp in self.onderbouw.kespen:
+            if not last_number is None:
+                if kesp.kesp_nummer_main == last_number + 1 and kesp.is_slecht:
+                    consecutive_slecht += 1
+                else:
+                    consecutive_slecht = 0
+
+            if consecutive_slecht >= 5:
+                return True
+
+            last_number = kesp.kesp_nummer_main
+
+        return False
+
+    @computed_field
     @property
     def maximaal_aantal_scheuren_per_10_m(self) -> int:
         """Aantal scheuren genormaliseerd naar 10 meter lengte."""
