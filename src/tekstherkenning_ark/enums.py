@@ -40,7 +40,6 @@ class SchoorStand(FlexibeleEnum):
     POSITIEF = "PNV"
     NEGATIEF = "PNA"
     NEUTRAAL = "LR"
-    TO_DO_REMOVE_PNL = "PNL"  # TODO Verwijderen indien niet meer gebruikt
 
 
 class NietBeschikbaar(FlexibeleEnum):

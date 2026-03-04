@@ -1,7 +1,7 @@
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
-from tekstherkenning_ark.enums import AansluitingStatus, SchoorStand
+from tekstherkenning_ark.enums import AansluitingStatus, SchoorStand, NietBeschikbaar
 
 
 def test_percentage_ongewenste_schoorstand_geen(mock_rakdeel: Rakdeel):
@@ -66,6 +66,48 @@ def test_percentage_ongewenste_schoorstand_geen_palen(mock_rakdeel: Rakdeel):
     mock_rakdeel.onderbouw.palen = []
 
     assert mock_rakdeel.onderbouw.percentage_ongewenste_schoorstand is None
+
+
+def test_aantal_schoorpalen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_schoorpalen alleen PNV/PNA meetelt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onderbouw.palen[0].schoor_richting = SchoorStand.POSITIEF
+    onderbouw.palen[1].schoor_richting = SchoorStand.NEGATIEF
+    onderbouw.palen[2].schoor_richting = SchoorStand.NEUTRAAL
+    onderbouw.palen[3].schoor_richting = NietBeschikbaar.NIET_VAN_TOEPASSING
+
+    assert onderbouw.aantal_schoorpalen == 2
+
+
+def test_is_schoorpalen_in_een_richting_true(mock_rakdeel: Rakdeel):
+    """Test dat is_schoorpalen_in_een_richting True is als alle schoorpalen dezelfde richting hebben."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    for paal in onderbouw.palen:
+        paal.schoor_richting = SchoorStand.POSITIEF
+
+    assert onderbouw.is_schoorpalen_in_een_richting
+
+
+def test_is_schoorpalen_in_een_richting_false(mock_rakdeel: Rakdeel):
+    """Test dat is_schoorpalen_in_een_richting False is bij gemengde PNV/PNA richtingen."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onderbouw.palen[0].schoor_richting = SchoorStand.POSITIEF
+    onderbouw.palen[1].schoor_richting = SchoorStand.NEGATIEF
+
+    assert not onderbouw.is_schoorpalen_in_een_richting
+
+
+def test_is_schoorpalen_in_een_richting_niet_van_toepassing(mock_rakdeel: Rakdeel):
+    """Test dat is_schoorpalen_in_een_richting NVT teruggeeft als er geen schoorpalen zijn."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    for paal in onderbouw.palen:
+        paal.schoor_richting = SchoorStand.NEUTRAAL
+
+    assert onderbouw.is_schoorpalen_in_een_richting is NietBeschikbaar.NIET_VAN_TOEPASSING
 
 
 def test_eerste_rij_palen(mock_rakdeel: Rakdeel):
