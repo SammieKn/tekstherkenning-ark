@@ -74,7 +74,8 @@ class Rakdeel(RakBaseModel):
     @computed_field
     @property
     def percentage_niet_functionerend_schuifhout(self) -> float | OnverwachtResultaat | None:
-        """Percentage van het schuifhout dat niet functioneert, afgeleid van de kespen in de onderbouw."""
+        """Percentage van het schuifhout dat niet functioneert,
+        afgeleid van de opsluitklossen bij de kespen in de onderbouw."""
 
         if not self.onderbouw.kespen:
             return None
