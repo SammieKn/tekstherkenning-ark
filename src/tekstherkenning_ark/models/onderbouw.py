@@ -5,6 +5,7 @@ from tekstherkenning_ark.enums import (
     MateriaalOnderbouw,
     MateriaalFundering,
     NietBeschikbaar,
+    SchoorStand,
 )
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
@@ -98,6 +99,19 @@ class Onderbouw(RakBaseModel):
     def aantal_palen_met_scheefstand(self) -> int:
         """Aantal palen met geconstateerde scheefstand."""
         return sum(1 for paal in self.palen if paal.is_scheefstand)
+
+    @computed_field
+    @property
+    def is_schoorpalen_in_een_richting(self) -> bool | NietBeschikbaar:
+        """Controleer of alle palen met geconstateerde schoorstand in dezelfde richting staan (allemaal positief of allemaal negatief)."""
+        schoorstanden = {paal.schoor_richting for paal in self.palen if paal.is_schoorpaal}
+        return len(schoorstanden) <= 1 if schoorstanden else NietBeschikbaar.NIET_VAN_TOEPASSING
+
+    @computed_field
+    @property
+    def aantal_schoorpalen(self) -> int:
+        """Aantal palen met geconstateerde schoorstand."""
+        return sum(1 for paal in self.palen if paal.is_schoorpaal)
 
     @computed_field
     @property

@@ -101,6 +101,11 @@ class Paal(RakBaseModel):
             logger.warning(f"Failed to extract main nummer from paal nummer {self.paal_nummer}")
             return None
 
+    @property
+    def is_schoorpaal(self) -> bool:
+        """Geef terug of deze paal een schoorpaal is op basis van de schoor_richting."""
+        return True if self.schoor_richting in (SchoorStand.POSITIEF, SchoorStand.NEGATIEF) else False
+
     @computed_field
     @property
     def n_scheuren(self) -> int:
