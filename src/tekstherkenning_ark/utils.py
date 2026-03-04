@@ -7,7 +7,7 @@ from unidecode import unidecode
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from tekstherkenning_ark.logger import get_logger
 
@@ -326,3 +326,21 @@ def remove_constructie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
     Een deel unassigned is indicatie dat de tabel niet klopt. In dit geval moet dus alles unassigned blijven."""
     all_items = dict_items_flat(item_dict)
     return {"": all_items}
+
+
+def remove_onverwacht_resultaat_from_table_rows(
+    table_rows: list[dict[str, Any | OnverwachtResultaat]],
+) -> list[dict[str, Any]]:
+    """Replace any OnverwachtResultaat values in the table rows with their waarde, and log how many were found."""
+
+    n_onverwacht = 0
+
+    for row in table_rows:
+        for key, value in row.items():
+            if isinstance(value, OnverwachtResultaat):
+                n_onverwacht += 1
+                row[key] = value.waarde
+
+    logger.info(f"{n_onverwacht} onverwachte resultaten gevonden en omgezet naar hun waarde in de tabel.")
+
+    return table_rows
