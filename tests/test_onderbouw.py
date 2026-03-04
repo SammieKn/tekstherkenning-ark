@@ -10,6 +10,20 @@ def test_percentage_ongewenste_schoorstand_geen(mock_rakdeel: Rakdeel):
     assert mock_rakdeel.onderbouw.percentage_ongewenste_schoorstand == 0.0
 
 
+def test_aantal_palen_dwars(mock_rakdeel: Rakdeel):
+    """Test dat aantal_palen_dwars de hoogste paalrij in de onderbouw teruggeeft."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    assert onderbouw.aantal_palen_dwars == 2
+
+
+def test_aantal_palen_dwars_geen_palen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_palen_dwars 0 is als er geen palen zijn."""
+    mock_rakdeel.onderbouw.palen = []
+
+    assert mock_rakdeel.onderbouw.aantal_palen_dwars == 0
+
+
 def test_percentage_ongewenste_schoorstand_een_paal(mock_rakdeel: Rakdeel):
     """Test dat percentage_ongewenste_schoorstand correct berekent als één eerste-rij paal PNA heeft."""
     onderbouw = mock_rakdeel.onderbouw
