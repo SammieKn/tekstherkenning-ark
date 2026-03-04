@@ -100,7 +100,8 @@ def test_get_eerste_paal_met_aansluitende_statussen_vindt_vijfde_paal(mock_rakde
     onderbouw.palen.extend(extra_palen)
 
     for paal_nummer in ["P1.1", "P1.2", "P1.3"]:
-        next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer).aansluiting_status = AansluitingStatus.SLECHT
+        leading_paal = next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer)
+        leading_paal.aansluiting_status = AansluitingStatus.SLECHT
 
     resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen((AansluitingStatus.SLECHT,))
 
@@ -122,7 +123,8 @@ def test_get_eerste_paal_met_aansluitende_statussen_none_bij_onderbroken_reeks(m
     onderbouw.palen.extend(extra_palen)
 
     for paal_nummer in ["P1.1", "P1.2", "P1.3"]:
-        next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer).aansluiting_status = AansluitingStatus.SLECHT
+        leading_paal = next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer)
+        leading_paal.aansluiting_status = AansluitingStatus.SLECHT
 
     resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen((AansluitingStatus.SLECHT,))
 
@@ -148,7 +150,7 @@ def test_get_eerste_paal_met_aansluitende_statussen_met_onverwacht_resultaat(moc
     ]
 
     resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen(
-        (AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR),
+        [AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR],
         include_onverwacht_resultaat=True,
     )
 
@@ -167,8 +169,7 @@ def test_is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij_true(mock_rakd
         _maak_paal_rij_1("P1.4", AansluitingStatus.SLECHT),
         _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
     ]
-
-    assert onderbouw.is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij is True
+    assert onderbouw.is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij
 
 
 def test_is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij_onverwacht_resultaat(mock_rakdeel: Rakdeel):
