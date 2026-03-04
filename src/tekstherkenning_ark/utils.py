@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from functools import cache
+from pathlib import Path
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
+from tekstherkenning_ark.constants import CACHE_DIR
 from tekstherkenning_ark.enums import NietBeschikbaar
 
 from typing import TYPE_CHECKING, Callable, TypeVar
@@ -326,3 +328,20 @@ def remove_constructie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
     Een deel unassigned is indicatie dat de tabel niet klopt. In dit geval moet dus alles unassigned blijven."""
     all_items = dict_items_flat(item_dict)
     return {"": all_items}
+
+
+def clear_llm_cache_files(cache_dir: Path = CACHE_DIR) -> None:
+    """Clear all llm cache files in the .cache directory."""
+
+    files = [file for file in cache_dir.glob("*.pkl") if not "_docai_result" in file.stem]
+
+    input(
+        f"------\n\nAbout to delete {len(files)} cache files in {cache_dir}. Press Enter to confirm or Ctrl+C to cancel.\n\n------"
+    )
+
+    for file in files:
+        try:
+            file.unlink()
+            logger.info(f"Deleted cache file: {file}")
+        except Exception as e:
+            logger.error(f"Error deleting cache file {file}: {e}")
