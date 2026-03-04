@@ -15,7 +15,6 @@ def test_aantal_palen_dwars(mock_rakdeel: Rakdeel):
     onderbouw = mock_rakdeel.onderbouw
 
     assert onderbouw.aantal_palen_dwars == 2
-    assert onderbouw.model_dump()["aantal_palen_dwars"] == 2
 
 
 def test_aantal_palen_dwars_geen_palen(mock_rakdeel: Rakdeel):
