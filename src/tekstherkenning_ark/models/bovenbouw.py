@@ -38,8 +38,7 @@ class Bovenbouw(RakBaseModel):
     materiaal: MateriaalBovenbouw | NietBeschikbaar = NietBeschikbaar.LEEG
     # Te bepalen uit de gebrekentabel (paragraaf 2.3 of 5.3.3) door het aantal scheuren te tellen en te relateren aan de lengte van het rakdeel.
     maximaal_aantal_scheuren_per_10_m: int | None = None
-    # Af te leiden uit de doorsnedetekening en de toestandstabel (figuur 1.11) en de gebrekentabel (paragraaf 2.3 of 5.3.3).
-    percentage_niet_functionerend_schuifhout: float | None = None
+
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
 
@@ -91,7 +90,6 @@ class Bovenbouw(RakBaseModel):
         """Check of LokaalVerdwenenMetselwerk gebrek aanwezig is."""
         return any(isinstance(gebrek, LokaalVerdwenenMetselwerk) for gebrek in self.gebreken)
 
-    @computed_field
     @property
     def is_scheefstand_aanwezig(self) -> bool:
         """Check of Scheefstand gebrek aanwezig is."""

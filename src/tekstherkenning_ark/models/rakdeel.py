@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import TypeVar
 from pydantic import computed_field
 
+from pydantic import computed_field
+
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
@@ -68,6 +70,41 @@ class Rakdeel(RakBaseModel):
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
+
+    @computed_field
+    @property
+    def percentage_niet_functionerend_schuifhout(self) -> float | OnverwachtResultaat | None:
+        """Percentage van het schuifhout dat niet functioneert,
+        afgeleid van de opsluitklossen bij de kespen in de onderbouw."""
+
+        if not self.onderbouw.kespen:
+            return None
+
+        if any(
+            isinstance(k.is_opsluitklos_aangetast, OnverwachtResultaat)
+            or isinstance(k.is_opsluitklos_aanwezig, OnverwachtResultaat)
+            for k in self.onderbouw.kespen
+        ):
+            return OnverwachtResultaat(
+                waarde="Onduidelijke staat van opsluitklossen in kesp data, kan percentage niet functionerend schuifhout niet betrouwbaar berekenen",
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+            )
+
+        inconsistente_kespen = [
+            k for k in self.onderbouw.kespen if k.is_opsluitklos_aangetast and not k.is_opsluitklos_aanwezig
+        ]
+
+        if any(inconsistente_kespen):
+            kespen_ids = ", ".join(k.kesp_nummer for k in inconsistente_kespen)
+            return OnverwachtResultaat(
+                waarde=f"Tegenstrijdige data in kespen {kespen_ids}: opsluitklos is aangetast maar ook niet aanwezig. Kan percentage niet functionerend schuifhout niet betrouwbaar berekenen",
+                onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+            )
+
+        n_opsluitklos = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aanwezig])
+        n_opsluitklos_aangetast = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aangetast])
+
+        return (n_opsluitklos - n_opsluitklos_aangetast) / (n_opsluitklos) * 100
 
     @computed_field
     @property
