@@ -46,6 +46,7 @@ Deze mock data is volledig handmatig geconstrueerd en bevat geen gevoelige infor
 ### Integration Tests - KZG0202 Duikrapport
 
 De integration tests gebruiken een **gesanitizeerd duikrapport** om de volledige parsing pipeline te testen met realistische data. Deze tests gebruiken het KZG0202 duikrapport.
+**Gesanitizeerd houdt in dan alleen de benodigde info overblijft en persoons- en gevoelige informatie verwijdert zijn**.
 
 **Locatie:** `tests/data/KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325/`
 
