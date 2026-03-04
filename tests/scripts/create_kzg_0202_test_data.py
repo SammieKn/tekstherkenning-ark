@@ -2,6 +2,8 @@ import pickle
 import sys
 from pathlib import Path
 
+from tekstherkenning_ark.utils import clear_llm_cache_files
+
 
 # Add project root and tests dir to sys.path to enable importing from tests module
 # Tests dir is needed so conftest.py can import from data submodule
@@ -72,6 +74,9 @@ if __name__ == "__main__":
     # Sanitize the SmartDocument
     logger.info("Sanitizing SmartDocument for test data")
     sanitized_doc = sanitize_smart_document(smart_doc)
+
+    # Clear LLM cache to ensure clean state for generating Rak cache
+    clear_llm_cache_files(cache_dir=KZG_0202_TEST_DIR)
 
     # Save the sanitized SmartDocument to the test data directory
     logger.info(f"Saving sanitized SmartDocument to {PKL_DST_PATH}")

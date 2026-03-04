@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, Any, Union
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
-
+from pydantic_core.core_schema import ValidationInfo
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
@@ -10,7 +10,7 @@ from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 T = TypeVar("T", Gebrek, OnverwachtResultaat, ToestandOnderdeel)
 
 
-def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
+def validate_with_onverwacht_fallback(value: Any, handler, info: ValidationInfo) -> Any:
     """Validator that wraps values in OnverwachtResultaat if validation fails."""
     # If already an OnverwachtResultaat, return it
     if isinstance(value, OnverwachtResultaat):
@@ -26,7 +26,7 @@ def validate_with_onverwacht_fallback(value: Any, handler, info) -> Any:
         return OnverwachtResultaat(
             waarde=value,
             onverwacht_resultaat_type=OnverwachtResultaatType.INCORRECT_TYPE,
-            details=f"Validation error: {str(e)}",
+            details=f"Validation error for attribute {info.field_name }: {str(e)}",
         )
 
 
