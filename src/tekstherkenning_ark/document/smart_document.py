@@ -171,7 +171,26 @@ class SmartDocument:
                 for cell in tabel.cells:
                     if get_rak_id(cell.content):
                         return get_rak_id(cell.content) or cell.content.strip()
-        return "Onbekend Rak"
+
+        # Fallback: try to extract from PDF name
+        logger.warning(f"Could not find Rak ID in tables, trying to extract from PDF name...")
+        raknaam_from_pdf = self._get_raknaam_from_pdf_name()
+        if raknaam_from_pdf:
+            return raknaam_from_pdf
+
+        logger.warning(f"Could not extract Rak ID from PDF name, returning {constants.ONBEKEND_RAK_NAAM} as fallback")
+
+        return constants.ONBEKEND_RAK_NAAM
+
+    def _get_raknaam_from_pdf_name(self) -> str | None:
+        """Try to extract the Rak ID from the PDF name"""
+
+        doc_name = self.document_name.replace(".pdf", "")
+        rak_id = get_rak_id(doc_name)
+        if rak_id:
+            return rak_id
+
+        return None
 
     def _parse_document(self) -> None:
         """Parse het AnalyzeResult en splits het op in secties."""

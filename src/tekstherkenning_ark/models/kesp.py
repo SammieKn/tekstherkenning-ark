@@ -130,6 +130,8 @@ class Kesp(RakBaseModel):
                 if current_constructie_id not in kesp_dict:
                     kesp_dict[current_constructie_id] = []
                 kesp_dict[current_constructie_id].append(kesp)
+            elif kesp_nummer_val.strip():
+                logger.warning(f"Row {row_idx} does not contain a valid kespnummer: {kesp_nummer_val}")
 
         # If one or more kespen were found without a constructie ID, remove all construction ids
         if "" in kesp_dict:

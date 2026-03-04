@@ -10,6 +10,7 @@ from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat,
 
 # Import utils functions - this must come after models import
 from tekstherkenning_ark.utils import (
+    clean_kesp_id,
     get_table_content,
     parse_ja_nee,
     clean_paal_id,
@@ -264,3 +265,20 @@ def test_remove_constructie_id_empty():
     """Test remove_constructie_id with an empty dictionary"""
     result = remove_constructie_id({})
     assert result == {"": []}
+
+
+def test_clean_kesp_id_valid_id():
+    """Test cleaning kesp IDs"""
+    assert clean_kesp_id("K1") == "K1"
+
+
+def test_clean_kesp_id_ocr_errors():
+    """Test cleaning kesp IDs with common OCR errors"""
+    assert clean_kesp_id("K5O") == "K50"
+    assert clean_kesp_id("KB") == "K8"
+    assert clean_kesp_id("  Kgg  ") == "K99"
+
+
+def test_clean_kesp_id_no_k():
+    """Test cleaning kesp IDs that don't start with K - should return original value"""
+    assert clean_kesp_id("  aangetast  ") == "aangetast"
