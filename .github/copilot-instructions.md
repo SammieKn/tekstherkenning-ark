@@ -16,6 +16,7 @@
 
 ## Repo-specifieke afspraken
 - Houd code compatibel met Python 3.13
+- Gebuik ALTIJD uv wanneer je code draait zoals pytests, debug scripts, et cetera.
 - Gebruik black en isort met een maximale regellengte van 119
 - Draai bij wijzigingen minimaal gerichte pytest-tests voor de aangepaste onderdelen
 - Vermijd echte Azure/OpenAI-calls in tests; gebruik mocks, fixtures of gecachte testdata
