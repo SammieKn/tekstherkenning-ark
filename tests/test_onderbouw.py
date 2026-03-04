@@ -87,7 +87,7 @@ def test_is_schoorpalen_in_een_richting_true(mock_rakdeel: Rakdeel):
     for paal in onderbouw.palen:
         paal.schoor_richting = SchoorStand.POSITIEF
 
-    assert onderbouw.is_schoorpalen_in_een_richting is True
+    assert onderbouw.is_schoorpalen_in_een_richting
 
 
 def test_is_schoorpalen_in_een_richting_false(mock_rakdeel: Rakdeel):
