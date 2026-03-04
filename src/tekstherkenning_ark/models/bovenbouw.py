@@ -90,27 +90,6 @@ class Bovenbouw(RakBaseModel):
         """Check of LokaalVerdwenenMetselwerk gebrek aanwezig is."""
         return any(isinstance(gebrek, LokaalVerdwenenMetselwerk) for gebrek in self.gebreken)
 
-    @computed_field
-    @property
-    def is_schuifhout_beschadigd(self) -> bool:
-        """Check of er een beschadigd schuifhout gebrek aanwezig is."""
-
-        # Check for gebreken that mention schuifhout
-        schuifhout_gebreken = [
-            gebrek
-            for gebrek in self.gebreken
-            if isinstance(gebrek, Gebrek) and "schuifhout" in gebrek.omschrijving.lower()
-        ]
-
-        # Check for a toestandsbepaling about schuifhout that is aangetast
-        schuifhout_toestanden = [
-            toestand
-            for toestand in self.toestand_onderdelen
-            if "schuifhout" in toestand.constructie_onderdeel.lower() and toestand.aangetast
-        ]
-
-        return bool(schuifhout_gebreken or schuifhout_toestanden)
-
     @property
     def is_scheefstand_aanwezig(self) -> bool:
         """Check of Scheefstand gebrek aanwezig is."""
