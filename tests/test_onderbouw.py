@@ -4,6 +4,25 @@ from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat,
 from tekstherkenning_ark.enums import AansluitingStatus, SchoorStand
 
 
+def _maak_paal_rij_1(paal_nummer: str, aansluiting_status: AansluitingStatus | OnverwachtResultaat) -> Paal:
+    return Paal(
+        paal_nummer=paal_nummer,
+        hoh_paalnummer="",
+        diameter_haaks=150,
+        diameter_parallel=150,
+        diameter_gemiddeld=150,
+        hoh_afstand_cm=100,
+        schoor_graden=5,
+        schoor_richting="PNV",
+        afstand_frontwand_cm=25,
+        is_scheefstand=False,
+        is_paalbreuk=False,
+        is_aantasting=False,
+        aansluiting_status=aansluiting_status,
+        positionering_aansluiting_cm="0",
+    )
+
+
 def test_percentage_ongewenste_schoorstand_geen(mock_rakdeel: Rakdeel):
     """Test dat percentage_ongewenste_schoorstand 0% geeft als geen enkele paal PNA heeft."""
     # Alle mock palen hebben schoor_richting="PNV" (geen ongewenste schoorstand)
@@ -66,6 +85,131 @@ def test_percentage_ongewenste_schoorstand_geen_palen(mock_rakdeel: Rakdeel):
     mock_rakdeel.onderbouw.palen = []
 
     assert mock_rakdeel.onderbouw.percentage_ongewenste_schoorstand is None
+
+
+def test_get_eerste_paal_met_aansluitende_statussen_vindt_vijfde_paal(mock_rakdeel: Rakdeel):
+    """Test dat de helper de paal retourneert waarop de aaneengesloten reeks van vijf wordt bereikt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    extra_palen = [
+        _maak_paal_rij_1("P1.4", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.6", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.7", AansluitingStatus.SLECHT),
+    ]
+    onderbouw.palen.extend(extra_palen)
+
+    for paal_nummer in ["P1.1", "P1.2", "P1.3"]:
+        next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer).aansluiting_status = AansluitingStatus.SLECHT
+
+    resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen((AansluitingStatus.SLECHT,))
+
+    assert isinstance(resultaat, Paal)
+    assert resultaat.paal_nummer == "P1.5"
+
+
+def test_get_eerste_paal_met_aansluitende_statussen_none_bij_onderbroken_reeks(mock_rakdeel: Rakdeel):
+    """Test dat de helper None teruggeeft als er geen vijf aaneengesloten matchende statussen zijn."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    extra_palen = [
+        _maak_paal_rij_1("P1.4", AansluitingStatus.GOED),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.6", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.7", AansluitingStatus.GOED),
+        _maak_paal_rij_1("P1.8", AansluitingStatus.SLECHT),
+    ]
+    onderbouw.palen.extend(extra_palen)
+
+    for paal_nummer in ["P1.1", "P1.2", "P1.3"]:
+        next(p for p in onderbouw.palen if p.paal_nummer == paal_nummer).aansluiting_status = AansluitingStatus.SLECHT
+
+    resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen((AansluitingStatus.SLECHT,))
+
+    assert resultaat is None
+
+
+def test_get_eerste_paal_met_aansluitende_statussen_met_onverwacht_resultaat(mock_rakdeel: Rakdeel):
+    """Test dat OnverwachtResultaat meetelt als include_onverwacht_resultaat=True."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onverwacht = OnverwachtResultaat(
+        waarde=None,
+        onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+        details="Test onverwacht resultaat",
+    )
+
+    onderbouw.palen = [
+        _maak_paal_rij_1("P1.1", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.2", AansluitingStatus.NIET_MEETBAAR),
+        _maak_paal_rij_1("P1.3", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.4", onverwacht),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+    ]
+
+    resultaat = onderbouw.get_eerste_paal_met_aansluitende_statussen(
+        (AansluitingStatus.SLECHT, AansluitingStatus.NIET_MEETBAAR),
+        include_onverwacht_resultaat=True,
+    )
+
+    assert isinstance(resultaat, Paal)
+    assert resultaat.paal_nummer == "P1.5"
+
+
+def test_is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij_true(mock_rakdeel: Rakdeel):
+    """Test dat de property True is bij vijf aaneengesloten slechte aansluitingen."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onderbouw.palen = [
+        _maak_paal_rij_1("P1.1", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.2", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.3", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.4", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+    ]
+
+    assert onderbouw.is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij is True
+
+
+def test_is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij_onverwacht_resultaat(mock_rakdeel: Rakdeel):
+    """Test dat de property een OnverwachtResultaat teruggeeft bij reeks met NM/OnverwachtResultaat."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onverwacht = OnverwachtResultaat(
+        waarde=None,
+        onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
+        details="Test onverwacht resultaat",
+    )
+
+    onderbouw.palen = [
+        _maak_paal_rij_1("P1.1", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.2", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.3", AansluitingStatus.NIET_MEETBAAR),
+        _maak_paal_rij_1("P1.4", onverwacht),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+    ]
+
+    resultaat = onderbouw.is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij
+
+    assert isinstance(resultaat, OnverwachtResultaat)
+    assert resultaat.waarde is True
+    assert resultaat.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
+
+
+def test_is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij_false_bij_niet_aaneengesloten(mock_rakdeel: Rakdeel):
+    """Test dat de property False is bij vijf slechte verbindingen die niet aaneengesloten zijn."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    onderbouw.palen = [
+        _maak_paal_rij_1("P1.1", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.2", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.3", AansluitingStatus.GOED),
+        _maak_paal_rij_1("P1.4", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.5", AansluitingStatus.SLECHT),
+        _maak_paal_rij_1("P1.6", AansluitingStatus.SLECHT),
+    ]
+
+    assert onderbouw.is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij is False
 
 
 def test_eerste_rij_palen(mock_rakdeel: Rakdeel):
