@@ -8,6 +8,7 @@ from functools import cache
 import json
 import pickle
 import pytest
+from copy import deepcopy
 from pathlib import Path
 
 from tekstherkenning_ark.document.smart_document import SmartDocument
@@ -17,6 +18,8 @@ from pathlib import Path
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+from tekstherkenning_ark.enums import AansluitingStatus
 from azure.ai.documentintelligence.models import DocumentTable
 
 
@@ -24,6 +27,7 @@ from azure.ai.documentintelligence.models import DocumentTable
 from data.mock_rak_with_gebreken import create_mock_rak_with_gebreken
 from data.mock_rak_with_onverwachte_resultaten import create_mock_rak_with_onverwachte_resultaten
 from data.mock_rak_with_scheuren import create_mock_rak_with_scheuren
+from data.mock_paal import MOCK_PAAL_RIJ_1_BASIS
 
 # Test directory constants
 TEST_DIR = Path(__file__).parent
@@ -104,3 +108,22 @@ def mock_rakdeel_with_scheuren(mock_rak_with_scheuren: Rak) -> Rakdeel:
 def mock_palen(mock_rak_with_gebreken: Rak) -> list[Paal]:
     """Fixture to provide a list of Palen from the first Rakdeel of the mock Rak with gebreken."""
     return mock_rak_with_gebreken.rakdelen[0].onderbouw.palen
+
+
+@pytest.fixture()
+def maak_paal_rij_1():
+    """Maak een standaard paal in rij 1 met overschreven paalnummer en aansluitingsstatus.
+
+    Returns
+    -------
+    Callable
+        Functie die een ``Paal`` opbouwt uit vaste mock data en opgegeven overrides.
+    """
+
+    def maak(paal_nummer: str, aansluiting_status: AansluitingStatus | OnverwachtResultaat) -> Paal:
+        paal_data = deepcopy(MOCK_PAAL_RIJ_1_BASIS)
+        paal_data["paal_nummer"] = paal_nummer
+        paal_data["aansluiting_status"] = aansluiting_status
+        return Paal(**paal_data)
+
+    return maak
