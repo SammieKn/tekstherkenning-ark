@@ -58,7 +58,7 @@ class Rakdeel(RakBaseModel):
     omschrijving: str = ""
 
     # Te vinden in paragraaf 5.x, eerste zin.
-    lengte_m_omschrijving: float | None = None
+    lengte_m_omschrijving: float | NietBeschikbaar | None = None
 
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None

@@ -4,6 +4,14 @@ from typing import Any
 import pandas as pd
 
 from tekstherkenning_ark.document.smart_document import SmartDocument
+from typing import TYPE_CHECKING
+
+from tekstherkenning_ark.logger import get_logger
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+
+logger = get_logger(__name__)
 
 RAK_TABLE_NAME = "rakken"
 RAKDEEL_TABLE_NAME = "rakdelen"
@@ -76,3 +84,23 @@ def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:
         TOESTANDBEPALINGEN_TABLE_NAME: toestandsbepalingen_df,
         ONVERWACHT_RESULTATEN_TABLE_NAME: onverwacht_resultaten_df,
     }
+
+
+def remove_onverwacht_resultaat_from_table_rows(
+    table_rows: list[dict[str, Any | OnverwachtResultaat]],
+) -> list[dict[str, Any]]:
+    """Replace any OnverwachtResultaat values in the table rows with their waarde, and log how many were found."""
+
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+
+    n_onverwacht = 0
+
+    for row in table_rows:
+        for key, value in row.items():
+            if isinstance(value, OnverwachtResultaat):
+                n_onverwacht += 1
+                row[key] = value.waarde
+
+    logger.info(f"{n_onverwacht} onverwachte resultaten gevonden en omgezet naar hun waarde in de tabel.")
+
+    return table_rows

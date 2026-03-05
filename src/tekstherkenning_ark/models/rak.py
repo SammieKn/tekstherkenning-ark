@@ -19,8 +19,7 @@ from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
-from tekstherkenning_ark.utils import get_rak_id, remove_onverwacht_resultaat_from_table_rows
-from tekstherkenning_ark.export_utils import remove_collection_fields
+from tekstherkenning_ark.export_utils import remove_collection_fields, remove_onverwacht_resultaat_from_table_rows
 
 logger = get_logger(__name__)
 

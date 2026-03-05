@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from functools import cache
+from pathlib import Path
 import re
 from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
+from tekstherkenning_ark.constants import CACHE_DIR
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import Callable, TypeVar
 
 from tekstherkenning_ark.logger import get_logger
 
-if TYPE_CHECKING:
-    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
@@ -328,21 +328,18 @@ def remove_constructie_id(item_dict: dict[str, list[T]]) -> dict[str, list[T]]:
     return {"": all_items}
 
 
-def remove_onverwacht_resultaat_from_table_rows(
-    table_rows: list[dict[str, Any | OnverwachtResultaat]],
-) -> list[dict[str, Any]]:
-    """Replace any OnverwachtResultaat values in the table rows with their waarde, and log how many were found."""
+def clear_llm_cache_files(cache_dir: Path = CACHE_DIR) -> None:
+    """Clear all llm cache files in the .cache directory."""
 
-    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+    files = [file for file in cache_dir.glob("*.pkl") if not "_docai_result" in file.stem]
 
-    n_onverwacht = 0
+    input(
+        f"------\n\nAbout to delete {len(files)} cache files in {cache_dir}. Press Enter to confirm or Ctrl+C to cancel.\n\n------"
+    )
 
-    for row in table_rows:
-        for key, value in row.items():
-            if isinstance(value, OnverwachtResultaat):
-                n_onverwacht += 1
-                row[key] = value.waarde
-
-    logger.info(f"{n_onverwacht} onverwachte resultaten gevonden en omgezet naar hun waarde in de tabel.")
-
-    return table_rows
+    for file in files:
+        try:
+            file.unlink()
+            logger.info(f"Deleted cache file: {file}")
+        except Exception as e:
+            logger.error(f"Error deleting cache file {file}: {e}")
