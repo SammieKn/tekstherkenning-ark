@@ -20,6 +20,7 @@ from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import get_rak_id, remove_onverwacht_resultaat_from_table_rows
+from tekstherkenning_ark.export_utils import remove_collection_fields
 
 logger = get_logger(__name__)
 
@@ -409,14 +410,21 @@ class Rak(RakBaseModel):
             )
             self.unassigned_houtmonsters = unassigned_houtmonsters
 
+    def _get_rak_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met rak data"""
+
+        rows = [remove_collection_fields(self.model_dump(mode="python"))]
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
     def _get_rakdeel_df(self) -> pd.DataFrame:
         """Genereer een DataFrame tabel met rakdeel data"""
 
         rows = []
-        for rakdeel in rak.rakdelen:
+        for rakdeel in self.rakdelen:
             rakdeel_row = {
-                "rak_id": rak.raknaam,
-                **rakdeel.model_dump(),
+                "rak_id": self.raknaam,
+                **remove_collection_fields(rakdeel.model_dump(mode="python")),
             }
             rows.append(rakdeel_row)
 
@@ -429,10 +437,10 @@ class Rak(RakBaseModel):
         rows = []
         for rakdeel_id, paal_nummer, houtmonster in self.alle_houtmonsters:
             houtmonster_row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "paal_nummer_ref": paal_nummer,
-                **houtmonster.model_dump(),
+                **remove_collection_fields(houtmonster.model_dump(mode="python")),
             }
             rows.append(houtmonster_row)
 
@@ -448,14 +456,14 @@ class Rak(RakBaseModel):
 
             for paal in rakdeel.onderbouw.palen:
                 paal_row = {
-                    "rak_id": rak.raknaam,
+                    "rak_id": self.raknaam,
                     "rakdeel_id": rakdeel.rakdeel_id,
                     "paal_nummer": paal.paal_nummer,
                     "afstand_van_startrak_cm": afstand_van_startrak_cm,
                     "afstand_op_paalrij_cm": paal.hoh_afstand_cm if paal.paalrij_nummer == 2 else 0,
                     "paal_nummer_main": paal.paal_nummer_main,
                     "paalrij_nummer": paal.paalrij_nummer,
-                    **paal.model_dump(),
+                    **remove_collection_fields(paal.model_dump(mode="python")),
                 }
                 rows.append(paal_row)
 
@@ -473,10 +481,10 @@ class Rak(RakBaseModel):
         rows = []
         for rakdeel_id, kesp in self.alle_kespen:
             kesp_row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "kesp_nummer": kesp.kesp_nummer,
-                **kesp.model_dump(),
+                **remove_collection_fields(kesp.model_dump(mode="python")),
             }
             rows.append(kesp_row)
 
@@ -491,11 +499,11 @@ class Rak(RakBaseModel):
             rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
             gebrek_type = type(gebrek).__name__
             gebrek_row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "model_pad": model_pad,
                 "gebrek_type": gebrek_type,
-                **gebrek.model_dump(),
+                **remove_collection_fields(gebrek.model_dump(mode="python")),
             }
             rows.append(gebrek_row)
 
@@ -510,10 +518,10 @@ class Rak(RakBaseModel):
             rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
             gebrek_type = type(gebrek).__name__
             gebrek_row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "model_pad": model_pad,
-                **gebrek.model_dump(),
+                **remove_collection_fields(gebrek.model_dump(mode="python")),
             }
 
             if gebrek_type not in gebreken_per_type:
@@ -535,7 +543,7 @@ class Rak(RakBaseModel):
         for pad, toestandonderdeel in self.alle_toestandsbepalingen:
             rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
             row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "model_pad": model_pad,
                 "onderdeel": toestandonderdeel.constructie_onderdeel,
@@ -553,10 +561,10 @@ class Rak(RakBaseModel):
         for pad, onverwacht in self.alle_onverwachte_resultaten:
             rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
             row = {
-                "rak_id": rak.raknaam,
+                "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "model_pad": model_pad,
-                **onverwacht.model_dump(),
+                **remove_collection_fields(onverwacht.model_dump(mode="python")),
             }
             rows.append(row)
 

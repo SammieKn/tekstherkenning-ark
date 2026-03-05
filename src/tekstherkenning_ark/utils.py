@@ -333,6 +333,8 @@ def remove_onverwacht_resultaat_from_table_rows(
 ) -> list[dict[str, Any]]:
     """Replace any OnverwachtResultaat values in the table rows with their waarde, and log how many were found."""
 
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
+
     n_onverwacht = 0
 
     for row in table_rows:
