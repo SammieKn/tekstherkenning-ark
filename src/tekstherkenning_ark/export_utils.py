@@ -8,9 +8,6 @@ from typing import TYPE_CHECKING
 
 from tekstherkenning_ark.logger import get_logger
 
-if TYPE_CHECKING:
-    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
-
 logger = get_logger(__name__)
 
 RAK_TABLE_NAME = "rakken"
@@ -87,7 +84,7 @@ def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:
 
 
 def remove_onverwacht_resultaat_from_table_rows(
-    table_rows: list[dict[str, Any | OnverwachtResultaat]],
+    table_rows: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Replace any OnverwachtResultaat values in the table rows with their waarde, and log how many were found."""
 
