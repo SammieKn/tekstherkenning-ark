@@ -1,4 +1,5 @@
 import os
+import asyncio
 from datetime import datetime
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
@@ -11,14 +12,12 @@ constructie_omschrijving = pd.read_excel(TESTDATA_PATH, sheet_name="rakdeel_omsc
 df_test = constructie_omschrijving[["rak", "rakdeel", "omschrijving"]]
 
 
-def verwerk_testset(llm: AzureOpenAILLM, df_origineel: pd.DataFrame, max_rijen: int = 10) -> pd.DataFrame:
+async def verwerk_testset(df_origineel: pd.DataFrame, max_rijen: int = 10) -> pd.DataFrame:
     """
     Verwerk de testset en classificeer elke omschrijving.
 
     Parameters
     ----------
-    llm : AzureOpenAILLM
-        De Azure OpenAI LLM instantie.
     df_origineel : pd.DataFrame
         Originele DataFrame met constructie omschrijvingen.
     max_rijen : int
@@ -35,7 +34,7 @@ def verwerk_testset(llm: AzureOpenAILLM, df_origineel: pd.DataFrame, max_rijen: 
     for idx, (_, rij) in enumerate(df.iterrows(), start=1):
         print(f"Verwerken rij {idx}/{len(df)}: {rij['rak']} - {rij['rakdeel']}")
 
-        rakdeel_info = RakdeelOmschrijving.classificeer_omschrijving(llm, rij["omschrijving"])
+        rakdeel_info = await RakdeelOmschrijving.classificeer_omschrijving(rij["omschrijving"])
 
         # Voeg LLM resultaten toe aan de kolommen
         for veld, waarde in rakdeel_info.model_dump().items():
@@ -48,24 +47,28 @@ def verwerk_testset(llm: AzureOpenAILLM, df_origineel: pd.DataFrame, max_rijen: 
     return df
 
 
-if __name__ == "__main__":
-    llm = AzureOpenAILLM()
+async def main():
+    async with AzureOpenAILLM() as llm:
+        is_valid, message = await llm.validate_api_key()
+        print(message)
 
-    is_valid, message = llm.validate_api_key()
-    print(message)
-
-    if is_valid:
-        # Verwerk de eerste 10 rijen van de testset
-        df_resultaat = verwerk_testset(llm, constructie_omschrijving, max_rijen=14)
+        if is_valid:
+            # Verwerk de eerste 10 rijen van de testset
+            df_resultaat = await verwerk_testset(constructie_omschrijving, max_rijen=14)
 
         print("\n=== Resultaten ===")
-        print(df_resultaat.to_string())
+            print("\n=== Resultaten ===")
+            print(df_resultaat.to_string())
 
-        # Opslaan naar Excel met timestamp
-        output_dir = DATA_DIR / "rakdeel_omschrijving"
-        output_dir.mkdir(exist_ok=True)
+            # Opslaan naar Excel met timestamp
+            output_dir = DATA_DIR / "rakdeel_omschrijving"
+            output_dir.mkdir(exist_ok=True)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = output_dir / f"rakdeel_resultaten_{timestamp}.xlsx"
-        df_resultaat.to_excel(output_path, index=False)
-        print(f"\nResultaten opgeslagen naar: {output_path}")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_path = output_dir / f"rakdeel_resultaten_{timestamp}.xlsx"
+            df_resultaat.to_excel(output_path, index=False)
+            print(f"\nResultaten opgeslagen naar: {output_path}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
