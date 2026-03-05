@@ -22,7 +22,6 @@ import pytest
 
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
-from tests.conftest import TEST_DATA_DIR
 
 
 def test_kzg0202(kzg0202_rak: Rak):
