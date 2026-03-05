@@ -343,10 +343,13 @@
         "materiaal_fundering": "",
         "aantal_palen_dwars": 2,
         "totaal_aantal_palen": 8,
+        "is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij": false,
         "aantal_onderzochte_palen": 0,
         "percentage_slechte_palen": 0.0,
         "percentage_ongewenste_schoorstand": 0.0,
         "aantal_palen_met_scheefstand": 0,
+        "is_schoorpalen_in_een_richting": true,
+        "aantal_schoorpalen": 8,
         "aantal_palen_met_paalbreuk": 0,
         "totaal_aantal_kespen": 0,
         "percentage_beschadigde_kespen": null,
@@ -371,7 +374,10 @@
       {
         "codering": "S1",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 0.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -379,7 +385,10 @@
       {
         "codering": "S2",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 2.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -387,7 +396,10 @@
       {
         "codering": "S3",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 5.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -395,7 +407,10 @@
       {
         "codering": "S4",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 12.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -403,7 +418,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 18.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -411,7 +429,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 19.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -419,7 +440,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 20.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -427,7 +451,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 21.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -435,7 +462,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 40.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -443,7 +473,10 @@
       {
         "codering": "S5",
         "omschrijving": "Scheur in metselwerk",
-        "figuurnummer": ""
+        "figuurnummer": "",
+        "afstand_van_startrak_m": 56.0,
+        "lengte_cm": "",
+        "scheurwijdte_mm": ""
       }
     ],
     [
@@ -451,7 +484,12 @@
       {
         "codering": "SH1.1.1",
         "omschrijving": "Scheur in hout verticaal",
-        "figuurnummer": "F1"
+        "figuurnummer": "F1",
+        "afstand_van_startrak_m": "",
+        "lengte_cm": 10.0,
+        "scheurwijdte_mm": 20.0,
+        "diepte_cm": 5.0,
+        "orientatie": "verticaal"
       }
     ],
     [
@@ -459,7 +497,12 @@
       {
         "codering": "SH1.1.2",
         "omschrijving": "Scheur in hout horizontaal",
-        "figuurnummer": "F2"
+        "figuurnummer": "F2",
+        "afstand_van_startrak_m": "",
+        "lengte_cm": 8.0,
+        "scheurwijdte_mm": 15.0,
+        "diepte_cm": 3.0,
+        "orientatie": "horizontaal"
       }
     ],
     [
@@ -467,7 +510,12 @@
       {
         "codering": "SH2.1.1",
         "omschrijving": "Scheur in hout horizontaal",
-        "figuurnummer": "F4"
+        "figuurnummer": "F4",
+        "afstand_van_startrak_m": "",
+        "lengte_cm": 6.0,
+        "scheurwijdte_mm": 10.0,
+        "diepte_cm": 4.0,
+        "orientatie": "horizontaal"
       }
     ],
     [
@@ -475,7 +523,12 @@
       {
         "codering": "SH1.2.1",
         "omschrijving": "Scheur in hout verticaal",
-        "figuurnummer": "F5"
+        "figuurnummer": "F5",
+        "afstand_van_startrak_m": "",
+        "lengte_cm": 12.0,
+        "scheurwijdte_mm": 25.0,
+        "diepte_cm": 8.0,
+        "orientatie": "verticaal"
       }
     ],
     [
@@ -483,7 +536,12 @@
       {
         "codering": "SH2.4.1",
         "omschrijving": "Scheur in hout verticaal",
-        "figuurnummer": "F11"
+        "figuurnummer": "F11",
+        "afstand_van_startrak_m": "",
+        "lengte_cm": 20.0,
+        "scheurwijdte_mm": 50.0,
+        "diepte_cm": 15.0,
+        "orientatie": "verticaal"
       }
     ]
   ],

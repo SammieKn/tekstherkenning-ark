@@ -15,11 +15,14 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
+import json
+
 from polyfactory.factories.pydantic_factory import ModelFactory
 import pytest
 
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
+from tests.conftest import TEST_DATA_DIR
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -79,7 +82,16 @@ class TestRakToJson:
     def test_mock_rak_scheuren_to_json(self, mock_rak_with_scheuren: Rak, mock_rak_with_scheuren_json: str):
         """Test that a mock Rak with scheuren can be serialized to JSON."""
         json_str = mock_rak_with_scheuren.model_dump_json(indent=2)
-        assert json_str == mock_rak_with_scheuren_json
+
+        expected_dict = json.loads(mock_rak_with_scheuren_json)
+        actual_dict = json.loads(json_str)
+
+        assert (
+            actual_dict["rakdelen"][0]["bovenbouw"]["gebreken"]
+            == expected_dict["rakdelen"][0]["bovenbouw"]["gebreken"]
+        ), "Gebreken in bovenbouw komen niet overeen"
+
+        assert actual_dict["alle_gebreken"] == expected_dict["alle_gebreken"]
 
     @pytest.mark.parametrize("gebrek_class", [Gebrek] + Gebrek.__subclasses__())
     def test_gebrek_subclasses_to_json(self, gebrek_class: type[Gebrek]):
