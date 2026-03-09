@@ -111,6 +111,14 @@ def mock_palen(mock_rak_with_gebreken: Rak) -> list[Paal]:
 
 
 @pytest.fixture()
+def mock_rak_with_scheuren_json() -> str:
+    """Fixture to provide a JSON string of a mock Rak with scheuren for testing JSON serialization."""
+
+    mock_rak_with_scheuren_json_path = TEST_DATA_DIR / "mock_rak_with_scheuren.json"
+    return mock_rak_with_scheuren_json_path.read_text()
+
+
+@pytest.fixture()
 def maak_paal_rij_1():
     """Maak een standaard paal in rij 1 met overschreven paalnummer en aansluitingsstatus.
 

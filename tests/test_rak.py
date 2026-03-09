@@ -15,13 +15,13 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 
 """
 
+import json
+
+from polyfactory.factories.pydantic_factory import ModelFactory
+import pytest
+
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
-from tekstherkenning_ark.models.rakdeel import Rakdeel
-from tekstherkenning_ark.models.bovenbouw import Bovenbouw
-from tekstherkenning_ark.models.onderbouw import Onderbouw
-from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.models.vloer import Vloer
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -75,3 +75,59 @@ def test_kzg0202_kesp_breedtes(kzg0202_rak: Rak):
     ), f"Expected 1 non-numeric kesp hoogte, got {len(all_non_numeric)}: {all_non_numeric}"
     assert sum(all_hoogtes) == 1549, f"Expected total height of 1550 cm, got {sum(all_hoogtes)}"
     # expected = 1549 + 1"NM" (total len 97, numerical len 96)
+
+
+class TestRakToJson:
+    def test_mock_rak_scheuren_to_json(self, mock_rak_with_scheuren: Rak, mock_rak_with_scheuren_json: str):
+        """Test that a mock Rak with scheuren can be serialized to JSON."""
+        json_str = mock_rak_with_scheuren.model_dump_json(indent=2)
+
+        expected_dict = json.loads(mock_rak_with_scheuren_json)
+        actual_dict = json.loads(json_str)
+
+        assert (
+            actual_dict["rakdelen"][0]["bovenbouw"]["gebreken"]
+            == expected_dict["rakdelen"][0]["bovenbouw"]["gebreken"]
+        ), "Gebreken in bovenbouw komen niet overeen"
+
+        assert actual_dict["alle_gebreken"] == expected_dict["alle_gebreken"]
+
+    @pytest.mark.parametrize("gebrek_class", [Gebrek] + Gebrek.__subclasses__())
+    def test_gebrek_subclasses_to_json(self, gebrek_class: type[Gebrek]):
+        """Test that all Gebrek subclasses can be serialized to JSON."""
+
+        # Create a mock instance of the subclass using a ModelFactory,
+        # which will fill in all required fields with dummy data
+        class SubclassMockFactory(ModelFactory[gebrek_class]):
+            __model__ = gebrek_class
+
+        instance = SubclassMockFactory.build()
+
+        # Check if we actually got an instance of the correct class
+        assert isinstance(instance, gebrek_class), f"Factory did not create an instance of {gebrek_class.__name__}"
+
+        # Put the gebrek in a Rak
+        rak = Rak(
+            raknaam="TESTRAK",
+            totale_lengte_m=10.0,
+            rakdelen=[],
+            gebreken=[instance],
+        )
+
+        # Create the JSON string from the instance
+        json_str = rak.model_dump_json(indent=2)
+
+        assert json_str is not None, f"JSON serialization failed for {gebrek_class.__name__}"
+
+        # Retrieve all expected fields for the subclass
+        expected_fields = list(gebrek_class.model_fields.keys()) + list(gebrek_class.model_computed_fields.keys())
+
+        # Subclasses should have more fields than the base Gebrek class
+        if gebrek_class != Gebrek:
+            assert len(expected_fields) > len(Gebrek.model_fields) + len(Gebrek.model_computed_fields)
+
+        # Check if all expected fields are present in the JSON output
+        for field in expected_fields:
+            assert (
+                f'"{field}":' in json_str
+            ), f"Expected field '{field}' not found in JSON output for {gebrek_class.__name__}"
