@@ -181,7 +181,7 @@ class Onderbouw(RakBaseModel):
     def aantal_ongewenst_schoor(self) -> int:
         """Aantal palen met geconstateerde negatieve schoorstand."""
 
-        return sum(paal.is_ongewenste_schoorstand and paal.paalrij_nummer == 1 for paal in self.palen)
+        return sum((paal.is_ongewenste_schoorstand or 0) and paal.paalrij_nummer == 1 for paal in self.palen)
 
     @computed_field
     @property
@@ -227,7 +227,7 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_beschadigde_kespen(self) -> int:
         """Aantal kespen met vervorming of aantasting."""
-        return sum(kesp.is_vervormd or kesp.is_aangetast for kesp in self.kespen)
+        return sum((kesp.is_vervormd or 0) or (kesp.is_aangetast or 0) for kesp in self.kespen)
 
     @computed_field
     @property
