@@ -459,3 +459,227 @@ def test_get_consecutive_palen_no_hoh_afstand_cm(mock_rakdeel: Rakdeel):
     assert isinstance(result, OnverwachtResultaat)
     assert result.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
     assert "Ontbrekende hoh_afstand_cm voor paal" in result.details
+
+
+def test_aantal_paalrijen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_paalrijen het aantal unieke paalrijen teruggeeft."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft palen in rij 1 (P1.1, P1.2, P1.3) en rij 2 (P2.2)
+    assert onderbouw.aantal_paalrijen == 2
+
+
+def test_aantal_paalrijen_geen_palen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_paalrijen 0 is als er geen palen zijn."""
+    mock_rakdeel.onderbouw.palen = []
+
+    assert mock_rakdeel.onderbouw.aantal_paalrijen == 0
+
+
+def test_aantal_palen_per_rij(mock_rakdeel: Rakdeel):
+    """Test dat aantal_palen_per_rij een correct overzicht geeft van palen per rij."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft 3 palen in rij 1 en 1 paal in rij 2
+    assert onderbouw.aantal_palen_per_rij == {1: 3, 2: 1}
+
+
+def test_aantal_palen_per_rij_extra_paal(mock_rakdeel: Rakdeel, maak_paal_rij_1):
+    """Test dat aantal_palen_per_rij correct update bij het toevoegen van palen."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Voeg extra paal toe aan rij 1
+    extra_paal = maak_paal_rij_1("P1.4", AansluitingStatus.GOED)
+    onderbouw.palen.append(extra_paal)
+
+    assert onderbouw.aantal_palen_per_rij == {1: 4, 2: 1}
+
+
+def test_aantal_palen_per_rij_meerdere_rijen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_palen_per_rij correct werkt met meerdere paalrijen."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Voeg palen toe aan een derde rij
+    paal_rij_3_1 = Paal(
+        paal_nummer="P3.1",
+        paalrij_nummer=3,
+        hoh_paalnummer="",
+        diameter_haaks=150,
+        diameter_parallel=150,
+        diameter_gemiddeld=150,
+        hoh_afstand_cm=100,
+        schoor_graden=5,
+        schoor_richting="PNV",
+        afstand_frontwand_cm=25,
+        is_scheefstand=False,
+        is_paalbreuk=False,
+        is_aantasting=False,
+        aansluiting_status=AansluitingStatus.GOED,
+        positionering_aansluiting_cm="0",
+    )
+    paal_rij_3_2 = Paal(
+        paal_nummer="P3.2",
+        paalrij_nummer=3,
+        hoh_paalnummer="P3.1",
+        diameter_haaks=150,
+        diameter_parallel=150,
+        diameter_gemiddeld=150,
+        hoh_afstand_cm=100,
+        schoor_graden=5,
+        schoor_richting="PNV",
+        afstand_frontwand_cm=25,
+        is_scheefstand=False,
+        is_paalbreuk=False,
+        is_aantasting=False,
+        aansluiting_status=AansluitingStatus.GOED,
+        positionering_aansluiting_cm="0",
+    )
+    onderbouw.palen.extend([paal_rij_3_1, paal_rij_3_2])
+
+    assert onderbouw.aantal_palen_per_rij == {1: 3, 2: 1, 3: 2}
+
+
+def test_aantal_ongewenst_schoor(mock_rakdeel: Rakdeel):
+    """Test dat aantal_ongewenst_schoor alleen eerste-rij palen met negatieve schoorstand telt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Alle palen hebben standaard PNV (positief), dus aantal_ongewenst_schoor moet 0 zijn
+    assert onderbouw.aantal_ongewenst_schoor == 0
+
+
+def test_aantal_ongewenst_schoor_een_paal(mock_rakdeel: Rakdeel):
+    """Test dat aantal_ongewenst_schoor correct telt bij één paal met ongewenste schoorstand."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet P1.1 (eerste rij) op negatieve schoorstand
+    p1_1 = next(paal for paal in onderbouw.palen if paal.paal_nummer == "P1.1")
+    p1_1.schoor_richting = SchoorStand.NEGATIEF
+
+    assert onderbouw.aantal_ongewenst_schoor == 1
+
+
+def test_aantal_ongewenst_schoor_meerdere_palen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_ongewenst_schoor correct telt bij meerdere palen met ongewenste schoorstand."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet alle eerste-rij palen op negatieve schoorstand
+    for paal in onderbouw.palen:
+        if paal.paalrij_nummer == 1:
+            paal.schoor_richting = SchoorStand.NEGATIEF
+
+    assert onderbouw.aantal_ongewenst_schoor == 3
+
+
+def test_aantal_ongewenst_schoor_tweede_rij_telt_niet_mee(mock_rakdeel: Rakdeel):
+    """Test dat aantal_ongewenst_schoor alleen eerste-rij palen meetelt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet alleen P2.2 (tweede rij) op negatieve schoorstand
+    p2_2 = next(paal for paal in onderbouw.palen if paal.paal_nummer == "P2.2")
+    p2_2.schoor_richting = SchoorStand.NEGATIEF
+
+    # Tweede-rij palen meetellen niet
+    assert onderbouw.aantal_ongewenst_schoor == 0
+
+
+def test_totaal_aantal_kespen(mock_rakdeel: Rakdeel):
+    """Test dat totaal_aantal_kespen het juiste aantal kespen teruggeeft."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft 7 kespen (K1 t/m K7)
+    assert onderbouw.totaal_aantal_kespen == 7
+
+
+def test_totaal_aantal_kespen_geen_kespen(mock_rakdeel: Rakdeel):
+    """Test dat totaal_aantal_kespen 0 is als er geen kespen zijn."""
+    mock_rakdeel.onderbouw.kespen = []
+
+    assert mock_rakdeel.onderbouw.totaal_aantal_kespen == 0
+
+
+def test_aantal_beschadigde_kespen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_beschadigde_kespen kespen met vervorming of aantasting telt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft 5 kespen met is_aangetast=True (K2 t/m K6)
+    assert onderbouw.aantal_beschadigde_kespen == 5
+
+
+def test_aantal_beschadigde_kespen_met_vervorming(mock_rakdeel: Rakdeel):
+    """Test dat aantal_beschadigde_kespen ook vervormde kespen meetelt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet K1 (niet aangetast) op vervormd
+    onderbouw.kespen[0].is_vervormd = True
+
+    # Nu zijn er 6 beschadigde kespen: K1 (vervormd) en K2-K6 (aangetast)
+    assert onderbouw.aantal_beschadigde_kespen == 6
+
+
+def test_aantal_beschadigde_kespen_geen_kespen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_beschadigde_kespen 0 is als er geen kespen zijn."""
+    mock_rakdeel.onderbouw.kespen = []
+
+    assert mock_rakdeel.onderbouw.aantal_beschadigde_kespen == 0
+
+
+def test_aantal_aansluitingen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_aansluitingen palen met status GOED of SLECHT telt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft 4 palen, allemaal met aansluiting_status GOED
+    assert onderbouw.aantal_aansluitingen == 4
+
+
+def test_aantal_aansluitingen_gemengd(mock_rakdeel: Rakdeel):
+    """Test dat aantal_aansluitingen zowel GOED als SLECHT aansluitingen telt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet enkele palen op SLECHT
+    onderbouw.palen[0].aansluiting_status = AansluitingStatus.SLECHT
+    onderbouw.palen[1].aansluiting_status = AansluitingStatus.SLECHT
+
+    # Nog steeds 4 aansluitingen (2 GOED + 2 SLECHT)
+    assert onderbouw.aantal_aansluitingen == 4
+
+
+def test_aantal_aansluitingen_met_niet_meetbaar(mock_rakdeel: Rakdeel):
+    """Test dat aantal_aansluitingen palen met status NIET_MEETBAAR niet meetelt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet enkele palen op NIET_MEETBAAR
+    onderbouw.palen[0].aansluiting_status = AansluitingStatus.NIET_MEETBAAR
+    onderbouw.palen[1].aansluiting_status = AansluitingStatus.NIET_MEETBAAR
+
+    # Alleen 2 aansluitingen (de palen met status GOED)
+    assert onderbouw.aantal_aansluitingen == 2
+
+
+def test_aantal_slechte_aansluitingen(mock_rakdeel: Rakdeel):
+    """Test dat aantal_slechte_aansluitingen alleen palen met status SLECHT telt."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Mock data heeft 4 palen, allemaal met aansluiting_status GOED
+    assert onderbouw.aantal_slechte_aansluitingen == 0
+
+
+def test_aantal_slechte_aansluitingen_enkele_slechte(mock_rakdeel: Rakdeel):
+    """Test dat aantal_slechte_aansluitingen correct telt bij enkele slechte aansluitingen."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet twee palen op SLECHT
+    onderbouw.palen[0].aansluiting_status = AansluitingStatus.SLECHT
+    onderbouw.palen[1].aansluiting_status = AansluitingStatus.SLECHT
+
+    assert onderbouw.aantal_slechte_aansluitingen == 2
+
+
+def test_aantal_slechte_aansluitingen_alle_slecht(mock_rakdeel: Rakdeel):
+    """Test dat aantal_slechte_aansluitingen correct telt als alle aansluitingen slecht zijn."""
+    onderbouw = mock_rakdeel.onderbouw
+
+    # Zet alle palen op SLECHT
+    for paal in onderbouw.palen:
+        paal.aansluiting_status = AansluitingStatus.SLECHT
+
+    assert onderbouw.aantal_slechte_aansluitingen == 4
