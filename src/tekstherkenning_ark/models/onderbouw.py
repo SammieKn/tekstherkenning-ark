@@ -44,13 +44,13 @@ class Onderbouw(RakBaseModel):
         """Return a string that uniquely identifies this Onderbouw instance."""
         return "onderbouw"
 
-    @computed_field  # TODO
+    @computed_field
     @property
     def aantal_paalrijen(self) -> int:
         """Aantal paalrijen in de onderbouw (unieke paalrij_nummer waarden)."""
         return len(set(paal.paalrij_nummer for paal in self.palen))
 
-    @computed_field  # TODO
+    @computed_field
     @property
     def aantal_palen_per_rij(self) -> dict[int, int]:
         """Aantal palen per paalrij in de onderbouw.
@@ -60,17 +60,13 @@ class Onderbouw(RakBaseModel):
         dict[int, int]
             Dictionary waarbij de keys de paalrij_nummer zijn en de values het aantal palen in die rij.
         """
+        return {rij_nummer: len(palen) for rij_nummer, palen in self.paal_rijen.items()}
 
-        # TODO is rijnummer P1.12 `1`` of `12`?
-
-        rijen = self.paal_rijen
-        return {rij_nummer: len(palen) for rij_nummer, palen in rijen.items()}
-
-    @computed_field  # TODO
+    @computed_field
     @property
     def aantal_rijen_onderzocht(self) -> int:
         """Aantal onderzochte paalrijen in de onderbouw."""
-        return len(self.paal_rijen)
+        return {rij_nummer: any(paal.is_onderzocht for paal in palen) for rij_nummer, palen in self.paal_rijen.items()}
 
     @computed_field
     @property
@@ -78,19 +74,21 @@ class Onderbouw(RakBaseModel):
         """Aantal paalrijen in dwarsdoorsneden (maximale paalrij_nummer waarde)."""
         if not self.palen:
             return 0
-        return max(paal.paalrij_nummer for paal in self.palen)
+        return max(paal.paalrij_nummer if isinstance(paal.paalrij_nummer, (int, float)) else 0 for paal in self.palen)
 
-    @computed_field  # TODO is een aansluiting altijd aanwezig, of alleen als de aansluitingstatus slecht of goed is?
+    @computed_field
     @property
     def aantal_aansluitingen(self) -> int:
         """Totaal aantal aansluitingen tussen palen en kespen in de onderbouw."""
-        return sum(paal.aansluiting_status is not None for paal in self.palen)
+        return sum(
+            paal.aansluiting_status in [AansluitingStatus.GOED, AansluitingStatus.SLECHT] for paal in self.palen
+        )
 
     @computed_field
     @property
     def aantal_slechte_aansluitingen(self) -> int:
         """Totaal aantal slechte aansluitingen tussen palen en kespen in de onderbouw."""
-        return sum(paal.aansluiting_status == AansluitingStatus.SLECHT for paal in self.palen)
+        return sum(paal.aansluiting_status is AansluitingStatus.SLECHT for paal in self.palen)
 
     @computed_field
     @property
