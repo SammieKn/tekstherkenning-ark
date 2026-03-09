@@ -44,6 +44,34 @@ class Onderbouw(RakBaseModel):
         """Return a string that uniquely identifies this Onderbouw instance."""
         return "onderbouw"
 
+    @computed_field  # TODO
+    @property
+    def aantal_paalrijen(self) -> int:
+        """Aantal paalrijen in de onderbouw (unieke paalrij_nummer waarden)."""
+        return len(set(paal.paalrij_nummer for paal in self.palen))
+
+    @computed_field  # TODO
+    @property
+    def aantal_palen_per_rij(self) -> dict[int, int]:
+        """Aantal palen per paalrij in de onderbouw.
+
+        Returns
+        -------
+        dict[int, int]
+            Dictionary waarbij de keys de paalrij_nummer zijn en de values het aantal palen in die rij.
+        """
+
+        # TODO is rijnummer P1.12 `1`` of `12`?
+
+        rijen = self.paal_rijen
+        return {rij_nummer: len(palen) for rij_nummer, palen in rijen.items()}
+
+    @computed_field  # TODO
+    @property
+    def aantal_rijen_onderzocht(self) -> int:
+        """Aantal onderzochte paalrijen in de onderbouw."""
+        return len(self.paal_rijen)
+
     @computed_field
     @property
     def aantal_palen_dwars(self) -> int:
@@ -51,6 +79,18 @@ class Onderbouw(RakBaseModel):
         if not self.palen:
             return 0
         return max(paal.paalrij_nummer for paal in self.palen)
+
+    @computed_field  # TODO is een aansluiting altijd aanwezig, of alleen als de aansluitingstatus slecht of goed is?
+    @property
+    def aantal_aansluitingen(self) -> int:
+        """Totaal aantal aansluitingen tussen palen en kespen in de onderbouw."""
+        return sum(paal.aansluiting_status is not None for paal in self.palen)
+
+    @computed_field
+    @property
+    def aantal_slechte_aansluitingen(self) -> int:
+        """Totaal aantal slechte aansluitingen tussen palen en kespen in de onderbouw."""
+        return sum(paal.aansluiting_status == AansluitingStatus.SLECHT for paal in self.palen)
 
     @computed_field
     @property
@@ -140,13 +180,19 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
+    def aantal_ongewenst_schoor(self) -> int:
+        """Aantal palen met geconstateerde negatieve schoorstand."""
+
+        return sum(paal.is_ongewenste_schoorstand and paal.paalrij_nummer == 1 for paal in self.palen)
+
+    @computed_field
+    @property
     def percentage_ongewenste_schoorstand(self) -> float | None:
         """Percentage palen met ongewenste/afwijkende schoorstand."""
         if not self.palen:
             return None
 
-        aantal_ongewenst = sum(1 for paal in self.palen if paal.is_ongewenste_schoorstand and paal.paalrij_nummer == 1)
-        return round((aantal_ongewenst / len(self.palen)) * 100, 2)
+        return round((self.aantal_ongewenst_schoor / len(self.palen)) * 100, 2)
 
     @computed_field
     @property
@@ -181,13 +227,18 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
+    def aantal_beschadigde_kespen(self) -> int:
+        """Aantal kespen met vervorming of aantasting."""
+        return sum(kesp.is_vervormd or kesp.is_aangetast for kesp in self.kespen)
+
+    @computed_field
+    @property
     def percentage_beschadigde_kespen(self) -> float | None:
         """Percentage kespen met vervorming of aantasting."""
         if not self.kespen:
             return None
 
-        aantal_beschadigd = sum(1 for kesp in self.kespen if kesp.is_vervormd or kesp.is_aangetast)
-        return round((aantal_beschadigd / len(self.kespen)) * 100, 2)
+        return round((self.aantal_beschadigde_kespen / len(self.kespen)) * 100, 2)
 
     @computed_field
     @property
