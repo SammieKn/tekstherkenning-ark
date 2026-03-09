@@ -428,7 +428,7 @@ class Rak(RakBaseModel):
 
         rows = []
         for rakdeel in self.rakdelen:
-            afstand_van_startrak_cm = 0
+            afstand_van_startrak_cm = rakdeel.lengte_m * 100
 
             for paal in rakdeel.onderbouw.palen:
                 paal_row = {
