@@ -9,7 +9,6 @@ from pydantic import ConfigDict, computed_field
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
@@ -427,7 +426,7 @@ class Rak(RakBaseModel):
 
         rows = []
         for rakdeel in self.rakdelen:
-            afstand_van_startrak_cm = rakdeel.lengte_m * 100
+            afstand_van_startrak_cm = rakdeel.lengte_m * 100 if isinstance(rakdeel.lengte_m, (int, float)) else None
 
             for paal in rakdeel.onderbouw.palen:
                 paal_row = {
@@ -438,7 +437,7 @@ class Rak(RakBaseModel):
                 }
                 rows.append(paal_row)
 
-                if paal.paalrij_nummer == 1 and not afstand_van_startrak_cm is None:
+                if paal.paalrij_nummer == 1 and afstand_van_startrak_cm is not None:
                     afstand_van_startrak_cm = (
                         (afstand_van_startrak_cm + paal.hoh_afstand_cm) if paal.hoh_afstand_cm else None
                     )

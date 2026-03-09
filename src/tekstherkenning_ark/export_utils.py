@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 from tekstherkenning_ark.document.smart_document import SmartDocument
-from typing import TYPE_CHECKING
+from typing_extensions import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.logger import get_logger
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 logger = get_logger(__name__)
 
