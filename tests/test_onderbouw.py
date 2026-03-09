@@ -604,3 +604,16 @@ def test_aantal_slechte_aansluitingen_alle_slecht(mock_onderbouw: Onderbouw):
         paal.aansluiting_status = AansluitingStatus.SLECHT
 
     assert mock_onderbouw.aantal_slechte_aansluitingen == 4
+
+
+def test_aantal_rijen_onderzocht_twee_rijen(mock_onderbouw: Onderbouw):
+    """Test dat aantal_rijen_onderzocht het juiste aantal onderzochte paalrijen teruggeeft."""
+    assert mock_onderbouw.aantal_rijen_onderzocht == 2
+
+
+def test_aantal_rijen_onderzocht_een_rij(mock_onderbouw: Onderbouw):
+    """Test dat aantal_rijen_onderzocht het juiste aantal onderzochte paalrijen teruggeeft."""
+    for paal in [p for p in mock_onderbouw.palen if p.paal_nummer_main == 2]:
+        paal.is_onderzocht = False
+
+    assert mock_onderbouw.aantal_rijen_onderzocht == 1

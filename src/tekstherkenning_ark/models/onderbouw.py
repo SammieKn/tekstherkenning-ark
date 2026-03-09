@@ -66,7 +66,7 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_rijen_onderzocht(self) -> int:
         """Aantal onderzochte paalrijen in de onderbouw."""
-        return {rij_nummer: any(paal.is_onderzocht for paal in palen) for rij_nummer, palen in self.paal_rijen.items()}
+        return sum([any(paal.is_onderzocht for paal in palen) for palen in self.paal_rijen.values()])
 
     @computed_field
     @property
