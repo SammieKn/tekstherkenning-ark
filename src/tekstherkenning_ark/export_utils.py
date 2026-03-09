@@ -6,7 +6,9 @@ import pandas as pd
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from typing import TYPE_CHECKING
 
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 logger = get_logger(__name__)
 
@@ -101,3 +103,31 @@ def remove_onverwacht_resultaat_from_table_rows(
     logger.info(f"{n_onverwacht} onverwachte resultaten gevonden en omgezet naar hun waarde in de tabel.")
 
     return table_rows
+
+
+def waarde_naar_excel(waarde: bool | NietBeschikbaar | OnverwachtResultaat):
+    """Converteer toestandwaarde naar een Excel-vriendelijk type."""
+    if isinstance(waarde, bool):
+        return waarde
+
+    if hasattr(waarde, "model_dump"):
+        try:
+            return waarde.model_dump()
+        except Exception:
+            return str(waarde)
+
+    if hasattr(waarde, "value"):
+        return waarde.value
+
+    return str(waarde)
+
+
+def haal_rakdeel_id_en_model_pad(pad: str) -> tuple[str, str]:
+    """Haal `rakdeel_id` en `model_pad` uit hiërarchisch pad."""
+    delen = [deel for deel in pad.split("/") if deel]
+    if len(delen) < 2:
+        return "", ""
+
+    rakdeel_id = delen[1]
+    model_pad = "/".join(delen[2:]) if len(delen) > 2 else "rakdeel"
+    return rakdeel_id, model_pad

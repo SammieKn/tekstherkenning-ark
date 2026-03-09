@@ -19,37 +19,14 @@ from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
-from tekstherkenning_ark.export_utils import remove_collection_fields, remove_onverwacht_resultaat_from_table_rows
+from tekstherkenning_ark.export_utils import (
+    remove_collection_fields,
+    remove_onverwacht_resultaat_from_table_rows,
+    waarde_naar_excel,
+    haal_rakdeel_id_en_model_pad,
+)
 
 logger = get_logger(__name__)
-
-
-def _waarde_naar_excel(waarde: bool | NietBeschikbaar | OnverwachtResultaat):
-    """Converteer toestandwaarde naar een Excel-vriendelijk type."""
-    if isinstance(waarde, bool):
-        return waarde
-
-    if hasattr(waarde, "model_dump"):
-        try:
-            return waarde.model_dump()
-        except Exception:
-            return str(waarde)
-
-    if hasattr(waarde, "value"):
-        return waarde.value
-
-    return str(waarde)
-
-
-def _haal_rakdeel_id_en_model_pad(pad: str) -> tuple[str, str]:
-    """Haal `rakdeel_id` en `model_pad` uit hiërarchisch pad."""
-    delen = [deel for deel in pad.split("/") if deel]
-    if len(delen) < 2:
-        return "", ""
-
-    rakdeel_id = delen[1]
-    model_pad = "/".join(delen[2:]) if len(delen) > 2 else "rakdeel"
-    return rakdeel_id, model_pad
 
 
 class Rak(RakBaseModel):
@@ -208,13 +185,13 @@ class Rak(RakBaseModel):
             # Sheet: Onderdeel Aantasting (hiërarchisch)
             aantasting_rows = []
             for pad, toestandonderdeel in self.alle_toestandsbepalingen:
-                rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+                rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
                 aantasting_rows.append(
                     {
                         "rakdeel_id": rakdeel_id,
                         "model_pad": model_pad,
                         "onderdeel": toestandonderdeel.constructie_onderdeel,
-                        "aangetast": _waarde_naar_excel(toestandonderdeel.aangetast),
+                        "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
                     }
                 )
 
@@ -495,7 +472,7 @@ class Rak(RakBaseModel):
 
         rows = []
         for pad, gebrek in self.alle_gebreken:
-            rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
             gebrek_type = type(gebrek).__name__
             gebrek_row = {
                 "rak_id": self.raknaam,
@@ -514,7 +491,7 @@ class Rak(RakBaseModel):
 
         gebreken_per_type: dict[str, list[dict]] = {}
         for pad, gebrek in self.alle_gebreken:
-            rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
             gebrek_type = type(gebrek).__name__
             gebrek_row = {
                 "rak_id": self.raknaam,
@@ -540,13 +517,13 @@ class Rak(RakBaseModel):
 
         rows = []
         for pad, toestandonderdeel in self.alle_toestandsbepalingen:
-            rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
             row = {
                 "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
                 "model_pad": model_pad,
                 "onderdeel": toestandonderdeel.constructie_onderdeel,
-                "aangetast": _waarde_naar_excel(toestandonderdeel.aangetast),
+                "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
             }
             rows.append(row)
 
@@ -558,7 +535,7 @@ class Rak(RakBaseModel):
 
         rows = []
         for pad, onverwacht in self.alle_onverwachte_resultaten:
-            rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
             row = {
                 "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
