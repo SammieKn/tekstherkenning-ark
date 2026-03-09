@@ -113,23 +113,23 @@ class Rak(RakBaseModel):
         return resultaat
 
     @property
-    def alle_houtmonsters(self) -> list[tuple[str, str, Houtmonster]]:
+    def alle_houtmonsters(self) -> list[tuple[str, Houtmonster]]:
         """Verzamel alle houtmonsters uit alle palen in alle rakdelen.
 
         Returns
         -------
-        list[tuple[str, str, Houtmonster]]
-            Lijst van tuples met (rakdeel_id, paal_nummer, houtmonster).
+        list[tuple[str, Houtmonster]]
+            Lijst van tuples met (rakdeel_id, houtmonster).
         """
-        resultaat: list[tuple[str, str, Houtmonster]] = []
+        resultaat: list[tuple[str, Houtmonster]] = []
         for rakdeel in self.rakdelen:
             for paal in rakdeel.onderbouw.palen:
                 for houtmonster in paal.houtmonsters:
-                    resultaat.append((rakdeel.rakdeel_id, paal.paal_nummer, houtmonster))
+                    resultaat.append((rakdeel.rakdeel_id, houtmonster))
 
         # Add unassigned houtmonsters
         for houtmonster in self.unassigned_houtmonsters:
-            resultaat.append(("unassigned", "unassigned", houtmonster))
+            resultaat.append(("unassigned", houtmonster))
         return resultaat
 
     def to_excel(self, export_dir: Path | None = None) -> Path:
@@ -228,10 +228,10 @@ class Rak(RakBaseModel):
 
             # Sheet: Houtmonsters
             houtmonster_rows = []
-            for rakdeel_id, paal_nummer, houtmonster in self.alle_houtmonsters:
+            for rakdeel_id, houtmonster in self.alle_houtmonsters:
                 hm_dict = houtmonster.model_dump()
                 hm_dict["rakdeel_id"] = rakdeel_id
-                hm_dict["paal_nummer_ref"] = paal_nummer
+                hm_dict["paal_nummer_ref"] = houtmonster.paal_nummer
                 houtmonster_rows.append(hm_dict)
             if houtmonster_rows:
                 df_houtmonsters = pd.DataFrame(houtmonster_rows)
@@ -352,7 +352,7 @@ class Rak(RakBaseModel):
         # Get assigned objects from rak object
         assigned_palen = [p for _, p in self.alle_palen]
         assigned_kespen = [k for _, k in self.alle_kespen]
-        assigned_houtmonsters = [hm for _, _, hm in self.alle_houtmonsters]
+        assigned_houtmonsters = [hm for _, hm in self.alle_houtmonsters]
 
         # Check for unassigned palen
         unassigned_palen = []
@@ -411,11 +411,10 @@ class Rak(RakBaseModel):
         """Genereer een DataFrame tabel met houtmonster data"""
 
         rows = []
-        for rakdeel_id, paal_nummer, houtmonster in self.alle_houtmonsters:
+        for rakdeel_id, houtmonster in self.alle_houtmonsters:
             houtmonster_row = {
                 "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
-                "paal_nummer_ref": paal_nummer,
                 **remove_collection_fields(houtmonster.model_dump(mode="python")),
             }
             rows.append(houtmonster_row)
@@ -434,11 +433,7 @@ class Rak(RakBaseModel):
                 paal_row = {
                     "rak_id": self.raknaam,
                     "rakdeel_id": rakdeel.rakdeel_id,
-                    "paal_nummer": paal.paal_nummer,
                     "afstand_van_startrak_cm": afstand_van_startrak_cm,
-                    "afstand_op_paalrij_cm": paal.hoh_afstand_cm if paal.paalrij_nummer == 2 else 0,
-                    "paal_nummer_main": paal.paal_nummer_main,
-                    "paalrij_nummer": paal.paalrij_nummer,
                     **remove_collection_fields(paal.model_dump(mode="python")),
                 }
                 rows.append(paal_row)
@@ -459,7 +454,6 @@ class Rak(RakBaseModel):
             kesp_row = {
                 "rak_id": self.raknaam,
                 "rakdeel_id": rakdeel_id,
-                "kesp_nummer": kesp.kesp_nummer,
                 **remove_collection_fields(kesp.model_dump(mode="python")),
             }
             rows.append(kesp_row)
