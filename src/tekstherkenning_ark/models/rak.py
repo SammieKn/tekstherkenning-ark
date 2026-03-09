@@ -18,37 +18,14 @@ from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
-from tekstherkenning_ark.utils import get_rak_id
+from tekstherkenning_ark.export_utils import (
+    remove_collection_fields,
+    remove_onverwacht_resultaat_from_table_rows,
+    waarde_naar_excel,
+    haal_rakdeel_id_en_model_pad,
+)
 
 logger = get_logger(__name__)
-
-
-def _waarde_naar_excel(waarde):
-    """Converteer toestandwaarde naar een Excel-vriendelijk type."""
-    if isinstance(waarde, bool):
-        return waarde
-
-    if hasattr(waarde, "model_dump"):
-        try:
-            return waarde.model_dump()
-        except Exception:
-            return str(waarde)
-
-    if hasattr(waarde, "value"):
-        return waarde.value
-
-    return str(waarde)
-
-
-def _haal_rakdeel_id_en_model_pad(pad: str) -> tuple[str, str]:
-    """Haal `rakdeel_id` en `model_pad` uit hiërarchisch pad."""
-    delen = [deel for deel in pad.split("/") if deel]
-    if len(delen) < 2:
-        return "", ""
-
-    rakdeel_id = delen[1]
-    model_pad = "/".join(delen[2:]) if len(delen) > 2 else "rakdeel"
-    return rakdeel_id, model_pad
 
 
 class Rak(RakBaseModel):
@@ -135,23 +112,23 @@ class Rak(RakBaseModel):
         return resultaat
 
     @property
-    def alle_houtmonsters(self) -> list[tuple[str, str, Houtmonster]]:
+    def alle_houtmonsters(self) -> list[tuple[str, Houtmonster]]:
         """Verzamel alle houtmonsters uit alle palen in alle rakdelen.
 
         Returns
         -------
-        list[tuple[str, str, Houtmonster]]
-            Lijst van tuples met (rakdeel_id, paal_nummer, houtmonster).
+        list[tuple[str, Houtmonster]]
+            Lijst van tuples met (rakdeel_id, houtmonster).
         """
-        resultaat: list[tuple[str, str, Houtmonster]] = []
+        resultaat: list[tuple[str, Houtmonster]] = []
         for rakdeel in self.rakdelen:
             for paal in rakdeel.onderbouw.palen:
                 for houtmonster in paal.houtmonsters:
-                    resultaat.append((rakdeel.rakdeel_id, paal.paal_nummer, houtmonster))
+                    resultaat.append((rakdeel.rakdeel_id, houtmonster))
 
         # Add unassigned houtmonsters
         for houtmonster in self.unassigned_houtmonsters:
-            resultaat.append(("unassigned", "unassigned", houtmonster))
+            resultaat.append(("unassigned", houtmonster))
         return resultaat
 
     def to_excel(self, export_dir: Path | None = None) -> Path:
@@ -207,13 +184,13 @@ class Rak(RakBaseModel):
             # Sheet: Onderdeel Aantasting (hiërarchisch)
             aantasting_rows = []
             for pad, toestandonderdeel in self.alle_toestandsbepalingen:
-                rakdeel_id, model_pad = _haal_rakdeel_id_en_model_pad(pad)
+                rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
                 aantasting_rows.append(
                     {
                         "rakdeel_id": rakdeel_id,
                         "model_pad": model_pad,
                         "onderdeel": toestandonderdeel.constructie_onderdeel,
-                        "aangetast": _waarde_naar_excel(toestandonderdeel.aangetast),
+                        "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
                     }
                 )
 
@@ -250,10 +227,10 @@ class Rak(RakBaseModel):
 
             # Sheet: Houtmonsters
             houtmonster_rows = []
-            for rakdeel_id, paal_nummer, houtmonster in self.alle_houtmonsters:
+            for rakdeel_id, houtmonster in self.alle_houtmonsters:
                 hm_dict = houtmonster.model_dump()
                 hm_dict["rakdeel_id"] = rakdeel_id
-                hm_dict["paal_nummer_ref"] = paal_nummer
+                hm_dict["paal_nummer_ref"] = houtmonster.paal_nummer
                 houtmonster_rows.append(hm_dict)
             if houtmonster_rows:
                 df_houtmonsters = pd.DataFrame(houtmonster_rows)
@@ -374,7 +351,7 @@ class Rak(RakBaseModel):
         # Get assigned objects from rak object
         assigned_palen = [p for _, p in self.alle_palen]
         assigned_kespen = [k for _, k in self.alle_kespen]
-        assigned_houtmonsters = [hm for _, _, hm in self.alle_houtmonsters]
+        assigned_houtmonsters = [hm for _, hm in self.alle_houtmonsters]
 
         # Check for unassigned palen
         unassigned_palen = []
@@ -407,6 +384,161 @@ class Rak(RakBaseModel):
                 f"{len(unassigned_houtmonsters)} houtmonsters could not be assigned to any paal. Storing them in `unassigned_houtmonsters` list in Rak."
             )
             self.unassigned_houtmonsters = unassigned_houtmonsters
+
+    def _get_rak_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met rak data"""
+
+        rows = [remove_collection_fields(self.model_dump(mode="python"))]
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_rakdeel_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met rakdeel data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            rakdeel_row = {
+                "rak_id": self.raknaam,
+                **remove_collection_fields(rakdeel.model_dump(mode="python")),
+            }
+            rows.append(rakdeel_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_houtmonsters_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met houtmonster data"""
+
+        rows = []
+        for rakdeel_id, houtmonster in self.alle_houtmonsters:
+            houtmonster_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                **remove_collection_fields(houtmonster.model_dump(mode="python")),
+            }
+            rows.append(houtmonster_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_palen_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met paal data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            afstand_van_startrak_cm = rakdeel.lengte_m * 100 if isinstance(rakdeel.lengte_m, (int, float)) else None
+
+            for paal in rakdeel.onderbouw.palen:
+                paal_row = {
+                    "rak_id": self.raknaam,
+                    "rakdeel_id": rakdeel.rakdeel_id,
+                    "afstand_van_startrak_cm": afstand_van_startrak_cm,
+                    **remove_collection_fields(paal.model_dump(mode="python")),
+                }
+                rows.append(paal_row)
+
+                if paal.paalrij_nummer == 1 and afstand_van_startrak_cm is not None:
+                    afstand_van_startrak_cm = (
+                        (afstand_van_startrak_cm + paal.hoh_afstand_cm) if paal.hoh_afstand_cm else None
+                    )
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_kespen_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met kesp data"""
+
+        rows = []
+        for rakdeel_id, kesp in self.alle_kespen:
+            kesp_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                **remove_collection_fields(kesp.model_dump(mode="python")),
+            }
+            rows.append(kesp_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_gebreken_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met gebrek data"""
+
+        rows = []
+        for pad, gebrek in self.alle_gebreken:
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
+            gebrek_type = type(gebrek).__name__
+            gebrek_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                "model_pad": model_pad,
+                "gebrek_type": gebrek_type,
+                **remove_collection_fields(gebrek.model_dump(mode="python")),
+            }
+            rows.append(gebrek_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_gebreken_per_type_dfs(self) -> dict[str, pd.DataFrame]:
+        """Genereer DataFrame tabellen per gebrek type"""
+
+        gebreken_per_type: dict[str, list[dict]] = {}
+        for pad, gebrek in self.alle_gebreken:
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
+            gebrek_type = type(gebrek).__name__
+            gebrek_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                "model_pad": model_pad,
+                **remove_collection_fields(gebrek.model_dump(mode="python")),
+            }
+
+            if gebrek_type not in gebreken_per_type:
+                gebreken_per_type[gebrek_type] = []
+            gebreken_per_type[gebrek_type].append(gebrek_row)
+
+        # Converteer naar DataFrames
+        gebreken_dfs = {}
+        for gebrek_type, rows in gebreken_per_type.items():
+            df = pd.DataFrame(rows).replace("\n", " ", regex=True)
+            gebreken_dfs[gebrek_type] = df
+
+        return gebreken_dfs
+
+    def _get_toestandsbepalingen_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met toestandsbepalingen data"""
+
+        rows = []
+        for pad, toestandonderdeel in self.alle_toestandsbepalingen:
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
+            row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                "model_pad": model_pad,
+                "onderdeel": toestandonderdeel.constructie_onderdeel,
+                "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
+            }
+            rows.append(row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_onverwacht_resultaten_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met onverwacht resultaat data"""
+
+        rows = []
+        for pad, onverwacht in self.alle_onverwachte_resultaten:
+            rakdeel_id, model_pad = haal_rakdeel_id_en_model_pad(pad)
+            row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel_id,
+                "model_pad": model_pad,
+                **remove_collection_fields(onverwacht.model_dump(mode="python")),
+            }
+            rows.append(row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
 
 
 if __name__ == "__main__":

@@ -57,22 +57,21 @@ class LLMClassifier(BaseModel):
         else:
             logger.info(f"Classifying description into {cls.__name__} via LLM...")
 
-            llm = AzureOpenAILLM()
+            async with AzureOpenAILLM() as llm:
+                response = await llm.client.beta.chat.completions.parse(
+                    model=llm.model,
+                    messages=[
+                        {"role": "system", "content": cls._systeem_prompt},
+                        {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
+                    ],
+                    response_format=cls,
+                    temperature=0,
+                )
 
-            response = await llm.client.beta.chat.completions.parse(
-                model=llm.model,
-                messages=[
-                    {"role": "system", "content": cls._systeem_prompt},
-                    {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
-                ],
-                response_format=cls,
-                temperature=0,
-            )
+                parsed_result = response.choices[0].message.parsed
+                if parsed_result is None:
+                    raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
 
-            parsed_result = response.choices[0].message.parsed
-            if parsed_result is None:
-                raise ValueError("Kon de omschrijving niet classificeren: geen resultaat ontvangen van LLM")
-
-            cache_file.write_bytes(pickle.dumps(parsed_result))
+                cache_file.write_bytes(pickle.dumps(parsed_result))
 
         return parsed_result

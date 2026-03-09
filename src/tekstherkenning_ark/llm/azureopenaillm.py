@@ -70,6 +70,20 @@ class AzureOpenAILLM:
         )
         self.encoding = tiktoken.get_encoding(azure_encoding_name)
 
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - sluit de client netjes af."""
+        await self.aclose()
+        return False
+
+    async def aclose(self):
+        """Sluit de async client netjes af."""
+        if self.client:
+            await self.client.close()
+
     async def chat_completion(
         self,
         prompt: str,

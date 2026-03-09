@@ -9,12 +9,10 @@ from unidecode import unidecode
 from tekstherkenning_ark.constants import CACHE_DIR
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import Callable, TypeVar
 
 from tekstherkenning_ark.logger import get_logger
 
-if TYPE_CHECKING:
-    from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 
 # Regex patterns for ID extraction and validation
 PAAL_ID_PATTERN = r"\bP\d+\.\d+\b"
