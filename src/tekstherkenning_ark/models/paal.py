@@ -18,28 +18,30 @@ class Paal(RakBaseModel):
     """Paal (Foundation Pile).
 
     Attributes:
-        paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
         paal_nummer: Nummer van de paal binnen de paalrij.
-        aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
-        is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
-        schoorstand_graden: Schoorstand van de paal in graden.
-        scheefstand: Indicatie of de paal scheefstand heeft.
-        materiaal: Materiaal van de paal. (MateriaalOnderbouw)
         diameter_haaks: Diameter haaks op de gevel in mm.
         diameter_parallel: Diameter parallel aan de gevel in mm.
         diameter_gemiddeld: Gemiddelde diameter in mm.
-        afstand_hoh: Hart-op-hart afstand tussen palen in mm.
+        hoh_afstand_cm: Hart-op-hart afstand tussen palen in cm.
+        hoh_paalnummer: Paalnummer waarmee de hoh_afstand gemeten is.
         schoor_graden: Schoorstand van de paal in graden.
         schoor_richting: Richting van de schoorstand (PNV/PNA/LR).
         afstand_frontwand_cm: Afstand tot de frontwand in cm.
         is_scheefstand: Indicatie of er scheefstand is geconstateerd.
         is_paalbreuk: Indicatie of er paalbreuk is geconstateerd.
         is_aantasting: Indicatie of er aantasting is geconstateerd.
-        is_juiste_aansluiting: Indicatie of de aansluiting correct is.
+        aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
         positionering_aansluiting_cm: Positionering van de aansluiting in cm.
         houtmonsters: Lijst van houtmonsters genomen uit deze paal.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        paalrij_nummer: Nummer van de paalrij waartoe de paal behoort.
+        paal_nummer_main: Hoofdnummer van de paal.
+        is_schoorpaal: Indicatie of de paal een schoorpaal is.
+        n_scheuren: Aantal scheuren in de paal.
+        is_ongewenste_schoorstand: Indicatie of de paal ongewenste (negatieve) schoorstand heeft.
     """
 
     # Te vinden in de schades en gebreken tabellen van hoofdstuk 5.

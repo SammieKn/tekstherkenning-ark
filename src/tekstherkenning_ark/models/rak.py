@@ -33,7 +33,16 @@ class Rak(RakBaseModel):
         rakdelen: Lijst van rakdelen waaruit het rak is opgebouwd.
         raknaam: Naam of code van het rak.
         totale_lengte_m: Totale lengte van het rak in meters.
+        unassigned_palen: Palen die niet aan een specifiek rakdeel zijn toegewezen.
+        unassigned_kespen: Kespen die niet aan een specifiek rakdeel zijn toegewezen.
+        unassigned_houtmonsters: Houtmonsters die niet aan een specifieke paal zijn toegewezen.
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        aantal_rakdelen: Totaal aantal rakdelen in dit rak.
+        alle_palen: Verzameling van alle palen uit alle rakdelen.
+        alle_kespen: Verzameling van alle kespen uit alle rakdelen.
+        alle_houtmonsters: Verzameling van alle houtmonsters uit alle palen.
     """
 
     model_config = ConfigDict(

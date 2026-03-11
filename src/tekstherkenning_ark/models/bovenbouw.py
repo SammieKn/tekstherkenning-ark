@@ -26,13 +26,18 @@ class Bovenbouw(RakBaseModel):
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
 
     Properties (berekend):
+        scheuren: Lijst van alle Scheur gebreken in de bovenbouw.
+        maximaal_aantal_scheuren_per_10_m: Maximaal aantal scheuren per 10 meter (sliding window).
         totaal_aantal_scheuren: Totaal aantal scheuren in het metselwerk.
-        maximale_scheurwijdte_mm: Grootste scheurwijdte uit alle ScheurMetselwerk gebreken.
-        lijst_scheurwijdtes: Alle geconstateerde scheurwijdtes.
+        maximale_scheurwijdte_mm: Grootste scheurwijdte uit alle Scheur gebreken.
         is_buik_in_wand_aanwezig: Check of BuikInWand gebrek aanwezig is.
         is_grondvoerend_gat_aanwezig: Check of GrondVoerendGat gebrek aanwezig is.
         is_lokaal_verdwenen_metselwerk: Check of LokaalVerdwenenMetselwerk gebrek aanwezig is.
         is_scheefstand_aanwezig: Check of Scheefstand gebrek aanwezig is.
+        is_scheefstand_met_scheur_aanwezig: Check of Scheefstand geassocieerd met Scheur aanwezig is.
+        scheefstand_met_scheur_in_wand: Lijst van Scheefstand-Scheur paren.
+        is_buik_met_scheur_aanwezig: Check of BuikInWand geassocieerd met Scheur aanwezig is.
+        buik_met_scheur_in_wand: Lijst van BuikInWand-Scheur paren.
     """
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
@@ -57,11 +62,7 @@ class Bovenbouw(RakBaseModel):
         """Maximaal aantal scheuren per 10 meter, berekend via een sliding window over de scheurafstanden."""
 
         scheur_afstanden = sorted(
-            [
-                s.afstand_van_startrak_m
-                for s in self.scheuren
-                if isinstance(s.afstand_van_startrak_m, (int, float))
-            ]
+            [s.afstand_van_startrak_m for s in self.scheuren if isinstance(s.afstand_van_startrak_m, (int, float))]
         )
 
         if len(scheur_afstanden) != len(self.scheuren):
