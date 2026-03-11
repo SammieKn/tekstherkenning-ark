@@ -528,6 +528,36 @@ class Rak(RakBaseModel):
         rows = remove_onverwacht_resultaat_from_table_rows(rows)
         return pd.DataFrame(rows).replace("\n", " ", regex=True)
 
+    def _get_onderbouw_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met onderbouw data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            onderbouw_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel.rakdeel_id,
+                **remove_collection_fields(rakdeel.onderbouw.model_dump(mode="python")),
+            }
+            rows.append(onderbouw_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_bovenbouw_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met bovenbouw data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            bovenbouw_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel.rakdeel_id,
+                **remove_collection_fields(rakdeel.bovenbouw.model_dump(mode="python")),
+            }
+            rows.append(bovenbouw_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
 
 if __name__ == "__main__":
 
