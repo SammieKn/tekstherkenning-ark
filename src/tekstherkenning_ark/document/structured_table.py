@@ -240,9 +240,13 @@ class StructuredTable:
         unit_in = [u.lower() for u in unit_in] if unit_in else None
 
         # Determine columns that match header and sub-header criteria
-        header_matching_columns = [c for c in self.columns if not header_in or c.header.lower() in header_in]
+        header_matching_columns = [
+            c for c in self.columns if not header_in or any(x in c.header.lower() for x in header_in)
+        ]
         subheader_matching_columns = [
-            c for c in header_matching_columns if not sub_header_in or c.sub_header.lower() in sub_header_in
+            c
+            for c in header_matching_columns
+            if not sub_header_in or any(x in c.sub_header.lower() for x in sub_header_in)
         ]
 
         # If exactly one column matches based on header and sub-header, return it.

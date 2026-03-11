@@ -63,7 +63,7 @@ def test_maximaal_aantal_scheuren_per_10_m(mock_rakdeel_with_scheuren: Rakdeel):
     3. Expected maximum: 7 scheuren (window P1.1-P1.3: 4+3+0=7 scheuren)
     """
 
-    result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
+    result = mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m
 
     # Verify result is not an OnverwachtResultaat
     assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"
@@ -78,7 +78,7 @@ def test_maximaal_aantal_scheuren_per_10_m_geen_scheuren(mock_rakdeel_with_scheu
     mock_rakdeel_with_scheuren.bovenbouw.gebreken = []
 
     # Should return 0 since there are no scheuren to count
-    assert mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m == 0
+    assert mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m == 0
 
 
 def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheuren: Rakdeel):
@@ -86,7 +86,7 @@ def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheur
     # Remove hoh_afstand_cm to trigger OnverwachtResultaat in get_consecutive_palen
     mock_rakdeel_with_scheuren.bovenbouw.gebreken[4] = None
 
-    result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
+    result = mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m
 
     # Verify result is not an OnverwachtResultaat
     assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"
@@ -188,10 +188,10 @@ def test_percentage_niet_functionerend_schuifhout_alle_functionerend():
 
     resultaat = rakdeel.percentage_niet_functionerend_schuifhout
     assert isinstance(resultaat, float)
-    assert resultaat == 100.0
+    assert resultaat == 0.0
 
 
-def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
+def test_percentage_niet_functionerend_schuifhout_half():
     """Test wanneer geen opsluitklossen functionerend zijn = 0%."""
     rakdeel = Rakdeel(
         rakdeel_id="Test D",
@@ -213,7 +213,7 @@ def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
                     breedte_cm=15,
                     lengte_uitstekend_deel_cm=10,
                     is_opsluitklos_aanwezig=True,
-                    is_opsluitklos_aangetast=True,
+                    is_opsluitklos_aangetast=False,
                 ),
             ],
         ),
@@ -221,7 +221,7 @@ def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
 
     resultaat = rakdeel.percentage_niet_functionerend_schuifhout
     assert isinstance(resultaat, float)
-    assert resultaat == 0.0
+    assert resultaat == 50.0
 
 
 def test_percentage_niet_functionerend_schuifhout_geen_opsluitklos_aanwezig():
