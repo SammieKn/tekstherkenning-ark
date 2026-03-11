@@ -22,6 +22,9 @@ dependencies = [
     "plotly>=6.6.0",
 ]
 
+[project.scripts]
+tekstherkenning-ark = "tekstherkenning_ark.cli:main"
+
 [tool.black]
 line-length = 119
 
