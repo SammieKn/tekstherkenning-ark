@@ -273,6 +273,41 @@ Traditionele keyword-matching faalt bij:
 
 ---
 
+## Gebruik
+
+### Command-line interface
+
+De tool kan worden gebruikt via de command-line om duikinspectierapporten te verwerken:
+
+```bash
+uv run tekstherkenning-ark -i <input_pdf_path> [-o <output_directory>]
+```
+
+**Parameters:**
+- `-i`, `--input`: Pad naar het input PDF bestand (verplicht)
+- `-o`, `--output`: Output directory voor het JSON bestand (optioneel, default: huidige directory)
+- `--no-cache`: Gebruik geen cache voor Azure Document Intelligence (optioneel)
+
+**Voorbeelden:**
+
+```bash
+# Verwerk een rapport en sla op in huidige directory
+uv run tekstherkenning-ark -i data/duikrapporten/HEG0201_Houtmonstername.pdf
+
+# Verwerk een rapport en sla op in specifieke directory
+uv run tekstherkenning-ark -i data/duikrapporten/HEG0201_Houtmonstername.pdf -o data/json_exports
+
+# Verwerk zonder cache te gebruiken
+uv run tekstherkenning-ark -i data/duikrapporten/HEG0201_Houtmonstername.pdf -o output --no-cache
+```
+
+De output wordt automatisch opgeslagen met een bestandsnaam gebaseerd op de rakcode (bijv. `HEG0201`) en een timestamp in het formaat: `{rakcode}_{YYMMDD_HHMM}.json`
+
+**Belangrijke punten:**
+- Het PDF bestand moet een geldige rakcode bevatten (bijv. HEG0201, AMS0601)
+- PDF's met "boorweestand" in de bestandsnaam worden automatisch afgewezen, aangezien dit type rapport niet wordt ondersteund
+- De output directory wordt automatisch aangemaakt als deze nog niet bestaat
+
 ## Samenwerken
 
 ### Code Standaarden

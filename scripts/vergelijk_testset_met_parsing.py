@@ -396,12 +396,13 @@ def vergelijk_rakdeel(
         "bovenbouw.aantal_scheuren": "bovenbouw.totaal_aantal_scheuren",
         "bovenbouw.materiaal_bovenbouw": "bovenbouw.materiaal",
         "bovenbouw.maximale_scheurwijdte_mm": "bovenbouw.maximale_scheurwijdte_mm",
-        "bovenbouw.percentage_niet_functionerend_schuifhout": "bovenbouw.percentage_niet_functionerend_schuifhout",
+        "bovenbouw.percentage_niet_functionerend_schuifhout": "rakdeel.percentage_niet_functionerend_schuifhout",
         "bovenbouw.is_lokaal_verdwenen_metselwerk": "bovenbouw.is_lokaal_verdwenen_metselwerk",
         "bovenbouw.is_grondvoerend_gat_aanwezig": "bovenbouw.is_grondvoerend_gat_aanwezig",
         "bovenbouw.is_buik_in_wand_aanwezig": "bovenbouw.is_buik_in_wand_aanwezig",
+        "bovenbouw.is_scheur_t_p_v_buik_aanwezig": "bovenbouw.is_buik_met_scheur_aanwezig",
         "bovenbouw.is_scheefstand_aanwezig": "bovenbouw.is_scheefstand_aanwezig",
-        "bovenbouw.scheur_bij_scheefstand_aanwezig": "bovenbouw.scheur_bij_scheefstand_aanwezig",
+        "bovenbouw.scheur_bij_scheefstand_aanwezig": "bovenbouw.is_scheefstand_met_scheur_aanwezig",
         "onderbouw.percentage_slechte_palen": "onderbouw.percentage_slechte_palen",
         "onderbouw.percentage_ongewenste_schoorstand": "onderbouw.percentage_ongewenste_schoorstand",
         "onderbouw.percentage_beschadigde_kespen": "onderbouw.percentage_beschadigde_kespen",
@@ -670,42 +671,41 @@ def main():
 
     print("\nStap 2: Vergelijken rakken...")
     for rak_id in unieke_rak_ids:
-        if rak_id == "OVW0401":  # Voorbeeld van een RAK ID die mogelijk problemen geeft
-            print(f"\n  Verwerken: {rak_id}")
+        print(f"\n  Verwerken: {rak_id}")
 
-            # Laad gecachte Rak
-            rak = laad_gecachte_rak(rak_id)
-            if rak is None:
-                print(f"    ⚠️  Geen gecachte Rak gevonden - overslaan")
-                continue
+        # Laad gecachte Rak
+        rak = laad_gecachte_rak(rak_id)
+        if rak is None:
+            print(f"    ⚠️  Geen gecachte Rak gevonden - overslaan")
+            continue
 
-            print(f"    ✓ Gecachte Rak geladen ({len(rak.rakdelen)} rakdelen)")
+        print(f"    ✓ Gecachte Rak geladen ({len(rak.rakdelen)} rakdelen)")
 
-            # Filter testset rijen voor deze RAK
-            testset_rijen = df_testset[df_testset["rak_id"] == rak_id]
+        # Filter testset rijen voor deze RAK
+        testset_rijen = df_testset[df_testset["rak_id"] == rak_id]
 
-            # Vergelijk elk rakdeel
-            all_ids = list(testset_rijen["rakdeel_id"])
-            for idx, (_, rij) in enumerate(testset_rijen.iterrows()):
-                rakdeel_id = rij["rakdeel_id"]
-                print(f"      - Vergelijken rakdeel: {rakdeel_id}")
+        # Vergelijk elk rakdeel
+        all_ids = list(testset_rijen["rakdeel_id"])
+        for idx, (_, rij) in enumerate(testset_rijen.iterrows()):
+            rakdeel_id = rij["rakdeel_id"]
+            print(f"      - Vergelijken rakdeel: {rakdeel_id}")
 
-                vergelijking = vergelijk_rakdeel(
-                    rij,
-                    rak,
-                    rakdeel_id,
-                    ARK_KOLOM_MAPPINGS,
-                    testset_rakdeel_index=idx,
-                    all_testset_rakdeel_ids=all_ids,
+            vergelijking = vergelijk_rakdeel(
+                rij,
+                rak,
+                rakdeel_id,
+                ARK_KOLOM_MAPPINGS,
+                testset_rakdeel_index=idx,
+                all_testset_rakdeel_ids=all_ids,
+            )
+            if vergelijking:
+                statistieken.rakdeel_vergelijkingen.append(vergelijking)
+                print(
+                    f"        Resultaat: {vergelijking.aantal_correct} correct, "
+                    f"{vergelijking.aantal_fout} fout, "
+                    f"{vergelijking.aantal_ontbrekend} ontbrekend "
+                    f"({vergelijking.accuratie_percentage}% accuratie)"
                 )
-                if vergelijking:
-                    statistieken.rakdeel_vergelijkingen.append(vergelijking)
-                    print(
-                        f"        Resultaat: {vergelijking.aantal_correct} correct, "
-                        f"{vergelijking.aantal_fout} fout, "
-                        f"{vergelijking.aantal_ontbrekend} ontbrekend "
-                        f"({vergelijking.accuratie_percentage}% accuratie)"
-                    )
 
     # Print samenvatting
     print("\n" + "=" * 80)

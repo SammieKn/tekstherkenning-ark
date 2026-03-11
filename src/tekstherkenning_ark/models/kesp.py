@@ -169,7 +169,7 @@ class Kesp(RakBaseModel):
         """
 
         opsluitklos_aanwezig_val = table.get_value(
-            header_in="Opsluitklos", sub_header_in="Aanwezig? Aanwezig?", unit_in="[Ja/Nee]", index=row_idx
+            header_in=["Opsluitklos", "schuifhout"], sub_header_in="Aanwezig?", unit_in="[Ja/Nee]", index=row_idx
         )
 
         return cls(
@@ -193,11 +193,14 @@ class Kesp(RakBaseModel):
             indrukking_paal_in_kesp_cm=table.get_value(
                 header_in="Indrukking van de funderingspaal in de kesp", unit_in="[Ja/Nee]", index=row_idx
             ),
-            is_opsluitklos_aanwezig=(
-                utils.parse_ja_nee(opsluitklos_aanwezig_val) if opsluitklos_aanwezig_val != "" else None
-            ),
+            is_opsluitklos_aanwezig=utils.parse_ja_nee(opsluitklos_aanwezig_val),
             is_opsluitklos_aangetast=utils.parse_ja_nee(
-                table.get_value(header_in="Opsluitklos", sub_header_in="Aantasting", unit_in="[Ja/Nee]", index=row_idx)
+                table.get_value(
+                    header_in=["Opsluitklos", "schuifhout"],
+                    sub_header_in="Aantasting",
+                    unit_in="[Ja/Nee]",
+                    index=row_idx,
+                )
             ),
             is_vervormd=utils.parse_ja_nee(
                 table.get_value(header_in="Schades", sub_header_in="Vervormingen", unit_in="[Ja/Nee]", index=row_idx)

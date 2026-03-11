@@ -29,7 +29,7 @@ def main():
 
             doc = SmartDocument.from_pdf(file)
             print(f"Genereren van Rak object voor {doc.document_name}...")
-            rak = Rak.from_smart_document(doc, use_caching=False)
+            rak = Rak.from_smart_document(doc, use_caching=True)
             print("Exporteren naar Excel...")
             export_pad = rak.to_excel()
             print(f"Klaar! Bestand opgeslagen: {export_pad}")

@@ -107,7 +107,7 @@
         "opmerkingen": "",
         "toestand_onderdelen": [],
         "materiaal": "Metselwerk",
-        "maximaal_aantal_scheuren_per_10_m": null,
+        "maximaal_aantal_scheuren_per_10_m": 5,
         "bovenkant_deksteen_cm_tov_nap": null,
         "totaal_aantal_scheuren": 10,
         "maximale_scheurwijdte_mm": null,
@@ -592,7 +592,6 @@
       ],
       "percentage_niet_functionerend_schuifhout": null,
       "vijf_slechte_kespen_naast_elkaar": false,
-      "maximaal_aantal_scheuren_per_10_m": 5,
       "lengte_m": 20.0,
       "aantal_scheuren_per_meter": 0.5
     }
