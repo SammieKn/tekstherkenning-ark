@@ -63,7 +63,7 @@ def test_maximaal_aantal_scheuren_per_10_m(mock_rakdeel_with_scheuren: Rakdeel):
     3. Expected maximum: 7 scheuren (window P1.1-P1.3: 4+3+0=7 scheuren)
     """
 
-    result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
+    result = mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m
 
     # Verify result is not an OnverwachtResultaat
     assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"
@@ -78,7 +78,7 @@ def test_maximaal_aantal_scheuren_per_10_m_geen_scheuren(mock_rakdeel_with_scheu
     mock_rakdeel_with_scheuren.bovenbouw.gebreken = []
 
     # Should return 0 since there are no scheuren to count
-    assert mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m == 0
+    assert mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m == 0
 
 
 def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheuren: Rakdeel):
@@ -86,7 +86,7 @@ def test_maximaal_aantal_scheuren_per_10_m_none_afstand(mock_rakdeel_with_scheur
     # Remove hoh_afstand_cm to trigger OnverwachtResultaat in get_consecutive_palen
     mock_rakdeel_with_scheuren.bovenbouw.gebreken[4] = None
 
-    result = mock_rakdeel_with_scheuren.maximaal_aantal_scheuren_per_10_m
+    result = mock_rakdeel_with_scheuren.bovenbouw.maximaal_aantal_scheuren_per_10_m
 
     # Verify result is not an OnverwachtResultaat
     assert not isinstance(result, OnverwachtResultaat), f"Unexpected error: {result}"

@@ -133,36 +133,6 @@ class Rakdeel(RakBaseModel):
 
     @computed_field
     @property
-    def maximaal_aantal_scheuren_per_10_m(self) -> int:
-        """Aantal scheuren genormaliseerd naar 10 meter lengte."""
-
-        # Verkrijg de scheur-afstanden in de bovenbouw
-        scheur_afstanden = sorted(
-            [
-                s.afstand_van_startrak_m
-                for s in self.bovenbouw.scheuren
-                if isinstance(s.afstand_van_startrak_m, (int, float))
-            ]
-        )
-
-        if len(scheur_afstanden) != len(self.bovenbouw.scheuren):
-            logger.warning(
-                f"{len(self.bovenbouw.scheuren) - len(scheur_afstanden)} / {len(self.bovenbouw.scheuren)} scheuren"
-                f" in rakdeel {self.rakdeel_id} hebben geen geldige afstand_van_startrak_m waarde en worden genegeerd "
-                f"in de maximaal_aantal_scheuren_per_10_m berekening."
-            )
-
-        # Loop over de scheuren, en bepaal het aantal scheuren in elke 10 meter window
-        max_scheuren_per_10_m = 0
-
-        for i, scheur_locatie in enumerate(scheur_afstanden):
-            n_scheuren = len([s for s in scheur_afstanden if scheur_locatie <= s < scheur_locatie + 10])
-            max_scheuren_per_10_m = max(max_scheuren_per_10_m, n_scheuren)
-
-        return max_scheuren_per_10_m
-
-    @computed_field
-    @property
     def lengte_m(self) -> float | None | OnverwachtResultaat:
         """Lengte van het rakdeel in meters.
 
