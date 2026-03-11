@@ -338,13 +338,6 @@ ARK_KOLOM_MAPPINGS: list[KolomMapping] = [
         conversie_functie=lambda x: _veilige_float(x) * 100 if _veilige_float(x) is not None else None,  # m naar cm
     ),
     KolomMapping(
-        kolom_index=92,
-        excel_naam="Percentage slechte houten palen",
-        datamodel_veld="onderbouw.percentage_slechte_palen",
-        datatype=float,
-        conversie_functie=_veilige_float,
-    ),
-    KolomMapping(
         kolom_index=94,
         excel_naam="Ongewenste schoorstand funderingspalen",
         datamodel_veld="onderbouw.percentage_ongewenste_schoorstand",

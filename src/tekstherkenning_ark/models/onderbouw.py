@@ -176,16 +176,6 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
-    def percentage_slechte_palen(self) -> float | None:
-        """Percentage palen met bacteriële aantasting."""
-        if not self.palen:
-            return None
-
-        aantal_slecht = sum(1 for paal in self.palen if paal.is_aantasting)
-        return round((aantal_slecht / len(self.palen)) * 100, 2)
-
-    @computed_field
-    @property
     def aantal_ongewenst_schoor(self) -> int:
         """Aantal palen met geconstateerde negatieve schoorstand."""
 
