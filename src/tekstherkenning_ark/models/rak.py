@@ -11,11 +11,9 @@ from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.paal import Paal
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel, T_Gebrek
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
-from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.export_utils import (
@@ -56,16 +54,6 @@ class Rak(RakBaseModel):
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Rak instance."""
         return str(self.raknaam)
-
-    @computed_field
-    @property
-    def alle_gebreken(self) -> list[tuple[str, T_Gebrek]]:
-        return super().alle_gebreken
-
-    @computed_field
-    @property
-    def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
-        return super().alle_onverwachte_resultaten
 
     @computed_field
     @property

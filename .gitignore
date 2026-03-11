@@ -156,3 +156,5 @@ cython_debug/
 
 *docai_result.pkl
 tests/data/KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325/rak_KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325.pkl
+
+*/output/*

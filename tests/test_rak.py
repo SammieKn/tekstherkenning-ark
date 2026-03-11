@@ -32,7 +32,7 @@ def test_kzg0202(kzg0202_rak: Rak):
 
 def test_kzg0202_nul_onverwacht(kzg0202_rak: Rak):
     """Test that the Rak instance from the test cache has the expected gebreken."""
-    aantal_overwacht_tot = len(kzg0202_rak.alle_onverwachte_resultaten)
+    aantal_overwacht_tot = len(kzg0202_rak.rakdelen[0].alle_onverwachte_resultaten)
     assert aantal_overwacht_tot == 0, f"Expected 0 onverwachte resultaten, got {aantal_overwacht_tot}"
 
 
@@ -82,6 +82,12 @@ class TestRakToJson:
         """Test that a mock Rak with scheuren can be serialized to JSON."""
         json_str = mock_rak_with_scheuren.model_dump_json(indent=2)
 
+        # Uncomment these line to update the expected JSON file with the current output
+        # (useful when intentionally changing the model structure or test data)
+
+        # from tests.conftest import TEST_DATA_DIR
+        # (TEST_DATA_DIR / "mock_rak_with_scheuren.json").write_text(json_str, encoding="utf-8")
+
         expected_dict = json.loads(mock_rak_with_scheuren_json)
         actual_dict = json.loads(json_str)
 
@@ -90,7 +96,7 @@ class TestRakToJson:
             == expected_dict["rakdelen"][0]["bovenbouw"]["gebreken"]
         ), "Gebreken in bovenbouw komen niet overeen"
 
-        assert actual_dict["alle_gebreken"] == expected_dict["alle_gebreken"]
+        assert actual_dict["rakdelen"][0]["alle_gebreken"] == expected_dict["rakdelen"][0]["alle_gebreken"]
 
     @pytest.mark.parametrize("gebrek_class", [Gebrek] + Gebrek.__subclasses__())
     def test_gebrek_subclasses_to_json(self, gebrek_class: type[Gebrek]):

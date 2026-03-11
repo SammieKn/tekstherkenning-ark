@@ -9,7 +9,7 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.paal import Paal
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel, T_Gebrek
 from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.document.smart_document import RakdeelSectie
@@ -70,6 +70,16 @@ class Rakdeel(RakBaseModel):
     def identifier(self) -> str:
         """Return a string that uniquely identifies this Rakdeel instance."""
         return str(self.rakdeel_id)
+
+    @computed_field
+    @property
+    def alle_onverwachte_resultaten(self) -> list[tuple[str, OnverwachtResultaat]]:
+        return super().alle_onverwachte_resultaten
+
+    @computed_field
+    @property
+    def alle_gebreken(self) -> list[tuple[str, T_Gebrek]]:
+        return super().alle_gebreken
 
     @computed_field
     @property
