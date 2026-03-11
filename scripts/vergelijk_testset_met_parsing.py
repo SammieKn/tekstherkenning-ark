@@ -396,7 +396,7 @@ def vergelijk_rakdeel(
         "bovenbouw.aantal_scheuren": "bovenbouw.totaal_aantal_scheuren",
         "bovenbouw.materiaal_bovenbouw": "bovenbouw.materiaal",
         "bovenbouw.maximale_scheurwijdte_mm": "bovenbouw.maximale_scheurwijdte_mm",
-        "bovenbouw.percentage_niet_functionerend_schuifhout": "bovenbouw.percentage_niet_functionerend_schuifhout",
+        "bovenbouw.percentage_niet_functionerend_schuifhout": "rakdeel.percentage_niet_functionerend_schuifhout",
         "bovenbouw.is_lokaal_verdwenen_metselwerk": "bovenbouw.is_lokaal_verdwenen_metselwerk",
         "bovenbouw.is_grondvoerend_gat_aanwezig": "bovenbouw.is_grondvoerend_gat_aanwezig",
         "bovenbouw.is_buik_in_wand_aanwezig": "bovenbouw.is_buik_in_wand_aanwezig",
