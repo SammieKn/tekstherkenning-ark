@@ -403,7 +403,6 @@ def vergelijk_rakdeel(
         "bovenbouw.is_scheur_t_p_v_buik_aanwezig": "bovenbouw.is_buik_met_scheur_aanwezig",
         "bovenbouw.is_scheefstand_aanwezig": "bovenbouw.is_scheefstand_aanwezig",
         "bovenbouw.scheur_bij_scheefstand_aanwezig": "bovenbouw.is_scheefstand_met_scheur_aanwezig",
-        "onderbouw.percentage_slechte_palen": "onderbouw.percentage_slechte_palen",
         "onderbouw.percentage_ongewenste_schoorstand": "onderbouw.percentage_ongewenste_schoorstand",
         "onderbouw.percentage_beschadigde_kespen": "onderbouw.percentage_beschadigde_kespen",
         "onderbouw.percentage_beschadigde_verbinding": "onderbouw.percentage_beschadigde_verbinding",

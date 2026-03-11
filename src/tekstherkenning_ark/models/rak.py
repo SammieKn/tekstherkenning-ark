@@ -425,7 +425,7 @@ class Rak(RakBaseModel):
                 }
                 rows.append(paal_row)
 
-                if paal.paalrij_nummer == 1 and afstand_van_startrak_cm is not None:
+                if paal.paal_nummer_main == 1 and afstand_van_startrak_cm is not None:
                     afstand_van_startrak_cm = (
                         (afstand_van_startrak_cm + paal.hoh_afstand_cm) if paal.hoh_afstand_cm else None
                     )
@@ -524,6 +524,36 @@ class Rak(RakBaseModel):
                 **remove_collection_fields(onverwacht.model_dump(mode="python")),
             }
             rows.append(row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_onderbouw_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met onderbouw data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            onderbouw_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel.rakdeel_id,
+                **remove_collection_fields(rakdeel.onderbouw.model_dump(mode="python")),
+            }
+            rows.append(onderbouw_row)
+
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_bovenbouw_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met bovenbouw data"""
+
+        rows = []
+        for rakdeel in self.rakdelen:
+            bovenbouw_row = {
+                "rak_id": self.raknaam,
+                "rakdeel_id": rakdeel.rakdeel_id,
+                **remove_collection_fields(rakdeel.bovenbouw.model_dump(mode="python")),
+            }
+            rows.append(bovenbouw_row)
 
         rows = remove_onverwacht_resultaat_from_table_rows(rows)
         return pd.DataFrame(rows).replace("\n", " ", regex=True)

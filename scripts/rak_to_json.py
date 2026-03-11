@@ -59,7 +59,7 @@ def main() -> None:
 
     print(f"Rapport gevonden: {pdf_pad.name}")
     doc = SmartDocument.from_pdf(pdf_pad)
-    rak = Rak.from_smart_document(doc, use_caching=True)
+    rak = Rak.from_smart_document(doc, use_caching=False)
 
     export_dir = DATA_DIR / "json_exports"
     export_dir.mkdir(parents=True, exist_ok=True)

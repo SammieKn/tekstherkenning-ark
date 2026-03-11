@@ -18,6 +18,8 @@ logger = get_logger(__name__)
 
 RAK_TABLE_NAME = "rakken"
 RAKDEEL_TABLE_NAME = "rakdelen"
+BOVENBOUW_TABLE_NAME = "bovenbouw"
+ONDERBOUW_TABLE_NAME = "onderbouw"
 HOUTMONSTER_TABLE_NAME = "houtmonsters"
 PALEN_TABLE_NAME = "palen"
 KESPEN_TABLE_NAME = "kespen"
@@ -52,10 +54,12 @@ def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:
     from tekstherkenning_ark.models.rak import Rak
 
     smartdocs = [SmartDocument.from_pdf(file) for file in pdf_rapporten if not "boor" in file.stem.lower()]
-    rakken = [Rak.from_smart_document(doc, use_caching=True) for doc in smartdocs]
+    rakken = [Rak.from_smart_document(doc, use_caching=False) for doc in smartdocs]
 
     rak_df = pd.concat([rak._get_rak_df() for rak in rakken])
     rakdeel_df = pd.concat([rak._get_rakdeel_df() for rak in rakken])
+    onderbouw_df = pd.concat([rak._get_onderbouw_df() for rak in rakken])
+    bovenbouw_df = pd.concat([rak._get_bovenbouw_df() for rak in rakken])
     houtmonster_df = pd.concat([rak._get_houtmonsters_df() for rak in rakken])
     kespen_df = pd.concat([rak._get_kespen_df() for rak in rakken])
     palen_df = pd.concat([rak._get_palen_df() for rak in rakken])
@@ -79,13 +83,15 @@ def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:
     return {
         RAK_TABLE_NAME: rak_df,
         RAKDEEL_TABLE_NAME: rakdeel_df,
+        BOVENBOUW_TABLE_NAME: bovenbouw_df,
+        ONDERBOUW_TABLE_NAME: onderbouw_df,
         HOUTMONSTER_TABLE_NAME: houtmonster_df,
         PALEN_TABLE_NAME: palen_df,
         KESPEN_TABLE_NAME: kespen_df,
-        GEBREKEN_TABLE_NAME: gebreken_df,
-        **{f"{GEBREKEN_TABLE_NAME}_{k}": v for k, v in gebreken_df_per_type.items()},
         TOESTANDBEPALINGEN_TABLE_NAME: toestandsbepalingen_df,
         ONVERWACHT_RESULTATEN_TABLE_NAME: onverwacht_resultaten_df,
+        GEBREKEN_TABLE_NAME: gebreken_df,
+        **{f"{GEBREKEN_TABLE_NAME}_{k}": v for k, v in gebreken_df_per_type.items()},
     }
 
 
