@@ -44,6 +44,11 @@ class Gebrek(BaseModel):
     omschrijving: str
     figuurnummer: str | NietBeschikbaar
 
+    @computed_field
+    @property
+    def gebrek_type(self) -> str:
+        return self.__class__.__name__
+
     @classmethod
     async def from_doc_tables(cls, structured_table: StructuredTable | None) -> list[Gebrek]:
         """Maak een lijst van Gebrek instanties uit een structured table.
