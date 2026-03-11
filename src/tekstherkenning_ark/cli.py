@@ -129,7 +129,7 @@ def main() -> None:
     parser.add_argument(
         "--no-cache",
         action="store_true",
-        help="Gebruik geen cache voor Azure Document Intelligence",
+        help="Gebruik geen cache voor Rak",
     )
 
     args = parser.parse_args()
@@ -148,7 +148,7 @@ def main() -> None:
 
         # Verwerk het PDF bestand
         use_cache = not args.no_cache
-        doc = SmartDocument.from_pdf(input_path, use_cache=use_cache)
+        doc = SmartDocument.from_pdf(input_path)
         rak = Rak.from_smart_document(doc, use_caching=use_cache)
 
         # Exporteer naar JSON
