@@ -101,11 +101,16 @@ class Rakdeel(RakBaseModel):
                 onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
             )
 
-        n_opsluitklos = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aanwezig])
-        n_opsluitklos_aangetast = len([k for k in self.onderbouw.kespen if k.is_opsluitklos_aangetast])
+        n_opsluitklos = sum(bool(k.is_opsluitklos_aanwezig) for k in self.onderbouw.kespen)
+
         if n_opsluitklos == 0:
             return None
-        return (n_opsluitklos - n_opsluitklos_aangetast) / (n_opsluitklos) * 100
+
+        n_opsluitklos_aangetast = sum(
+            bool(k.is_opsluitklos_aangetast and k.is_opsluitklos_aanwezig) for k in self.onderbouw.kespen
+        )
+
+        return (n_opsluitklos_aangetast / n_opsluitklos) * 100
 
     @computed_field
     @property
