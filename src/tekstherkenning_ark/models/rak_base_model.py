@@ -84,7 +84,14 @@ class RakBaseModel(BaseModel):
     def onverwachte_resultaten(self) -> list[OnverwachtResultaat]:
         """Return a list of all OnverwachtResultaat objects in this model"""
 
-        return [value for value in self.__dict__.values() if isinstance(value, OnverwachtResultaat)]
+        values = list(self.__dict__.values())
+        computed_values = [
+            getattr(self, attr)
+            for attr in self.__class__.model_computed_fields
+            if not "onverwachte_resultaten" in attr
+        ]
+
+        return [value for value in values + computed_values if isinstance(value, OnverwachtResultaat)]
 
     @property
     def children(self) -> list[RakBaseModel]:
