@@ -1,6 +1,9 @@
 from pydantic import computed_field
 
 from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
+from tekstherkenning_ark.logger import get_logger
+
+logger = get_logger(__name__)
 from tekstherkenning_ark.models.gebrek import (
     BuikInWand,
     Gebrek,
@@ -18,8 +21,6 @@ class Bovenbouw(RakBaseModel):
 
     Attributes:
         materiaal: Materiaal van de bovenbouw (bijvoorbeeld metselwerk, beton, natuursteen).
-        maximaal_aantal_scheuren_per_10_m: Maximaal aantal scheuren per 10 meter in het metselwerk.
-        percentage_niet_functionerend_schuifhout: Percentage van het schuifhout dat niet functioneert.
         bovenkant_deksteen_cm_tov_nap: Hoogte van de bovenkant van de deksteen ten opzichte van NAP, in centimeters.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
@@ -36,8 +37,6 @@ class Bovenbouw(RakBaseModel):
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: MateriaalBovenbouw | NietBeschikbaar = NietBeschikbaar.LEEG
-    # Te bepalen uit de gebrekentabel (paragraaf 2.3 of 5.3.3) door het aantal scheuren te tellen en te relateren aan de lengte van het rakdeel.
-    maximaal_aantal_scheuren_per_10_m: int | None = None
 
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
@@ -51,6 +50,34 @@ class Bovenbouw(RakBaseModel):
     def scheuren(self) -> list[Scheur]:
         """Return a list of all Scheur gebreken in this Bovenbouw."""
         return [gebrek for gebrek in self.gebreken or [] if isinstance(gebrek, Scheur)]
+
+    @computed_field
+    @property
+    def maximaal_aantal_scheuren_per_10_m(self) -> int:
+        """Maximaal aantal scheuren per 10 meter, berekend via een sliding window over de scheurafstanden."""
+
+        scheur_afstanden = sorted(
+            [
+                s.afstand_van_startrak_m
+                for s in self.scheuren
+                if isinstance(s.afstand_van_startrak_m, (int, float))
+            ]
+        )
+
+        if len(scheur_afstanden) != len(self.scheuren):
+            logger.warning(
+                f"{len(self.scheuren) - len(scheur_afstanden)} / {len(self.scheuren)} scheuren"
+                f" in bovenbouw hebben geen geldige afstand_van_startrak_m waarde en worden genegeerd"
+                f" in de maximaal_aantal_scheuren_per_10_m berekening."
+            )
+
+        max_scheuren_per_10_m = 0
+
+        for scheur_locatie in scheur_afstanden:
+            n_scheuren = len([s for s in scheur_afstanden if scheur_locatie <= s < scheur_locatie + 10])
+            max_scheuren_per_10_m = max(max_scheuren_per_10_m, n_scheuren)
+
+        return max_scheuren_per_10_m
 
     @computed_field
     @property

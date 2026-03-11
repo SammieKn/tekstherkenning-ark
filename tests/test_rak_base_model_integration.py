@@ -128,12 +128,11 @@ def test_bovenbouw_with_normal_values():
 
     bovenbouw = Bovenbouw(
         bovenkant_deksteen_cm_tov_nap=125.5,
-        maximaal_aantal_scheuren_per_10_m=3,
         opmerkingen="Goede staat",
     )
 
     assert bovenbouw.bovenkant_deksteen_cm_tov_nap == 125.5
-    assert bovenbouw.maximaal_aantal_scheuren_per_10_m == 3
+    assert bovenbouw.maximaal_aantal_scheuren_per_10_m == 0
     assert bovenbouw.opmerkingen == "Goede staat"
 
 
