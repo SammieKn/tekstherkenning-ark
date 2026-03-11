@@ -169,7 +169,6 @@ graph TD
     B --> D[Onderbouw]
     
     C --> E[Metselwerk]
-    E --> F[Gebreken]
     
     D --> G[Palen]
     D --> H[Kespen]
@@ -177,26 +176,19 @@ graph TD
     D --> J[Onderloopsheidscherm]
     
     G --> K[Houtmonsters]
-    G --> F
     
+    X[Gebreken]
+    Y[OnverwachtResultaten]
+    Z[ToestandsBepalingen]
+
     style A fill:#e3f2fd
     style B fill:#f3e5f5
     style C fill:#fff3e0
     style D fill:#e8f5e9
-    style F fill:#ffebee
+    style X fill:#ffebee
+    style Y fill:#ffebee
+    style Z fill:#ffebee
 ```
-
-### Kerncomponenten
-
-| Component | Beschrijving | Belangrijke velden |
-|-----------|--------------|-------------------|
-| **Rak** | Volledige kademuur | raknaam, rakdelen, totale_lengte_m |
-| **Rakdeel** | Sectie van de kademuur | rakdeel_id, bovenbouw, onderbouw, constructietype |
-| **Bovenbouw** | Bovengrondse structuur | metselwerk, materiaal, scheuren, buik |
-| **Onderbouw** | Ondergrondse fundering | palen, kespen, vloer, onderloopsheidscherm |
-| **Paal** | Fundatiepaal | paal_nummer, diameter, materiaal, gebreken, houtmonsters |
-| **Gebrek** | Schade/afwijking | codering, omschrijving, type (Scheur, GrondVoerendGat, etc.) |
-| **Houtmonster** | Monster voor datering | houtmonster_code, is_aangetast, stichtingjaar |
 
 ### Gebrektypen (met AI-classificatie)
 - **Scheur** (+ subtypen: ScheurHout, ScheurMetselwerk)
@@ -285,28 +277,9 @@ Traditionele keyword-matching faalt bij:
 | **black** | - | Code formatting (119 char line length) |
 | **isort** | - | Import sorting |
 
-### Waarom deze keuzes?
-- **Pydantic**: Type-veiligheid en automatische validatie voorkomt data-inconsistenties
-- **Azure Services**: Enterprise-grade betrouwbaarheid en GDPR-compliant
-- **UV**: Snellere dependency resolution en betere reproduceerbare builds
-- **Pytest**: Industry standard voor Python testing met uitgebreide fixture support
-
 ---
 
 ## Samenwerken
-
-### Branching Strategie
-- **main** - Stabiele releases (production-ready)
-- **develop** - Development branch voor nieuwe features
-- **feature/** - Feature branches (gebruik `kebab-case`, bijv. `feature/nieuwe-parser`)
-
-### Workflow
-1. Maak een feature branch vanaf `develop`
-2. Ontwikkel en test je feature (`uv run pytest`)
-3. Zorg voor code formatting (`black`, `isort`)
-4. Maak een pull request naar `develop`
-5. Na review en goedkeuring: merge naar `develop`
-6. Releases worden gedaan van `develop` naar `main`
 
 ### Code Standaarden
 - ✅ Voertaal: **Nederlands** (documentatie, comments, variabelen)
