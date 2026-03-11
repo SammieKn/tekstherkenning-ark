@@ -64,6 +64,14 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
+    def max_aantal_palen_per_rij(self) -> int | None:
+        """Maximaal aantal palen in een enkele paalrij in de onderbouw."""
+        if not self.palen:
+            return None
+        return max(self.aantal_palen_per_rij.values()) if self.aantal_palen_per_rij else None
+
+    @computed_field
+    @property
     def aantal_rijen_onderzocht(self) -> int:
         """Aantal onderzochte paalrijen in de onderbouw."""
         return sum([any(paal.is_onderzocht for paal in palen) for palen in self.paal_rijen.values()])

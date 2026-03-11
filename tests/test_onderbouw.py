@@ -433,6 +433,7 @@ def test_aantal_palen_per_rij(mock_onderbouw: Onderbouw):
     """Test dat aantal_palen_per_rij een correct overzicht geeft van palen per rij."""
     # Mock data heeft 3 palen in rij 1 en 1 paal in rij 2
     assert mock_onderbouw.aantal_palen_per_rij == {1: 3, 2: 1}
+    assert mock_onderbouw.max_aantal_palen_per_rij == 3
 
 
 def test_aantal_palen_per_rij_extra_paal(mock_onderbouw: Onderbouw, maak_paal_rij_1):
@@ -442,6 +443,7 @@ def test_aantal_palen_per_rij_extra_paal(mock_onderbouw: Onderbouw, maak_paal_ri
     mock_onderbouw.palen.append(extra_paal)
 
     assert mock_onderbouw.aantal_palen_per_rij == {1: 4, 2: 1}
+    assert mock_onderbouw.max_aantal_palen_per_rij == 4
 
 
 def test_aantal_palen_per_rij_meerdere_rijen(mock_onderbouw: Onderbouw):
@@ -484,6 +486,7 @@ def test_aantal_palen_per_rij_meerdere_rijen(mock_onderbouw: Onderbouw):
     mock_onderbouw.palen.extend([paal_rij_3_1, paal_rij_3_2])
 
     assert mock_onderbouw.aantal_palen_per_rij == {1: 3, 2: 1, 3: 2}
+    assert mock_onderbouw.max_aantal_palen_per_rij == 3
 
 
 def test_aantal_ongewenst_schoor(mock_onderbouw: Onderbouw):
