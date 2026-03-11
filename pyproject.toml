@@ -21,6 +21,9 @@ dependencies = [
     "polyfactory>=3.3.0",
 ]
 
+[project.scripts]
+tekstherkenning-ark = "tekstherkenning_ark.cli:main"
+
 [tool.black]
 line-length = 119
 
