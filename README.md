@@ -12,12 +12,6 @@ Duikinspectierapporten (PDF-formaat van Nebest) worden:
 4. Geëxporteerd naar **JSON** of **Excel**
 5. Klaargezet voor integratie met [Viktor](https://www.viktor.ai/) en de [ARK-tool](https://github.com/ic144/ark-automatiseren)
 
-### Voordelen
-- ✅ Automatiseert handmatig invoerwerk van duikinspectiegegevens
-- ✅ Vermindert fouten door gevalideerde datastructuren
-- ✅ Bespaart tijd en verhoogt consistentie
-- ✅ Maakt gegevens machineleesbaar voor verdere analyse
-
 ---
 
 ## Installatie
@@ -319,13 +313,6 @@ Zie de [docs/](docs/) folder voor gedetailleerde documentatie:
 
 ### Opdrachtgever
 - **Gemeente Amsterdam** - ARK-proces Kademuren
-
-### Support
-Voor vragen over:
-- 🐛 **Bugs/Issues**: Maak een GitHub issue aan
-- 💡 **Feature requests**: Maak een GitHub issue met label `enhancement`
-- 📖 **Documentatie**: Zie de [docs/](docs/) folder
-- 🔧 **Development**: Neem contact op met het development team
 
 ---
 
