@@ -418,14 +418,14 @@ def test_get_consecutive_palen_no_hoh_afstand_cm(mock_onderbouw: Onderbouw):
 def test_aantal_paalrijen(mock_onderbouw: Onderbouw):
     """Test dat aantal_paalrijen het aantal unieke paalrijen teruggeeft."""
     # Mock data heeft palen in rij 1 (P1.1, P1.2, P1.3) en rij 2 (P2.2)
-    assert mock_onderbouw.aantal_paalrijen == 3
+    assert mock_onderbouw.aantal_onderzochte_paalrijen == 3
 
 
 def test_aantal_paalrijen_geen_palen(mock_onderbouw: Onderbouw):
     """Test dat aantal_paalrijen 0 is als er geen palen zijn."""
     mock_onderbouw.palen = []
 
-    assert mock_onderbouw.aantal_paalrijen == 0
+    assert mock_onderbouw.aantal_onderzochte_paalrijen == 0
 
 
 def test_aantal_palen_per_rij(mock_onderbouw: Onderbouw):

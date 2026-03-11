@@ -47,7 +47,7 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
-    def aantal_paalrijen(self) -> int:
+    def aantal_onderzochte_paalrijen(self) -> int:
         """Aantal paalrijen in de onderbouw (unieke paalrij_nummer waarden)."""
 
         return len(set(paal.paalrij_nummer for paal in self.palen))
@@ -107,7 +107,7 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
-    def totaal_aantal_paalrijen(self) -> int | OnverwachtResultaat:
+    def ingeschat_aantal_paalrijen(self) -> int | OnverwachtResultaat:
         """Totaal aantal palen in de onderbouw.
 
         Alle paalrijen in de tabel zijn per definitie onderzocht. Het kan zijn dat er palen zijn (bijv achter een woonboot) die
