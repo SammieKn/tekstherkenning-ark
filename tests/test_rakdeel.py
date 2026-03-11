@@ -188,10 +188,10 @@ def test_percentage_niet_functionerend_schuifhout_alle_functionerend():
 
     resultaat = rakdeel.percentage_niet_functionerend_schuifhout
     assert isinstance(resultaat, float)
-    assert resultaat == 100.0
+    assert resultaat == 0.0
 
 
-def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
+def test_percentage_niet_functionerend_schuifhout_half():
     """Test wanneer geen opsluitklossen functionerend zijn = 0%."""
     rakdeel = Rakdeel(
         rakdeel_id="Test D",
@@ -213,7 +213,7 @@ def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
                     breedte_cm=15,
                     lengte_uitstekend_deel_cm=10,
                     is_opsluitklos_aanwezig=True,
-                    is_opsluitklos_aangetast=True,
+                    is_opsluitklos_aangetast=False,
                 ),
             ],
         ),
@@ -221,7 +221,7 @@ def test_percentage_niet_functionerend_schuifhout_geen_functionerend():
 
     resultaat = rakdeel.percentage_niet_functionerend_schuifhout
     assert isinstance(resultaat, float)
-    assert resultaat == 0.0
+    assert resultaat == 50.0
 
 
 def test_percentage_niet_functionerend_schuifhout_geen_opsluitklos_aanwezig():
