@@ -52,7 +52,6 @@ def create_mock_rak_with_gebreken() -> Rak:
                             is_aantasting=False,
                             aansluiting_status="G",
                             positionering_aansluiting_cm="0",
-                            is_onderzocht=True,
                             gebreken=[
                                 Gebrek(
                                     codering="GP1",
@@ -76,7 +75,6 @@ def create_mock_rak_with_gebreken() -> Rak:
                             is_aantasting=False,
                             aansluiting_status="G",
                             positionering_aansluiting_cm="0",
-                            is_onderzocht=False,
                         ),
                         Paal(
                             paal_nummer="P2.2",
@@ -93,7 +91,6 @@ def create_mock_rak_with_gebreken() -> Rak:
                             is_aantasting=False,
                             aansluiting_status="G",
                             positionering_aansluiting_cm="0",
-                            is_onderzocht=True,
                         ),
                         Paal(
                             paal_nummer="P1.3",
@@ -110,7 +107,6 @@ def create_mock_rak_with_gebreken() -> Rak:
                             is_aantasting=False,
                             aansluiting_status="G",
                             positionering_aansluiting_cm="0",
-                            is_onderzocht=True,
                         ),
                     ],
                     kespen=[

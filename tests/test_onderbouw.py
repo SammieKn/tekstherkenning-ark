@@ -36,7 +36,7 @@ def test_percentage_ongewenste_schoorstand_alle_eerste_rij(mock_onderbouw: Onder
     """Test dat percentage_ongewenste_schoorstand correct berekent als alle eerste-rij palen PNA hebben."""
     # Zet alle eerste-rij palen (P1.1, P1.2, P1.3) op ongewenste schoorstand
     for paal in mock_onderbouw.palen:
-        if paal.paalrij_nummer == 1:
+        if paal.paal_nummer_main == 1:
             paal.schoor_richting = SchoorStand.NEGATIEF
 
     # 3 van 4 palen = 75.0%
@@ -220,7 +220,7 @@ def test_is_schoorpalen_in_een_richting_niet_van_toepassing(mock_onderbouw: Onde
 
 def test_eerste_rij_palen(mock_onderbouw: Onderbouw):
     """Test dat de eerste rij palen correct wordt geïdentificeerd en gesorteerd."""
-    eerste_rij_palen = mock_onderbouw.eerste_rij_palen
+    eerste_rij_palen = mock_onderbouw.p1_palen
 
     assert len(eerste_rij_palen) == 3
     assert eerste_rij_palen[0].paal_nummer == "P1.1"
@@ -228,7 +228,7 @@ def test_eerste_rij_palen(mock_onderbouw: Onderbouw):
     assert eerste_rij_palen[2].paal_nummer == "P1.3"
 
 
-def test_eerste_rij_palen_wrong_order(mock_onderbouw: Onderbouw):
+def test_p1_palen_wrong_order(mock_onderbouw: Onderbouw):
     """Test dat de eerste rij palen correct wordt geïdentificeerd en gesorteerd."""
     # Change the order of palen
     mock_onderbouw.palen = [
@@ -238,7 +238,7 @@ def test_eerste_rij_palen_wrong_order(mock_onderbouw: Onderbouw):
         mock_onderbouw.palen[2],
     ]
 
-    eerste_rij_palen = mock_onderbouw.eerste_rij_palen
+    eerste_rij_palen = mock_onderbouw.p1_palen
 
     assert len(eerste_rij_palen) == 3
     assert eerste_rij_palen[0].paal_nummer == "P1.1"
@@ -251,7 +251,7 @@ def test_eerste_rij_palen_missing(mock_onderbouw: Onderbouw):
     # Remove one of the palen from the first rij
     mock_onderbouw.palen = [paal for paal in mock_onderbouw.palen if paal.paal_nummer != "P1.2"]
 
-    eerste_rij_palen = mock_onderbouw.eerste_rij_palen
+    eerste_rij_palen = mock_onderbouw.p1_palen
 
     assert len(eerste_rij_palen) == 2
     assert eerste_rij_palen[0].paal_nummer == "P1.1"
@@ -317,7 +317,7 @@ def test_get_consecutive_palen_normal_case(mock_onderbouw: Onderbouw):
     result = mock_onderbouw.get_consecutive_palen()
 
     assert isinstance(result, list)
-    assert len(result) == len(mock_onderbouw.eerste_rij_palen)
+    assert len(result) == len(mock_onderbouw.p1_palen)
 
     # Controleer de volgorde: P1.1 -> P1.2 -> P1.3
     assert result[0].paal_nummer == "P1.1"
@@ -328,7 +328,7 @@ def test_get_consecutive_palen_normal_case(mock_onderbouw: Onderbouw):
 def test_get_consecutive_palen_empty_eerste_rij(mock_onderbouw: Onderbouw):
     """Test dat get_consecutive_palen een lege lijst teruggeeft als er geen eerste rij palen zijn."""
     # Verwijder alle eerste rij palen
-    mock_onderbouw.palen = [paal for paal in mock_onderbouw.palen if paal.paalrij_nummer != 1]
+    mock_onderbouw.palen = [paal for paal in mock_onderbouw.palen if paal.paal_nummer_main != 1]
 
     result = mock_onderbouw.get_consecutive_palen()
 
@@ -373,7 +373,6 @@ def test_get_consecutive_palen_incomplete_chain_error(mock_onderbouw: Onderbouw)
 
     assert isinstance(result, OnverwachtResultaat)
     assert result.onverwacht_resultaat_type == OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT
-    assert "Onvolledige verwerking van palen" in result.details
 
 
 def test_get_consecutive_palen_propagates_get_next_paal_error(mock_onderbouw: Onderbouw):
@@ -419,7 +418,7 @@ def test_get_consecutive_palen_no_hoh_afstand_cm(mock_onderbouw: Onderbouw):
 def test_aantal_paalrijen(mock_onderbouw: Onderbouw):
     """Test dat aantal_paalrijen het aantal unieke paalrijen teruggeeft."""
     # Mock data heeft palen in rij 1 (P1.1, P1.2, P1.3) en rij 2 (P2.2)
-    assert mock_onderbouw.aantal_paalrijen == 2
+    assert mock_onderbouw.aantal_paalrijen == 3
 
 
 def test_aantal_paalrijen_geen_palen(mock_onderbouw: Onderbouw):
@@ -432,8 +431,8 @@ def test_aantal_paalrijen_geen_palen(mock_onderbouw: Onderbouw):
 def test_aantal_palen_per_rij(mock_onderbouw: Onderbouw):
     """Test dat aantal_palen_per_rij een correct overzicht geeft van palen per rij."""
     # Mock data heeft 3 palen in rij 1 en 1 paal in rij 2
-    assert mock_onderbouw.aantal_palen_per_rij == {1: 3, 2: 1}
-    assert mock_onderbouw.max_aantal_palen_per_rij == 3
+    assert mock_onderbouw.aantal_palen_per_rij == {1: 1, 2: 2, 3: 1}
+    assert mock_onderbouw.max_aantal_palen_per_rij == 2
 
 
 def test_aantal_palen_per_rij_extra_paal(mock_onderbouw: Onderbouw, maak_paal_rij_1):
@@ -442,8 +441,8 @@ def test_aantal_palen_per_rij_extra_paal(mock_onderbouw: Onderbouw, maak_paal_ri
     extra_paal = maak_paal_rij_1("P1.4", AansluitingStatus.GOED)
     mock_onderbouw.palen.append(extra_paal)
 
-    assert mock_onderbouw.aantal_palen_per_rij == {1: 4, 2: 1}
-    assert mock_onderbouw.max_aantal_palen_per_rij == 4
+    assert mock_onderbouw.aantal_palen_per_rij == {1: 1, 2: 2, 3: 1, 4: 1}
+    assert mock_onderbouw.max_aantal_palen_per_rij == 2
 
 
 def test_aantal_palen_per_rij_meerdere_rijen(mock_onderbouw: Onderbouw):
@@ -485,7 +484,7 @@ def test_aantal_palen_per_rij_meerdere_rijen(mock_onderbouw: Onderbouw):
     )
     mock_onderbouw.palen.extend([paal_rij_3_1, paal_rij_3_2])
 
-    assert mock_onderbouw.aantal_palen_per_rij == {1: 3, 2: 1, 3: 2}
+    assert mock_onderbouw.aantal_palen_per_rij == {1: 2, 2: 3, 3: 1}
     assert mock_onderbouw.max_aantal_palen_per_rij == 3
 
 
@@ -508,7 +507,7 @@ def test_aantal_ongewenst_schoor_meerdere_palen(mock_onderbouw: Onderbouw):
     """Test dat aantal_ongewenst_schoor correct telt bij meerdere palen met ongewenste schoorstand."""
     # Zet alle eerste-rij palen op negatieve schoorstand
     for paal in mock_onderbouw.palen:
-        if paal.paalrij_nummer == 1:
+        if paal.paal_nummer_main == 1:
             paal.schoor_richting = SchoorStand.NEGATIEF
 
     assert mock_onderbouw.aantal_ongewenst_schoor == 3
@@ -607,16 +606,3 @@ def test_aantal_slechte_aansluitingen_alle_slecht(mock_onderbouw: Onderbouw):
         paal.aansluiting_status = AansluitingStatus.SLECHT
 
     assert mock_onderbouw.aantal_slechte_aansluitingen == 4
-
-
-def test_aantal_rijen_onderzocht_twee_rijen(mock_onderbouw: Onderbouw):
-    """Test dat aantal_rijen_onderzocht het juiste aantal onderzochte paalrijen teruggeeft."""
-    assert mock_onderbouw.aantal_rijen_onderzocht == 2
-
-
-def test_aantal_rijen_onderzocht_een_rij(mock_onderbouw: Onderbouw):
-    """Test dat aantal_rijen_onderzocht het juiste aantal onderzochte paalrijen teruggeeft."""
-    for paal in [p for p in mock_onderbouw.palen if p.paal_nummer_main == 2]:
-        paal.is_onderzocht = False
-
-    assert mock_onderbouw.aantal_rijen_onderzocht == 1

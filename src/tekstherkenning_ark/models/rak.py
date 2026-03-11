@@ -425,7 +425,7 @@ class Rak(RakBaseModel):
                 }
                 rows.append(paal_row)
 
-                if paal.paalrij_nummer == 1 and afstand_van_startrak_cm is not None:
+                if paal.paal_nummer_main == 1 and afstand_van_startrak_cm is not None:
                     afstand_van_startrak_cm = (
                         (afstand_van_startrak_cm + paal.hoh_afstand_cm) if paal.hoh_afstand_cm else None
                     )

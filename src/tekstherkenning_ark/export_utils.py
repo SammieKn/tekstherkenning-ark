@@ -52,7 +52,7 @@ def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:
     from tekstherkenning_ark.models.rak import Rak
 
     smartdocs = [SmartDocument.from_pdf(file) for file in pdf_rapporten if not "boor" in file.stem.lower()]
-    rakken = [Rak.from_smart_document(doc, use_caching=True) for doc in smartdocs]
+    rakken = [Rak.from_smart_document(doc, use_caching=False) for doc in smartdocs]
 
     rak_df = pd.concat([rak._get_rak_df() for rak in rakken])
     rakdeel_df = pd.concat([rak._get_rakdeel_df() for rak in rakken])

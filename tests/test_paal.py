@@ -29,16 +29,16 @@ def test_get_palen_from_doc_tables_no_onverwacht_resultaat(paal_tables: Document
     ), f"Er zijn (onverwacht !) onverwachte resultaten gevonden in de palen: {total_onverwacht}"
 
 
-def test_paalrij_nummer(mock_palen: list[Paal]):
+def test_paal_nummer_main(mock_palen: list[Paal]):
     expected_paal_nummers = ["P1.1", "P1.2", "P2.2", "P1.3"]
     expected_paalrij_nummers = [1, 1, 2, 1]
 
     for paal, expected_nummer, expected_rij in zip(mock_palen, expected_paal_nummers, expected_paalrij_nummers):
         assert paal.paal_nummer == expected_nummer
-        assert paal.paalrij_nummer == expected_rij
+        assert paal.paal_nummer_main == expected_rij
 
 
-def test_paal_nummer_main(mock_palen: list[Paal]):
+def test_paalrij_nummer(mock_palen: list[Paal]):
     expected_paal_nummers = ["P1.1", "P1.2", "P2.2", "P1.3"]
     expected_paal_nummer_mains = [1, 2, 2, 3]
 
@@ -46,7 +46,7 @@ def test_paal_nummer_main(mock_palen: list[Paal]):
         mock_palen, expected_paal_nummers, expected_paal_nummer_mains
     ):
         assert paal.paal_nummer == expected_nummer
-        assert paal.paal_nummer_main == expected_nummer_main
+        assert paal.paalrij_nummer == expected_nummer_main
 
 
 def test_n_scheuren(mock_rakdeel_with_scheuren: Rakdeel):

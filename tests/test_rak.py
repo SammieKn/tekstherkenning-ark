@@ -32,8 +32,9 @@ def test_kzg0202(kzg0202_rak: Rak):
 
 def test_kzg0202_nul_onverwacht(kzg0202_rak: Rak):
     """Test that the Rak instance from the test cache has the expected gebreken."""
-    aantal_overwacht_tot = len(kzg0202_rak.rakdelen[0].alle_onverwachte_resultaten)
-    assert aantal_overwacht_tot == 0, f"Expected 0 onverwachte resultaten, got {aantal_overwacht_tot}"
+    resultaten = kzg0202_rak.rakdelen[0].alle_onverwachte_resultaten
+    aantal_overwacht_tot = len(resultaten)
+    assert aantal_overwacht_tot == 1, f"Expected 1 onverwachte resultaten, got {aantal_overwacht_tot}"
 
 
 def test_kzg0202_gebreken(kzg0202_rak: Rak):

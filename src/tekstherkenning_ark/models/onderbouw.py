@@ -1,5 +1,6 @@
 from pydantic import computed_field
 
+from tekstherkenning_ark.constants import GEM_PAAL_HOH_AFSTAND
 from tekstherkenning_ark.enums import (
     AansluitingStatus,
     MateriaalOnderbouw,
@@ -48,6 +49,7 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_paalrijen(self) -> int:
         """Aantal paalrijen in de onderbouw (unieke paalrij_nummer waarden)."""
+
         return len(set(paal.paalrij_nummer for paal in self.palen))
 
     @computed_field
@@ -68,21 +70,26 @@ class Onderbouw(RakBaseModel):
         """Maximaal aantal palen in een enkele paalrij in de onderbouw."""
         if not self.palen:
             return None
+
         return max(self.aantal_palen_per_rij.values()) if self.aantal_palen_per_rij else None
 
     @computed_field
     @property
     def aantal_rijen_onderzocht(self) -> int:
         """Aantal onderzochte paalrijen in de onderbouw."""
-        return sum([any(paal.is_onderzocht for paal in palen) for palen in self.paal_rijen.values()])
+
+        return len(self.aantal_palen_per_rij)
 
     @computed_field
     @property
     def aantal_palen_dwars(self) -> int:
-        """Aantal paalrijen in dwarsdoorsneden (maximale paalrij_nummer waarde)."""
+        """Aantal palen in dwarsdoorsneden (maximale paal_nummer_main waarde)."""
         if not self.palen:
             return 0
-        return max(paal.paalrij_nummer if isinstance(paal.paalrij_nummer, (int, float)) else 0 for paal in self.palen)
+
+        return max(
+            paal.paal_nummer_main if isinstance(paal.paal_nummer_main, (int, float)) else 0 for paal in self.palen
+        )
 
     @computed_field
     @property
@@ -100,14 +107,34 @@ class Onderbouw(RakBaseModel):
 
     @computed_field
     @property
-    def totaal_aantal_palen(self) -> int:
-        """Totaal aantal palen in de onderbouw."""
-        return len(self.palen)
+    def totaal_aantal_paalrijen(self) -> int | OnverwachtResultaat:
+        """Totaal aantal palen in de onderbouw.
+
+        Alle paalrijen in de tabel zijn per definitie onderzocht. Het kan zijn dat er palen zijn (bijv achter een woonboot) die
+        niet bereikbaar waren en dus niet onderzocht, en dus niet in de tabel.
+        Deze 'missende' palen zijn te achterhalen door grote hoh afstanden tussen palen.
+        """
+
+        eerste_rij_palen = self.get_consecutive_palen()
+
+        if isinstance(eerste_rij_palen, OnverwachtResultaat):
+            return eerste_rij_palen
+
+        n_onderzocht = len(eerste_rij_palen)
+        n_niet_onderzocht = 0
+
+        for paal in eerste_rij_palen:
+            if paal.hoh_afstand_cm and paal.hoh_afstand_cm > GEM_PAAL_HOH_AFSTAND * 2:
+                n_niet_beschreven_palen = int(paal.hoh_afstand_cm / GEM_PAAL_HOH_AFSTAND) - 1
+                n_niet_onderzocht += n_niet_beschreven_palen
+
+        return n_onderzocht + n_niet_onderzocht
 
     @property
     def paal_rijen(self) -> dict[int, list[Paal]]:
         """Geef een dictionary terug waarbij de keys de paalrij_nummer zijn en de values lijsten van palen in die rij."""
-        paal_rijen_dict = {}
+
+        paal_rijen_dict: dict[int, list[Paal]] = {}
         for paal in self.palen:
             if paal.paalrij_nummer not in paal_rijen_dict:
                 paal_rijen_dict[paal.paalrij_nummer] = []
@@ -118,11 +145,11 @@ class Onderbouw(RakBaseModel):
         return paal_rijen_dict
 
     @property
-    def eerste_rij_palen(self) -> list[Paal]:
+    def p1_palen(self) -> list[Paal]:
         """Geef de palen van de eerste rij terug (bijvoorbeeld P1.1, P1.2, P1.3, etc.),
-        gesorteerd op paal_nummer_main."""
+        gesorteerd op paalrij nummer."""
 
-        return self.paal_rijen[1] if 1 in self.paal_rijen else []
+        return sorted([p for p in self.palen if p.paal_nummer_main == 1], key=lambda p: p.paalrij_nummer)
 
     def get_eerste_paal_met_aansluitende_statussen(
         self,
@@ -130,20 +157,20 @@ class Onderbouw(RakBaseModel):
         include_onverwacht_resultaat: bool = False,
     ) -> Paal | None:
         """Geef de eerste paal terug waar een reeks van minimaal vijf aansluitende statussen is bereikt."""
-        for palen in self.paal_rijen.values():
-            aansluitende_status_count = 0
 
-            for paal in palen:
-                is_match = paal.aansluiting_status in aansluiting_statussen
-                if include_onverwacht_resultaat and isinstance(paal.aansluiting_status, OnverwachtResultaat):
-                    is_match = True
+        aansluitende_status_count = 0
 
-                if is_match:
-                    aansluitende_status_count += 1
-                    if aansluitende_status_count >= 5:
-                        return paal
-                else:
-                    aansluitende_status_count = 0
+        for paal in self.p1_palen:
+            is_match = paal.aansluiting_status in aansluiting_statussen
+            if include_onverwacht_resultaat and isinstance(paal.aansluiting_status, OnverwachtResultaat):
+                is_match = True
+
+            if is_match:
+                aansluitende_status_count += 1
+                if aansluitende_status_count >= 5:
+                    return paal
+            else:
+                aansluitende_status_count = 0
 
         return None
 
@@ -172,14 +199,14 @@ class Onderbouw(RakBaseModel):
     @property
     def aantal_onderzochte_palen(self) -> int:
         """Aantal palen dat daadwerkelijk onderzocht is."""
-        return sum(1 for paal in self.palen if paal.is_onderzocht)
+        return len(self.palen)
 
     @computed_field
     @property
     def aantal_ongewenst_schoor(self) -> int:
         """Aantal palen met geconstateerde negatieve schoorstand."""
 
-        return sum((paal.is_ongewenste_schoorstand or 0) and paal.paalrij_nummer == 1 for paal in self.palen)
+        return sum((paal.is_ongewenste_schoorstand or 0) and paal.paal_nummer_main == 1 for paal in self.palen)
 
     @computed_field
     @property
@@ -200,6 +227,7 @@ class Onderbouw(RakBaseModel):
     @property
     def is_schoorpalen_in_een_richting(self) -> bool | NietBeschikbaar:
         """Controleer of alle palen met geconstateerde schoorstand in dezelfde richting staan (allemaal positief of allemaal negatief)."""
+
         schoorstanden = {paal.schoor_richting for paal in self.palen if paal.is_schoorpaal}
         return len(schoorstanden) <= 1 if schoorstanden else NietBeschikbaar.NIET_VAN_TOEPASSING
 
@@ -269,10 +297,12 @@ class Onderbouw(RakBaseModel):
             - Ontbrekende paalreferenties (bijvoorbeeld een ontbrekende P1.13 in een reeks van P1.1 t/m P1.20)
         """
 
-        if not self.eerste_rij_palen:
+        p1_palen = self.p1_palen
+
+        if not p1_palen:
             return []
 
-        current_paal = self.eerste_rij_palen[0]
+        current_paal = p1_palen[0]
         consecutive_palen = []
 
         while current_paal:
@@ -300,11 +330,11 @@ class Onderbouw(RakBaseModel):
                 return current_paal
 
         # Validate that we have processed the expected number of palen based on the first row palen in onderbouw
-        if not len(consecutive_palen) == len(self.eerste_rij_palen):
+        if not len(consecutive_palen) == len(p1_palen):
             return OnverwachtResultaat(
                 waarde=None,
                 onverwacht_resultaat_type=OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT,
-                details=f"Onvolledige verwerking van palen: {len(consecutive_palen)} van {len(self.eerste_rij_palen)} palen verwerkt. Dit kan duiden op onvolledige data of een gebroken reeks.",
+                details=f"Ontbrekende palen in hoh_paalnummer verwijzingen: {len(consecutive_palen)} van {len(p1_palen)} palen verwerkt.",
             )
 
         return consecutive_palen
@@ -321,9 +351,7 @@ class Onderbouw(RakBaseModel):
         """
 
         # Determine the next paal in the sequence based on hoh_paalnummer.
-        palen_that_refer_to_current_paal = [
-            p for p in self.eerste_rij_palen if p.hoh_paalnummer == current_paal.paal_nummer
-        ]
+        palen_that_refer_to_current_paal = [p for p in self.p1_palen if p.hoh_paalnummer == current_paal.paal_nummer]
 
         # Check if there are multiple palen that refer to the same hoh_paalnummer, which would indicate a data issue
         if len(palen_that_refer_to_current_paal) > 1:

@@ -22,7 +22,6 @@ class Paal(RakBaseModel):
         paal_nummer: Nummer van de paal binnen de paalrij.
         aansluiting_status: Status van de aansluiting paal-kesp of paal-vloer.
         is_negatief_schoor: Indicatie of de paal negatief schoor staat (PNA in de tabel).
-        is_onderzocht: Indicatie of de paal is onderzocht.
         schoorstand_graden: Schoorstand van de paal in graden.
         scheefstand: Indicatie of de paal scheefstand heeft.
         materiaal: Materiaal van de paal. (MateriaalOnderbouw)
@@ -48,9 +47,6 @@ class Paal(RakBaseModel):
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Paalnummer'.
     paal_nummer: str
-
-    # Te vinden in de meettabel funderingspalen, Bijlage 3, kolom 'Onderzocht'.
-    is_onderzocht: bool | None = None
 
     # Te vinden in de meettabel funderingspalen, Bijlage 3, kolommen 'diameter'.
     diameter_haaks: int | NietBeschikbaar
@@ -89,19 +85,19 @@ class Paal(RakBaseModel):
     @computed_field
     @property
     def paalrij_nummer(self) -> int:
-        """Geef het nummer van de paalrij terug als string. (P1.12 -> 1)"""
-        return int(self.paal_nummer.split(".")[0].replace("P", ""))
-
-    @computed_field
-    @property
-    def paal_nummer_main(self) -> int | None:
-        """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 12)"""
+        """Geef het nummer van de paalrij terug als string. (P1.12 -> 12)"""
 
         try:
             return int(self.paal_nummer.split(".")[1])
         except:
             logger.warning(f"Failed to extract main nummer from paal nummer {self.paal_nummer}")
             return None
+
+    @computed_field
+    @property
+    def paal_nummer_main(self) -> int | None:
+        """Geef het hoofdnummer van de paal terug als integer. (P1.12 -> 1)"""
+        return int(self.paal_nummer.split(".")[0].replace("P", ""))
 
     @property
     def is_schoorpaal(self) -> bool:
@@ -189,14 +185,14 @@ class Paal(RakBaseModel):
             paal_dict = utils.remove_constructie_id(paal_dict)
 
         # Validate paal nummers are sequential within each constructie ID
-        prev_main_paal_nummer = 0
+        prev_paalrij_nummer = 0
 
         for paal in utils.dict_items_flat(paal_dict):
-            if not paal.paal_nummer_main in [prev_main_paal_nummer, prev_main_paal_nummer + 1]:
+            if not paal.paalrij_nummer in [prev_paalrij_nummer, prev_paalrij_nummer + 1]:
                 logger.warning(
-                    f"Non-sequential paal nummers found. Expected Px.{prev_main_paal_nummer + 1} after Px.{prev_main_paal_nummer} but instead got {paal.paal_nummer}"
+                    f"Non-sequential paal nummers found. Expected Px.{prev_paalrij_nummer + 1} after Px.{prev_paalrij_nummer} but instead got {paal.paal_nummer}"
                 )
-            prev_main_paal_nummer = paal.paal_nummer_main
+            prev_paalrij_nummer = paal.paalrij_nummer
 
         return paal_dict
 
