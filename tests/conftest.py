@@ -15,6 +15,7 @@ from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark import constants
 from pathlib import Path
 
+from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
@@ -96,6 +97,12 @@ def mock_rak_with_scheuren() -> Rak:
 def mock_rakdeel(mock_rak_with_gebreken: Rak) -> Rakdeel:
     """Fixture to provide a single Rakdeel from the mock Rak with gebreken."""
     return mock_rak_with_gebreken.rakdelen[0]
+
+
+@pytest.fixture()
+def mock_onderbouw(mock_rakdeel: Rakdeel) -> Onderbouw:
+    """Fixture to provide the Onderbouw from the mock Rakdeel with gebreken."""
+    return mock_rakdeel.onderbouw
 
 
 @pytest.fixture()
