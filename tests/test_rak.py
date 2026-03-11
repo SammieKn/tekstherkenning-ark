@@ -22,7 +22,6 @@ import pytest
 
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
-from tests.conftest import TEST_DATA_DIR
 
 
 def test_kzg0202(kzg0202_rak: Rak):
@@ -83,8 +82,10 @@ class TestRakToJson:
         """Test that a mock Rak with scheuren can be serialized to JSON."""
         json_str = mock_rak_with_scheuren.model_dump_json(indent=2)
 
-        # Uncomment this line to update the expected JSON file with the current output
+        # Uncomment these line to update the expected JSON file with the current output
         # (useful when intentionally changing the model structure or test data)
+
+        # from tests.conftest import TEST_DATA_DIR
         # (TEST_DATA_DIR / "mock_rak_with_scheuren.json").write_text(json_str, encoding="utf-8")
 
         expected_dict = json.loads(mock_rak_with_scheuren_json)
