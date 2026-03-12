@@ -41,14 +41,22 @@ class Rakdeel(RakBaseModel):
 
     Attributes:
         rakdeel_id: Unieke identificatie van het rakdeel.
-        bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
-        constructietype: Type constructie van het rakdeel (bijvoorbeeld houten paalfundering, betonnen L-wand, etc.).
+        omschrijving: Tekstuele omschrijving van het rakdeel.
         lengte_m_omschrijving: Lengte van het rakdeel in meters uitgelezen uit de omschrijving.
-        onderbouw: Object met alle eigenschappen van de onderbouw van het rakdeel.
-        rakdeel_id: Unieke identificatie van het rakdeel, bijvoorbeeld 'Constructie A' of 'Constructie B'.
         bouwjaar: Bouwjaar van het rakdeel.
+        bovenbouw: Object met alle eigenschappen van de bovenbouw van het rakdeel.
+        onderbouw: Object met alle eigenschappen van de onderbouw van het rakdeel.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        alle_onverwachte_resultaten: Lijst van alle onverwachte resultaten in dit rakdeel en onderliggende objecten.
+        alle_gebreken: Lijst van alle gebreken in dit rakdeel en onderliggende objecten.
+        percentage_niet_functionerend_schuifhout: Percentage opsluitklossen dat aangetast is.
+        vijf_slechte_kespen_naast_elkaar: Indicatie of er 5 aangetaste kespen naast elkaar staan.
+        lengte_m: Lengte van het rakdeel in meters (uit omschrijving of afgeleid).
+        lengte_m_afgeleid: Lengte afgeleid uit de paalafstanden.
+        aantal_scheuren_per_meter: Scheur-dichtheid per meter.
     """
 
     # Te vinden in paragraaf 5.x, kopregel of inhoudsopgave.

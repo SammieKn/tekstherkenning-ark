@@ -13,20 +13,23 @@ class Kesp(RakBaseModel):
     """Kesp.
 
     Attributes:
-        kespnummer: Uniek nummer van de kesp, zoals vermeld in de meettabel kespen.
+        kesp_nummer: Uniek nummer van de kesp.
         hoogte_cm: Hoogte van de kesp in centimeters.
         breedte_cm: Breedte van de kesp in centimeters.
         hoek_tov_lengte_as_graden: Hoek die de kesp maakt met de lengte-as van de frontwand, in graden.
         lengte_uitstekend_deel_cm: Lengte van het uitstekende deel van de kesp ten opzichte van de voorzijde van de frontwand, in centimeters.
         mate_inknijping_cm: Mate van inknijping ten opzichte van de oorspronkelijke staat, in centimeters.
-        indrukking_paal_in_kesp_cm: Indrukking van de funderingspaal in de kesp, in centimeters.
+        indrukking_paal_in_kesp: Indicatie of er indrukking van de funderingspaal in de kesp is.
         is_opsluitklos_aanwezig: Indicatie of een opsluitklos aanwezig is.
         is_opsluitklos_aangetast: Indicatie of de opsluitklos aangetast is.
         is_vervormd: Indicatie of er vervorming van de kesp is vastgesteld.
         is_aangetast: Indicatie of er aantasting van de kesp is vastgesteld.
-        paalrij_nr: Nummer van de paalrij waartoe de kesp behoort.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        is_slecht: Indicatie of de kesp als 'slecht' wordt beschouwd (aangetast of met gebreken).
+        kesp_nummer_main: Hoofdnummer van de kesp.
     """
 
     # Te vinden in Bijlage 3, kolom 'Kespnummer'.

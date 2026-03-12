@@ -38,6 +38,11 @@ class Gebrek(BaseModel):
         Omschrijving van het gebrek.
     figuurnummer : str | NietBeschikbaar
         Figuurnummer behorend bij het gebrek.
+
+    Properties (berekend)
+    ---------------------
+    gebrek_type : str
+        Het type gebrek (klassenaam van het gebrek).
     """
 
     codering: str

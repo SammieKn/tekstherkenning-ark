@@ -22,10 +22,36 @@ class Onderbouw(RakBaseModel):
 
     Attributes:
         kespen: Lijst van onderzochte kespen onder het rakdeel.
-        onderloopsheidscherm: Onderloopsheidscherm van de onderbouw.
         palen: Lijst van palen onder het rakdeel.
         vloer: Vloer van de onderbouw.
+        onderloopsheidscherm: Onderloopsheidscherm van de onderbouw.
         materiaal: Materiaal van de onderbouw (bijvoorbeeld hout, beton, staal).
+        materiaal_fundering: Materiaal van de fundering.
+
+    Properties (berekend):
+        aantal_onderzochte_paalrijen: Aantal onderzochte paalrijen.
+        aantal_palen_per_rij: Dictionary met aantal palen per paalrij.
+        max_aantal_palen_per_rij: Maximaal aantal palen in een enkele paalrij.
+        aantal_rijen_onderzocht: Aantal onderzochte paalrijen.
+        aantal_palen_dwars: Aantal palen in dwarsdoorsneden.
+        aantal_aansluitingen: Totaal aantal aansluitingen tussen palen en kespen.
+        aantal_slechte_aansluitingen: Totaal aantal slechte aansluitingen.
+        ingeschat_aantal_paalrijen: Totaal aantal paalrijen inclusief niet-onderzochte.
+        paal_rijen: Dictionary van palen gegroepeerd per paalrij.
+        p1_palen: Palen van de eerste rij.
+        is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij: Indicatie of er 5 aaneengesloten slechte aansluitingen zijn.
+        aantal_onderzochte_palen: Aantal daadwerkelijk onderzochte palen.
+        aantal_ongewenst_schoor: Aantal palen met negatieve schoorstand.
+        percentage_ongewenste_schoorstand: Percentage palen met ongewenste schoorstand.
+        aantal_palen_met_scheefstand: Aantal palen met scheefstand.
+        is_schoorpalen_in_een_richting: Check of schoorpalen allemaal in dezelfde richting staan.
+        aantal_schoorpalen: Aantal palen met schoorstand.
+        aantal_palen_met_paalbreuk: Aantal palen met paalbreuk.
+        totaal_aantal_kespen: Totaal aantal kespen.
+        aantal_beschadigde_kespen: Aantal kespen met vervorming of aantasting.
+        percentage_beschadigde_kespen: Percentage kespen met vervorming of aantasting.
+        percentage_vervormde_kespen: Percentage kespen met vervorming.
+        percentage_beschadigde_verbinding: Percentage palen met slechte aansluiting.
     """
 
     # Te vinden in de meettabel kespen (Bijlage 3).

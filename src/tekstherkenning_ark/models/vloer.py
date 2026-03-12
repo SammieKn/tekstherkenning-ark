@@ -16,12 +16,14 @@ class Vloer(RakBaseModel):
     """Vloer.
 
     Attributes:
-        is_beschadigd: Indicatie of de vloer beschadigd is.
         materiaal: Materiaal van de vloer (bijvoorbeeld hout, beton).
         bovenkant_vloer_cm_tov_nap: Hoogte van de bovenkant van de vloer ten opzichte van NAP, in centimeters.
         is_meerdere_locaties: Indicatie of de schade aan de vloer op meerdere locaties voorkomt.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        is_beschadigd: Indicatie of de vloer beschadigd is.
     """
 
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.

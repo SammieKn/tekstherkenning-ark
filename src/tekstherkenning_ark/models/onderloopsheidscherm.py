@@ -16,10 +16,12 @@ class Onderloopsheidscherm(RakBaseModel):
     """Onderloopsheidscherm.
 
     Attributes:
-        is_beschadigd: Indicatie of het onderloopsheidscherm beschadigd is (op meerdere plekken).
         is_meerdere_locaties: Indicatie of de schade aan het onderloopsheidscherm op meerdere locaties voorkomt.
         gebreken: Lijst van gebreken (inherited from RakBaseModel).
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
+
+    Properties (berekend):
+        is_beschadigd: Indicatie of het onderloopsheidscherm beschadigd is.
     """
 
     # Te vinden in de uitleg bij het algemene gebrek in de gebrekentabel (paragraaf 2.3 of 5.3.3).
