@@ -1,0 +1,596 @@
+{
+  "gebreken": [],
+  "opmerkingen": "",
+  "toestand_onderdelen": [],
+  "rakdelen": [
+    {
+      "gebreken": [],
+      "opmerkingen": "",
+      "toestand_onderdelen": [],
+      "rakdeel_id": "Constructie A",
+      "omschrijving": "Houten paalfundering met meerdere scheuren in verschillende palen",
+      "lengte_m_omschrijving": 20.0,
+      "bouwjaar": null,
+      "bovenbouw": {
+        "gebreken": [
+          {
+            "codering": "S1",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 0.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S2",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 2.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S3",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 5.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S4",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 12.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 18.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 19.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 20.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 21.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 40.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          },
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 56.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        "opmerkingen": "",
+        "toestand_onderdelen": [],
+        "materiaal": "Metselwerk",
+        "maximaal_aantal_scheuren_per_10_m": 5,
+        "bovenkant_deksteen_cm_tov_nap": null,
+        "totaal_aantal_scheuren": 10,
+        "maximale_scheurwijdte_mm": null,
+        "is_buik_in_wand_aanwezig": false,
+        "is_grondvoerend_gat_aanwezig": false,
+        "is_lokaal_verdwenen_metselwerk": false,
+        "is_scheefstand_met_scheur_aanwezig": false,
+        "scheefstand_met_scheur_in_wand": [],
+        "is_buik_met_scheur_aanwezig": false,
+        "buik_met_scheur_in_wand": []
+      },
+      "onderbouw": {
+        "gebreken": [],
+        "opmerkingen": "",
+        "toestand_onderdelen": [],
+        "kespen": [],
+        "palen": [
+          {
+            "gebreken": [
+              {
+                "codering": "SH1.1.1",
+                "omschrijving": "Scheur in hout verticaal",
+                "figuurnummer": "F1",
+                "gebrek_type": "ScheurHout"
+              },
+              {
+                "codering": "SH1.1.2",
+                "omschrijving": "Scheur in hout horizontaal",
+                "figuurnummer": "F2",
+                "gebrek_type": "ScheurHout"
+              }
+            ],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P1.1",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 300,
+            "hoh_paalnummer": "",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 1,
+            "paal_nummer_main": 1,
+            "n_scheuren": 2,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [
+              {
+                "codering": "SH2.1.1",
+                "omschrijving": "Scheur in hout horizontaal",
+                "figuurnummer": "F4",
+                "gebrek_type": "ScheurHout"
+              }
+            ],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P2.1",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 300,
+            "hoh_paalnummer": "",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 2,
+            "paal_nummer_main": 1,
+            "n_scheuren": 1,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [
+              {
+                "codering": "SH1.2.1",
+                "omschrijving": "Scheur in hout verticaal",
+                "figuurnummer": "F5",
+                "gebrek_type": "ScheurHout"
+              }
+            ],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P1.2",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 400,
+            "hoh_paalnummer": "P1.1",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 1,
+            "paal_nummer_main": 2,
+            "n_scheuren": 1,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P1.3",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 500,
+            "hoh_paalnummer": "P1.2",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 1,
+            "paal_nummer_main": 3,
+            "n_scheuren": 0,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P2.3",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 500,
+            "hoh_paalnummer": "P2.2",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 2,
+            "paal_nummer_main": 3,
+            "n_scheuren": 0,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P1.4",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 400,
+            "hoh_paalnummer": "P1.3",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 1,
+            "paal_nummer_main": 4,
+            "n_scheuren": 0,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [
+              {
+                "codering": "SH2.4.1",
+                "omschrijving": "Scheur in hout verticaal",
+                "figuurnummer": "F11",
+                "gebrek_type": "ScheurHout"
+              }
+            ],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P2.4",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 400,
+            "hoh_paalnummer": "P2.3",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 2,
+            "paal_nummer_main": 4,
+            "n_scheuren": 1,
+            "is_ongewenste_schoorstand": false
+          },
+          {
+            "gebreken": [],
+            "opmerkingen": "",
+            "toestand_onderdelen": [],
+            "paal_nummer": "P1.5",
+            "diameter_haaks": 150,
+            "diameter_parallel": 150,
+            "diameter_gemiddeld": 150,
+            "hoh_afstand_cm": 300,
+            "hoh_paalnummer": "P1.4",
+            "schoor_graden": 5,
+            "schoor_richting": "PNV",
+            "afstand_frontwand_cm": 25,
+            "is_scheefstand": false,
+            "is_paalbreuk": false,
+            "is_aantasting": false,
+            "aansluiting_status": "G",
+            "positionering_aansluiting_cm": "0",
+            "houtmonsters": [],
+            "paalrij_nummer": 1,
+            "paal_nummer_main": 5,
+            "n_scheuren": 0,
+            "is_ongewenste_schoorstand": false
+          }
+        ],
+        "vloer": {
+          "gebreken": [],
+          "opmerkingen": "",
+          "toestand_onderdelen": [],
+          "materiaal": "Hout",
+          "bovenkant_vloer_cm_tov_nap": -120.5,
+          "is_meerdere_locaties": null,
+          "is_beschadigd": false
+        },
+        "onderloopsheidscherm": null,
+        "materiaal": "",
+        "materiaal_fundering": "",
+        "aantal_paalrijen": 2,
+        "aantal_palen_per_rij": {
+          "1": 5,
+          "2": 3
+        },
+        "aantal_rijen_onderzocht": 0,
+        "aantal_palen_dwars": 2,
+        "aantal_aansluitingen": 8,
+        "aantal_slechte_aansluitingen": 0,
+        "totaal_aantal_palen": 8,
+        "is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij": false,
+        "aantal_onderzochte_palen": 0,
+        "aantal_ongewenst_schoor": 0,
+        "percentage_ongewenste_schoorstand": 0.0,
+        "aantal_palen_met_scheefstand": 0,
+        "is_schoorpalen_in_een_richting": true,
+        "aantal_schoorpalen": 8,
+        "aantal_palen_met_paalbreuk": 0,
+        "totaal_aantal_kespen": 0,
+        "aantal_beschadigde_kespen": 0,
+        "percentage_beschadigde_kespen": null,
+        "percentage_vervormde_kespen": null,
+        "percentage_beschadigde_verbinding": 0.0
+      },
+      "alle_onverwachte_resultaten": [],
+      "alle_gebreken": [
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S1",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 0.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S2",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 2.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S3",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 5.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S4",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 12.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 18.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 19.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 20.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 21.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 40.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/bovenbouw",
+          {
+            "codering": "S5",
+            "omschrijving": "Scheur in metselwerk",
+            "figuurnummer": "",
+            "afstand_van_startrak_m": 56.0,
+            "lengte_cm": "",
+            "scheurwijdte_mm": "",
+            "gebrek_type": "Scheur"
+          }
+        ],
+        [
+          "Constructie A/onderbouw/P1.1",
+          {
+            "codering": "SH1.1.1",
+            "omschrijving": "Scheur in hout verticaal",
+            "figuurnummer": "F1",
+            "afstand_van_startrak_m": "",
+            "lengte_cm": 10.0,
+            "scheurwijdte_mm": 20.0,
+            "diepte_cm": 5.0,
+            "orientatie": "verticaal",
+            "gebrek_type": "ScheurHout"
+          }
+        ],
+        [
+          "Constructie A/onderbouw/P1.1",
+          {
+            "codering": "SH1.1.2",
+            "omschrijving": "Scheur in hout horizontaal",
+            "figuurnummer": "F2",
+            "afstand_van_startrak_m": "",
+            "lengte_cm": 8.0,
+            "scheurwijdte_mm": 15.0,
+            "diepte_cm": 3.0,
+            "orientatie": "horizontaal",
+            "gebrek_type": "ScheurHout"
+          }
+        ],
+        [
+          "Constructie A/onderbouw/P2.1",
+          {
+            "codering": "SH2.1.1",
+            "omschrijving": "Scheur in hout horizontaal",
+            "figuurnummer": "F4",
+            "afstand_van_startrak_m": "",
+            "lengte_cm": 6.0,
+            "scheurwijdte_mm": 10.0,
+            "diepte_cm": 4.0,
+            "orientatie": "horizontaal",
+            "gebrek_type": "ScheurHout"
+          }
+        ],
+        [
+          "Constructie A/onderbouw/P1.2",
+          {
+            "codering": "SH1.2.1",
+            "omschrijving": "Scheur in hout verticaal",
+            "figuurnummer": "F5",
+            "afstand_van_startrak_m": "",
+            "lengte_cm": 12.0,
+            "scheurwijdte_mm": 25.0,
+            "diepte_cm": 8.0,
+            "orientatie": "verticaal",
+            "gebrek_type": "ScheurHout"
+          }
+        ],
+        [
+          "Constructie A/onderbouw/P2.4",
+          {
+            "codering": "SH2.4.1",
+            "omschrijving": "Scheur in hout verticaal",
+            "figuurnummer": "F11",
+            "afstand_van_startrak_m": "",
+            "lengte_cm": 20.0,
+            "scheurwijdte_mm": 50.0,
+            "diepte_cm": 15.0,
+            "orientatie": "verticaal",
+            "gebrek_type": "ScheurHout"
+          }
+        ]
+      ],
+      "percentage_niet_functionerend_schuifhout": null,
+      "vijf_slechte_kespen_naast_elkaar": false,
+      "lengte_m": 20.0,
+      "aantal_scheuren_per_meter": 0.5
+    }
+  ],
+  "raknaam": "Test Rak Maximaal Scheuren",
+  "totale_lengte_m": 30.0,
+  "unassigned_palen": [],
+  "unassigned_kespen": [],
+  "unassigned_houtmonsters": [],
+  "aantal_rakdelen": 1
+}

@@ -1,0 +1,292 @@
+"""Mock Rak object met ScheurHout gebreken voor het testen van scheur berekeningen."""
+
+from tekstherkenning_ark.models.rak import Rak
+from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.vloer import Vloer
+from tekstherkenning_ark.models.gebrek import Scheur, ScheurHout
+
+
+def create_mock_rak_with_scheuren() -> Rak:
+    """Maak een mock Rak object voor het testen van maximaal_aantal_scheuren_per_10_m.
+
+    Returns
+    -------
+    Rak
+        Mock Rak object met meerdere palen met ScheurHout gebreken.
+    """
+    return Rak(
+        raknaam="Test Rak Maximaal Scheuren",
+        totale_lengte_m=30.0,
+        rakdelen=[
+            Rakdeel(
+                rakdeel_id="Constructie A",
+                omschrijving="Houten paalfundering met meerdere scheuren in verschillende palen",
+                lengte_m_omschrijving=20.0,
+                bovenbouw=Bovenbouw(
+                    materiaal="Metselwerk",
+                    gebreken=[
+                        Scheur(
+                            codering="S1",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=0,
+                        ),
+                        Scheur(
+                            codering="S2",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=2,
+                        ),
+                        Scheur(
+                            codering="S3",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=5,
+                        ),
+                        Scheur(
+                            codering="S4",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=12,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=18,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=19,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=20,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=21,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=40,
+                        ),
+                        Scheur(
+                            codering="S5",
+                            omschrijving="Scheur in metselwerk",
+                            figuurnummer="",
+                            afstand_van_startrak_m=56,
+                        ),
+                    ],
+                ),
+                onderbouw=Onderbouw(
+                    palen=[
+                        # Paalrij 1: P1.1 (3 ScheurHout), P1.2 (1 ScheurHout), P1.3 (0), P1.4 (3 ScheurHout), P1.5 (0)
+                        # Paalrij 2: P2.1 (1 ScheurHout), P2.2 (2 ScheurHout), P2.3 (0), P2.4 (1 ScheurHout), P2.5 (0)
+                        Paal(
+                            paal_nummer="P1.1",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=300,
+                            hoh_paalnummer="",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[
+                                ScheurHout(
+                                    codering="SH1.1.1",
+                                    omschrijving="Scheur in hout verticaal",
+                                    figuurnummer="F1",
+                                    lengte_cm=10.0,
+                                    scheurwijdte_mm=20.0,
+                                    diepte_cm=5.0,
+                                    orientatie="verticaal",
+                                ),
+                                ScheurHout(
+                                    codering="SH1.1.2",
+                                    omschrijving="Scheur in hout horizontaal",
+                                    figuurnummer="F2",
+                                    lengte_cm=8.0,
+                                    scheurwijdte_mm=15.0,
+                                    diepte_cm=3.0,
+                                    orientatie="horizontaal",
+                                ),
+                            ],
+                        ),
+                        Paal(
+                            paal_nummer="P2.1",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=300,
+                            hoh_paalnummer="",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[
+                                ScheurHout(
+                                    codering="SH2.1.1",
+                                    omschrijving="Scheur in hout horizontaal",
+                                    figuurnummer="F4",
+                                    lengte_cm=6.0,
+                                    scheurwijdte_mm=10.0,
+                                    diepte_cm=4.0,
+                                    orientatie="horizontaal",
+                                ),
+                            ],
+                        ),
+                        Paal(
+                            paal_nummer="P1.2",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=400,
+                            hoh_paalnummer="P1.1",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[
+                                ScheurHout(
+                                    codering="SH1.2.1",
+                                    omschrijving="Scheur in hout verticaal",
+                                    figuurnummer="F5",
+                                    lengte_cm=12.0,
+                                    scheurwijdte_mm=25.0,
+                                    diepte_cm=8.0,
+                                    orientatie="verticaal",
+                                ),
+                            ],
+                        ),
+                        Paal(
+                            paal_nummer="P1.3",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=500,
+                            hoh_paalnummer="P1.2",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[],
+                        ),
+                        Paal(
+                            paal_nummer="P2.3",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=500,
+                            hoh_paalnummer="P2.2",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[],
+                        ),
+                        Paal(
+                            paal_nummer="P1.4",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=400,
+                            hoh_paalnummer="P1.3",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[],
+                        ),
+                        Paal(
+                            paal_nummer="P2.4",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=400,
+                            hoh_paalnummer="P2.3",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[
+                                ScheurHout(
+                                    codering="SH2.4.1",
+                                    omschrijving="Scheur in hout verticaal",
+                                    figuurnummer="F11",
+                                    lengte_cm=20.0,
+                                    scheurwijdte_mm=50.0,
+                                    diepte_cm=15.0,
+                                    orientatie="verticaal",
+                                ),
+                            ],
+                        ),
+                        Paal(
+                            paal_nummer="P1.5",
+                            diameter_haaks=150,
+                            diameter_parallel=150,
+                            diameter_gemiddeld=150,
+                            hoh_afstand_cm=300,
+                            hoh_paalnummer="P1.4",
+                            schoor_graden=5,
+                            schoor_richting="PNV",
+                            afstand_frontwand_cm=25,
+                            is_scheefstand=False,
+                            is_paalbreuk=False,
+                            is_aantasting=False,
+                            aansluiting_status="G",
+                            positionering_aansluiting_cm="0",
+                            gebreken=[],
+                        ),
+                    ],
+                    kespen=[],
+                    vloer=Vloer(
+                        materiaal="Hout",
+                        bovenkant_vloer_cm_tov_nap=-120.5,
+                    ),
+                ),
+                gebreken=[],
+            ),
+        ],
+    )

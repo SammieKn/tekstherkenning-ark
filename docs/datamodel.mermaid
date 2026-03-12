@@ -1,0 +1,223 @@
+classDiagram
+%% Optional indicated by '?' ; collections shown as list~T~
+
+class AansluitingStatus {
+  <<enumeration>>
+  GOED
+  NIET_MEETBAAR
+  SLECHT
+}
+
+class NietBeschikbaar {
+  <<enumeration>>
+  NIET_VAN_TOEPASSING
+  NIET_MEETBAAR
+  LEEG
+}
+
+class MateriaalFundering {
+  <<enumeration>>
+  HOUT
+  STAAL
+  BETON
+}
+
+class MateriaalOnderbouw {
+  <<enumeration>>
+  HOUT
+  STAAL
+  BETON
+}
+
+class MateriaalBovenbouw {
+  <<enumeration>>
+  METSELWERK
+  BASALT
+  BETON_METSELWERK
+  BETON_BASALT
+  BETON
+}
+
+class MateriaalVloer {
+  <<enumeration>>
+  ONBEKEND
+  HOUT
+  BETON
+}
+
+class SchoorStand {
+  <<enumeration>>
+  POSITIEF
+  NEGATIEF
+  NEUTRAAL
+}
+
+class Gebrek {
+  codering: str
+  omschrijving: str
+  figuurnummer: str
+}
+
+class Scheur {
+  lengte_cm: int
+  scheurwijdte_mm: int
+  afstand_van_startrak: int?
+  orientatie: str?
+}
+
+class GrondVoerendGat {
+  afmetingen_cm: list~int?~
+}
+
+class BuikInWand {
+  uitbuiging_cm: int
+}
+
+class Scheefstand {
+  hoek_graden: int
+}
+
+class LokaalVerdwenenMetselwerk {
+  afmetingen_cm: list~int?~
+}
+
+class Houtmonster {
+  codering: str
+  rak_code: str
+  paal_nummer: str
+  houtmonster_code: str
+  diameter_paal_ter_hoogte_houtmonster_mm: int?
+  hoogte_onder_nap_cm: int?
+  hoogte_tov_onderzijde_fundering_cm: int?
+  is_wankant_aanwezig: bool?
+  datum_monstername: str?
+  is_aangetast: bool?
+  stichtingjaar: int?
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Bovenbouw {
+  materiaal: MateriaalBovenbouw | NietBeschikbaar
+  bovenkant_deksteen_cm_tov_nap: float?
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Kesp {
+  kesp_nummer: str
+  hoogte_cm: int | NietBeschikbaar
+  breedte_cm: int | NietBeschikbaar
+  hoek_tov_lengte_as_graden: int | NietBeschikbaar?
+  lengte_uitstekend_deel_cm: int | NietBeschikbaar
+  mate_inknijping_cm: int | NietBeschikbaar?
+  indrukking_paal_in_kesp: bool | NietBeschikbaar?
+  is_opsluitklos_aanwezig: bool | NietBeschikbaar?
+  is_opsluitklos_aangetast: bool | NietBeschikbaar
+  is_vervormd: bool | NietBeschikbaar?
+  is_aangetast: bool | NietBeschikbaar?
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Onderloopsheidscherm {
+  is_meerdere_locaties: bool?
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Paal {
+  paal_nummer: str
+  diameter_haaks: int | NietBeschikbaar
+  diameter_parallel: int | NietBeschikbaar
+  diameter_gemiddeld: int | NietBeschikbaar
+  hoh_afstand_cm: int | NietBeschikbaar
+  hoh_paalnummer: str
+  schoor_graden: int | NietBeschikbaar
+  schoor_richting: SchoorStand | NietBeschikbaar
+  afstand_frontwand_cm: int | NietBeschikbaar
+  is_scheefstand: bool | NietBeschikbaar
+  is_paalbreuk: bool | NietBeschikbaar
+  is_aantasting: bool | NietBeschikbaar
+  aansluiting_status: AansluitingStatus
+  positionering_aansluiting_cm: str | NietBeschikbaar
+  houtmonsters: list~Houtmonster~
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Vloer {
+  materiaal: MateriaalVloer | NietBeschikbaar
+  bovenkant_vloer_cm_tov_nap: float?
+  is_meerdere_locaties: bool?
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Onderbouw {
+  kespen: list~Kesp~
+  palen: list~Paal~
+  vloer: Vloer?
+  onderloopsheidscherm: Onderloopsheidscherm?
+  materiaal: MateriaalOnderbouw | NietBeschikbaar
+  materiaal_fundering: MateriaalFundering | NietBeschikbaar
+}
+
+class Rakdeel {
+  rakdeel_id: str
+  omschrijving: str
+  lengte_m_omschrijving: float | NietBeschikbaar?
+  bouwjaar: int?
+  bovenbouw: Bovenbouw
+  onderbouw: Onderbouw
+  gebreken: list~Gebrek~
+  opmerkingen: str
+}
+
+class Rak {
+  rakdelen: list~Rakdeel~
+  raknaam: str
+  totale_lengte_m: float
+  unassigned_palen: list~Paal~
+  unassigned_kespen: list~Kesp~
+  unassigned_houtmonsters: list~Houtmonster~
+  opmerkingen: str
+}
+
+%% Inheritance relationships
+Scheur --|> Gebrek
+GrondVoerendGat --|> Gebrek
+BuikInWand --|> Gebrek
+Scheefstand --|> Gebrek
+LokaalVerdwenenMetselwerk --|> Gebrek
+
+%% Composition relationships
+Bovenbouw *-- "0..*" Gebrek : gebreken
+Bovenbouw --> MateriaalBovenbouw : materiaal
+
+Kesp *-- "0..*" Gebrek : gebreken
+
+Houtmonster *-- "0..*" Gebrek : gebreken
+
+Onderloopsheidscherm *-- "0..*" Gebrek : gebreken
+
+Paal *-- "0..*" Gebrek : gebreken
+Paal --> AansluitingStatus : aansluiting_status
+Paal --> SchoorStand : schoor_richting
+Paal *-- "0..*" Houtmonster : houtmonsters
+
+Vloer *-- "0..*" Gebrek : gebreken
+Vloer --> MateriaalVloer : materiaal
+
+Onderbouw *-- "0..*" Kesp : kespen
+Onderbouw *-- "0..1" Onderloopsheidscherm : onderloopsheidscherm
+Onderbouw *-- "1..*" Paal : palen
+Onderbouw *-- "0..1" Vloer : vloer
+Onderbouw --> MateriaalOnderbouw : materiaal
+Onderbouw --> MateriaalFundering : materiaal_fundering
+
+Rakdeel *-- Bovenbouw : bovenbouw
+Rakdeel *-- Onderbouw : onderbouw
+Rakdeel *-- "0..*" Gebrek : gebreken
+
+Rak *-- "1..*" Rakdeel : rakdelen
