@@ -17,6 +17,7 @@ from tekstherkenning_ark.document.sectie import Sectie
 from tekstherkenning_ark.document.rakdeelsectie import RakdeelSectie
 from azure.ai.documentintelligence.models import AnalyzeResult, DocumentTable, DocumentParagraph
 from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.identity import DefaultAzureCredential
 from azure.core.credentials import AzureKeyCredential
 from io import BytesIO
 
@@ -74,11 +75,17 @@ class SmartDocument:
             doc_ai_endpoint = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
             doc_ai_key = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY")
 
-            if not doc_ai_endpoint or not doc_ai_key:
-                raise ValueError("Azure credentials not found in .env file")
+            if not doc_ai_endpoint:
+                raise ValueError("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT niet gevonden in .env bestand")
+
+            # Gebruik API key als beschikbaar, anders DefaultAzureCredential
+            if doc_ai_key:
+                credential = AzureKeyCredential(doc_ai_key)
+            else:
+                credential = DefaultAzureCredential()
 
             # Initialize Azure Document Intelligence client
-            client = DocumentIntelligenceClient(endpoint=doc_ai_endpoint, credential=AzureKeyCredential(doc_ai_key))
+            client = DocumentIntelligenceClient(endpoint=doc_ai_endpoint, credential=credential)
 
             # Read and analyze the document
             logger.info(f"Analyzing document with Azure Document Intelligence...")
