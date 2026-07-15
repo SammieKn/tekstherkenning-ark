@@ -59,26 +59,49 @@ class Gebrek {
 }
 
 class Scheur {
+  afstand_van_startrak_m: int?
   lengte_cm: int
   scheurwijdte_mm: int
-  afstand_van_startrak: int?
   orientatie: str?
 }
 
 class GrondVoerendGat {
   afmetingen_cm: list~int?~
+  afstand_van_startrak_m: int?
+  breedte_cm: float
+  hoogte_cm: float
+  diepte_cm: float
 }
 
 class BuikInWand {
+  afstand_van_startrak_m: int?
   uitbuiging_cm: int
+  start_buik_van_startrak_m_ingevuld: float
+  eind_buik_van_startrak_m_ingevuld: float
+  lengte_buik_m_ingevuld: float
 }
 
 class Scheefstand {
+  start_scheefstand_van_startrak_m_ingevuld: float?
+  eind_scheefstand_van_startrak_m_ingevuld: float?
+  lengte_scheefstand_van_startrak_m_ingevuld: float?
   hoek_graden: int
 }
 
 class LokaalVerdwenenMetselwerk {
   afmetingen_cm: list~int?~
+  breedte_cm: float
+  hoogte_cm: float
+  diepte_cm: float
+}
+
+class ScheurHout {
+}
+
+class ScheurMetselwerk {
+  afstand_van_deksloof_cm: float?
+  afstand_van_waterlijn_cm: float?
+  is_inprikbaar: bool
 }
 
 class Houtmonster {
@@ -190,6 +213,8 @@ GrondVoerendGat --|> Gebrek
 BuikInWand --|> Gebrek
 Scheefstand --|> Gebrek
 LokaalVerdwenenMetselwerk --|> Gebrek
+ScheurHout --|> Scheur
+ScheurMetselwerk --|> Scheur
 
 %% Composition relationships
 Bovenbouw *-- "0..*" Gebrek : gebreken
