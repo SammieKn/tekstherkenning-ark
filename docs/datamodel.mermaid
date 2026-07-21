@@ -119,7 +119,7 @@ class Onderloopsheidscherm {
   opmerkingen: str
 }
 
-class Paal {
+class PaalIndividueel {
   paal_nummer: str
   diameter_haaks: int | NietBeschikbaar
   diameter_parallel: int | NietBeschikbaar
@@ -147,9 +147,17 @@ class Vloer {
   opmerkingen: str
 }
 
+class Paal {
+  materiaal_paal: materiaal_paal | NietBeschikbaar
+  aantal_palen_dwars: int | NietBeschikbaar
+  aantal_palen_schoor: int | NietBeschikbaar
+  schoorpalen_1_richting: bool | NietBeschikbaar  
+  palen: list~Paal~
+}
+
 class KademuurFundering {
   kespen: list~Kesp~
-  palen: list~Paal~
+  paal: Paal?
   vloer: Vloer?
   onderloopsheidscherm: Onderloopsheidscherm?
   materiaal_vloer: MateriaalOnderbouw | NietBeschikbaar
