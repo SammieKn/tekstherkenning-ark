@@ -179,7 +179,7 @@ class Kademuur {
   kademuurdelen: list~Kademuurdeel~
   objectnummer: str
   totale_lengte_m: float
-  unassigned_palen: list~Paal~
+  unassigned_palen: list~PaalIndividueel~
   unassigned_kespen: list~Kesp~
   unassigned_houtmonsters: list~Houtmonster~
   opmerkingen: str
@@ -202,10 +202,12 @@ Houtmonster *-- "0..*" Gebrek : gebreken
 
 Onderloopsheidscherm *-- "0..*" Gebrek : gebreken
 
-Paal *-- "0..*" Gebrek : gebreken
-Paal --> AansluitingStatus : aansluiting_status
-Paal --> SchoorStand : schoor_richting
-Paal *-- "0..*" Houtmonster : houtmonsters
+PaalIndividueel *-- "0..*" Gebrek : gebreken
+PaalIndividueel --> AansluitingStatus : aansluiting_status
+PaalIndividueel --> SchoorStand : schoor_richting
+PaalIndividueel *-- "0..*" Houtmonster : houtmonsters
+
+Paal *-- "0..*" PaalIndividueel: paal_individueel
 
 Vloer *-- "0..*" Gebrek : gebreken
 Vloer --> MateriaalVloer : materiaal_vloer
