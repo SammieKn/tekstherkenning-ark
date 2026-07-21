@@ -162,7 +162,7 @@ class Kademuurdeel {
   lengte_m_omschrijving: float | NietBeschikbaar?
   bouwjaar: int?
   kerende_constructie: KerendeConstructie
-  fundering: Fundering
+  fundering: KademuurFundering
   gebreken: list~Gebrek~
   opmerkingen: str
 }
@@ -210,7 +210,7 @@ KademuurFundering --> MateriaalVloer : materiaal_vloer
 KademuurFundering --> MateriaalPaal : materiaal_fundering
 
 Kademuurdeel *-- KerendeConstructie : kerende_constructie
-Kademuurdeel *-- Onderbouw : onderbouw
+Kademuurdeel *-- KademuurFundering : fundering
 Kademuurdeel *-- "0..*" Gebrek : gebreken
 
-Kademuurdeel *-- "1..*" Kademuurdeel : kademuurdelen
+Kademuur *-- "1..*" Kademuurdeel : kademuurdelen
