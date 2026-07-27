@@ -45,6 +45,14 @@ class SchoorStand {
   NEUTRAAL
 }
 
+class FunderingNiveau {
+  <<enumeration>>
+  1E ZANDLAAG
+  2E ZANDLAAG
+  3E ZANDLAAG
+  OP STAAL
+}
+
 class Gebrek {
   codering: str
   omschrijving: str
@@ -185,6 +193,14 @@ class Kademuur {
   opmerkingen: str
 }
 
+class Scores {
+  score faalkans maaiveld : float
+  score faalkans bovenbouw : float
+  score faalkans onderbouw : float
+  score faalkans fundering : float
+  score faalkans waterbodem: float
+}
+
 %% Inheritance relationships
 Scheur --|> Gebrek
 GrondVoerendGat --|> Gebrek
@@ -218,9 +234,11 @@ KademuurFundering *-- "1..*" Paal : palen
 KademuurFundering *-- "0..1" Vloer : vloer
 KademuurFundering --> MateriaalVloer : materiaal_vloer
 KademuurFundering --> MateriaalPaal : materiaal_paal
+KademuurFundering --> FunderingNiveau: fundering_niveau
 
 Kademuurdeel *-- KerendeConstructie : kerende_constructie
 Kademuurdeel *-- KademuurFundering : fundering
 Kademuurdeel *-- "0..*" Gebrek : gebreken
+Kademuurdeel *-- Scores : scores
 
 Kademuur *-- "1..*" Kademuurdeel : kademuurdelen
