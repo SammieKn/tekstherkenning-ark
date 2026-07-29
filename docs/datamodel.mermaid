@@ -15,21 +15,21 @@ class NietBeschikbaar {
   LEEG
 }
 
-class MateriaalFundering {
+class MateriaalPaal {
   <<enumeration>>
   HOUT
   STAAL
   BETON
 }
 
-class MateriaalOnderbouw {
+class MateriaalKesp {
   <<enumeration>>
   HOUT
   STAAL
   BETON
 }
 
-class MateriaalBovenbouw {
+class MateriaalKerendeConstructie {
   <<enumeration>>
   METSELWERK
   BASALT
@@ -50,6 +50,14 @@ class SchoorStand {
   POSITIEF
   NEGATIEF
   NEUTRAAL
+}
+
+class FunderingNiveau {
+  <<enumeration>>
+  1E ZANDLAAG
+  2E ZANDLAAG
+  3E ZANDLAAG
+  OP STAAL
 }
 
 class Gebrek {
@@ -83,7 +91,7 @@ class LokaalVerdwenenMetselwerk {
 
 class Houtmonster {
   codering: str
-  rak_code: str
+  objectnummer: str
   paal_nummer: str
   houtmonster_code: str
   diameter_paal_ter_hoogte_houtmonster_mm: int?
@@ -97,14 +105,15 @@ class Houtmonster {
   opmerkingen: str
 }
 
-class Bovenbouw {
-  materiaal: MateriaalBovenbouw | NietBeschikbaar
+class KerendeConstructie {
+  <<bovenbouw in ARK, bovenbouw in oorspronkelijke model>>
+  materiaal: MateriaalKerendeConstructie | NietBeschikbaar
   bovenkant_deksteen_cm_tov_nap: float?
   gebreken: list~Gebrek~
   opmerkingen: str
 }
 
-class Kesp {
+class KespIndividueel {
   kesp_nummer: str
   hoogte_cm: int | NietBeschikbaar
   breedte_cm: int | NietBeschikbaar
@@ -126,7 +135,7 @@ class Onderloopsheidscherm {
   opmerkingen: str
 }
 
-class Paal {
+class PaalIndividueel {
   paal_nummer: str
   diameter_haaks: int | NietBeschikbaar
   diameter_parallel: int | NietBeschikbaar
@@ -154,31 +163,52 @@ class Vloer {
   opmerkingen: str
 }
 
-class Onderbouw {
-  kespen: list~Kesp~
+class Paal {
+  <<toegevoegd t.o.v. oorspronkelijke model>>
+  materiaal_paal: materiaal_paal | NietBeschikbaar
+  aantal_palen_dwars: int | NietBeschikbaar
+  aantal_palen_schoor: int | NietBeschikbaar
+  schoorpalen_1_richting: bool | NietBeschikbaar  
   palen: list~Paal~
-  vloer: Vloer?
-  onderloopsheidscherm: Onderloopsheidscherm?
-  materiaal: MateriaalOnderbouw | NietBeschikbaar
-  materiaal_fundering: MateriaalFundering | NietBeschikbaar
 }
 
-class Rakdeel {
+class Kesp {
+  <<toegevoegd t.o.v. oorspronkelijke model>>
+  materiaal_kesp: materiaal_kesp | NietBeschikbaar
+}
+
+class KademuurFundering {
+  <<onderbouw en fundering in ARK, onderbouw in oorspronkelijke model>>
+  kespen: list~Kesp~
+  paal: Paal?
+  vloer: Vloer?
+  onderloopsheidscherm: Onderloopsheidscherm?
+  materiaal_vloer: MateriaalOnderbouw | NietBeschikbaar
+  materiaal_paal: MateriaalPaal | NietBeschikbaar
+  fundering_niveau : FunderingNiveau | NietBeschikbaar
+}
+
+class Kademuurdeel {
   rakdeel_id: str
   omschrijving: str
   lengte_m_omschrijving: float | NietBeschikbaar?
   bouwjaar: int?
-  bovenbouw: Bovenbouw
-  onderbouw: Onderbouw
+  kerende_constructie: KerendeConstructie
+  fundering: KademuurFundering
   gebreken: list~Gebrek~
   opmerkingen: str
+  score faalkans maaiveld : float
+  score faalkans bovenbouw : float
+  score faalkans onderbouw : float
+  score faalkans fundering : float
+  score faalkans waterbodem: float
 }
 
-class Rak {
-  rakdelen: list~Rakdeel~
-  raknaam: str
+class Kademuur {
+  kademuurdelen: list~Kademuurdeel~
+  objectnummer: str
   totale_lengte_m: float
-  unassigned_palen: list~Paal~
+  unassigned_palen: list~PaalIndividueel~
   unassigned_kespen: list~Kesp~
   unassigned_houtmonsters: list~Houtmonster~
   opmerkingen: str
@@ -192,8 +222,8 @@ Scheefstand --|> Gebrek
 LokaalVerdwenenMetselwerk --|> Gebrek
 
 %% Composition relationships
-Bovenbouw *-- "0..*" Gebrek : gebreken
-Bovenbouw --> MateriaalBovenbouw : materiaal
+KerendeConstructie *-- "0..*" Gebrek : gebreken
+KerendeConstructie --> MateriaalKerendeConstructie : materiaal
 
 Kesp *-- "0..*" Gebrek : gebreken
 
@@ -201,23 +231,28 @@ Houtmonster *-- "0..*" Gebrek : gebreken
 
 Onderloopsheidscherm *-- "0..*" Gebrek : gebreken
 
-Paal *-- "0..*" Gebrek : gebreken
-Paal --> AansluitingStatus : aansluiting_status
-Paal --> SchoorStand : schoor_richting
-Paal *-- "0..*" Houtmonster : houtmonsters
+PaalIndividueel *-- "0..*" Gebrek : gebreken
+PaalIndividueel --> AansluitingStatus : aansluiting_status
+PaalIndividueel --> SchoorStand : schoor_richting
+PaalIndividueel *-- "0..*" Houtmonster : houtmonsters
+
+Kesp *-- "0.." KespIndividueel: kesp_individueel
+Kesp --> MateriaalKesp: materiaal_kesp
+
+Paal *-- "0..*" PaalIndividueel: paal_individueel
+Paal --> MateriaalPaal : materiaal_paal
 
 Vloer *-- "0..*" Gebrek : gebreken
-Vloer --> MateriaalVloer : materiaal
+Vloer --> MateriaalVloer : materiaal_vloer
 
-Onderbouw *-- "0..*" Kesp : kespen
-Onderbouw *-- "0..1" Onderloopsheidscherm : onderloopsheidscherm
-Onderbouw *-- "1..*" Paal : palen
-Onderbouw *-- "0..1" Vloer : vloer
-Onderbouw --> MateriaalOnderbouw : materiaal
-Onderbouw --> MateriaalFundering : materiaal_fundering
+KademuurFundering *-- "0..*" Kesp : kespen
+KademuurFundering *-- "0..1" Onderloopsheidscherm : onderloopsheidscherm
+KademuurFundering *-- "1..*" Paal : palen
+KademuurFundering *-- "0..1" Vloer : vloer
+KademuurFundering --> FunderingNiveau: fundering_niveau
 
-Rakdeel *-- Bovenbouw : bovenbouw
-Rakdeel *-- Onderbouw : onderbouw
-Rakdeel *-- "0..*" Gebrek : gebreken
+Kademuurdeel *-- KerendeConstructie : kerende_constructie
+Kademuurdeel *-- KademuurFundering : fundering
+Kademuurdeel *-- "0..*" Gebrek : gebreken
 
-Rak *-- "1..*" Rakdeel : rakdelen
+Kademuur *-- "1..*" Kademuurdeel : kademuurdelen
