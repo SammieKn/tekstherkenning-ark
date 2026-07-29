@@ -105,7 +105,7 @@ class KerendeConstructie {
   opmerkingen: str
 }
 
-class Kesp {
+class KespIndividueel {
   kesp_nummer: str
   hoogte_cm: int | NietBeschikbaar
   breedte_cm: int | NietBeschikbaar
@@ -163,6 +163,11 @@ class Paal {
   palen: list~Paal~
 }
 
+
+class Kesp {
+  materiaal_kesp: materiaal_kesp | NietBeschikbaar
+}
+
 class KademuurFundering {
   kespen: list~Kesp~
   paal: Paal?
@@ -182,6 +187,11 @@ class Kademuurdeel {
   fundering: KademuurFundering
   gebreken: list~Gebrek~
   opmerkingen: str
+  score faalkans maaiveld : float
+  score faalkans bovenbouw : float
+  score faalkans onderbouw : float
+  score faalkans fundering : float
+  score faalkans waterbodem: float
 }
 
 class Kademuur {
@@ -192,14 +202,6 @@ class Kademuur {
   unassigned_kespen: list~Kesp~
   unassigned_houtmonsters: list~Houtmonster~
   opmerkingen: str
-}
-
-class Scores {
-  score faalkans maaiveld : float
-  score faalkans bovenbouw : float
-  score faalkans onderbouw : float
-  score faalkans fundering : float
-  score faalkans waterbodem: float
 }
 
 %% Inheritance relationships
@@ -224,7 +226,11 @@ PaalIndividueel --> AansluitingStatus : aansluiting_status
 PaalIndividueel --> SchoorStand : schoor_richting
 PaalIndividueel *-- "0..*" Houtmonster : houtmonsters
 
+Kesp *-- "0.." KespIndividueel: kesp_individueel
+Kesp --> MateriaalKesp: materiaal_kesp
+
 Paal *-- "0..*" PaalIndividueel: paal_individueel
+Paal --> MateriaalPaal : materiaal_paal
 
 Vloer *-- "0..*" Gebrek : gebreken
 Vloer --> MateriaalVloer : materiaal_vloer
@@ -233,13 +239,10 @@ KademuurFundering *-- "0..*" Kesp : kespen
 KademuurFundering *-- "0..1" Onderloopsheidscherm : onderloopsheidscherm
 KademuurFundering *-- "1..*" Paal : palen
 KademuurFundering *-- "0..1" Vloer : vloer
-KademuurFundering --> MateriaalVloer : materiaal_vloer
-KademuurFundering --> MateriaalPaal : materiaal_paal
 KademuurFundering --> FunderingNiveau: fundering_niveau
 
 Kademuurdeel *-- KerendeConstructie : kerende_constructie
 Kademuurdeel *-- KademuurFundering : fundering
 Kademuurdeel *-- "0..*" Gebrek : gebreken
-Kademuurdeel *-- Scores : scores
 
 Kademuur *-- "1..*" Kademuurdeel : kademuurdelen
