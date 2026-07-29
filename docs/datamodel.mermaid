@@ -22,6 +22,13 @@ class MateriaalPaal {
   BETON
 }
 
+class MateriaalKesp {
+  <<enumeration>>
+  HOUT
+  STAAL
+  BETON
+}
+
 class MateriaalKerendeConstructie {
   <<enumeration>>
   METSELWERK
@@ -99,6 +106,7 @@ class Houtmonster {
 }
 
 class KerendeConstructie {
+  <<bovenbouw in ARK>>
   materiaal: MateriaalKerendeConstructie | NietBeschikbaar
   bovenkant_deksteen_cm_tov_nap: float?
   gebreken: list~Gebrek~
@@ -163,12 +171,12 @@ class Paal {
   palen: list~Paal~
 }
 
-
 class Kesp {
   materiaal_kesp: materiaal_kesp | NietBeschikbaar
 }
 
 class KademuurFundering {
+  <<onderbouw en fundering in ARK>>
   kespen: list~Kesp~
   paal: Paal?
   vloer: Vloer?
