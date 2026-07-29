@@ -106,8 +106,7 @@ class Houtmonster {
 }
 
 class KerendeConstructie {
-  <<bovenbouw in ARK>>
-  <<bovenbouw in oorspronkelijke model>>
+  <<bovenbouw in ARK, bovenbouw in oorspronkelijke model>>
   materiaal: MateriaalKerendeConstructie | NietBeschikbaar
   bovenkant_deksteen_cm_tov_nap: float?
   gebreken: list~Gebrek~
@@ -179,8 +178,7 @@ class Kesp {
 }
 
 class KademuurFundering {
-  <<onderbouw en fundering in ARK>>
-  <<onderbouw in oorspronkelijke model>>
+  <<onderbouw en fundering in ARK, onderbouw in oorspronkelijke model>>
   kespen: list~Kesp~
   paal: Paal?
   vloer: Vloer?
