@@ -107,6 +107,7 @@ class Houtmonster {
 
 class KerendeConstructie {
   <<bovenbouw in ARK>>
+  <<bovenbouw in oorspronkelijke model>>
   materiaal: MateriaalKerendeConstructie | NietBeschikbaar
   bovenkant_deksteen_cm_tov_nap: float?
   gebreken: list~Gebrek~
@@ -164,6 +165,7 @@ class Vloer {
 }
 
 class Paal {
+  <<toegevoegd t.o.v. oorspronkelijke model>>
   materiaal_paal: materiaal_paal | NietBeschikbaar
   aantal_palen_dwars: int | NietBeschikbaar
   aantal_palen_schoor: int | NietBeschikbaar
@@ -172,11 +174,13 @@ class Paal {
 }
 
 class Kesp {
+  <<toegevoegd t.o.v. oorspronkelijke model>>
   materiaal_kesp: materiaal_kesp | NietBeschikbaar
 }
 
 class KademuurFundering {
   <<onderbouw en fundering in ARK>>
+  <<onderbouw in oorspronkelijke model>>
   kespen: list~Kesp~
   paal: Paal?
   vloer: Vloer?
