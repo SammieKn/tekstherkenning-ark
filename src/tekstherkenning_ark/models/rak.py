@@ -259,7 +259,11 @@ class Rak(RakBaseModel):
     def from_smart_document(cls, doc: SmartDocument, use_caching: bool = True) -> Rak:
         """Maak een Rak-object en alle bijbehorende subobjecten aan vanuit een SmartDocument."""
 
-        cache_file = constants.CACHE_DIR / f"rak_{doc.document_name}.pkl"
+        # Nieuwe PDF-extractie mag niet via een oude, uitsluitend naamgebonden Rak-cache worden omzeild.
+        cache_sleutel = doc.document_name
+        if doc.documentvingerafdruk:
+            cache_sleutel = f"{cache_sleutel}_{doc.documentvingerafdruk}"
+        cache_file = constants.CACHE_DIR / f"rak_{cache_sleutel}.pkl"
         if cache_file.exists() and use_caching:
             logger.info(f"Loading cached Rak from {cache_file}")
             rak_instance = pickle.loads(cache_file.read_bytes())
@@ -320,6 +324,7 @@ class Rak(RakBaseModel):
         rak_instance.check_assigned_objects(palen_dict=palen_dict, kespen_dict=kespen_dict, houtmonsters=houtmonsters)
 
         # Cache the created Rak instance
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
         cache_file.write_bytes(pickle.dumps(rak_instance))
 
         return rak_instance

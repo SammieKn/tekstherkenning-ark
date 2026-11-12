@@ -33,7 +33,7 @@ De **Tekstherkenning ARK** tool is ontwikkeld ter ondersteuning van het ARK-proc
 
 Het handmatig invoeren van gegevens uit duikinspectierapporten is tijdrovend en foutgevoelig. Deze tool automatiseert dit proces door:
 
-1. **Duikrapporten te analyseren** met Azure Document Intelligence
+1. **Duikrapporten lokaal te analyseren** met PyMuPDF, zonder OCR
 2. **Relevante data te extraheren** zoals paalmetingen, gebreken en constructie-eigenschappen
 3. **Gestructureerde output te genereren** die direct bruikbaar is in de ARK-tool
 
@@ -49,7 +49,7 @@ Het handmatig invoeren van gegevens uit duikinspectierapporten is tijdrovend en 
 │  ┌──────────────┐     ┌─────────────────────────────────────────────────┐   │
 │  │  PDF Input   │────▶│              SmartDocument                       │   │
 │  │ (Duikrapport)│     │  ┌─────────────────────────────────────────┐    │   │
-│  └──────────────┘     │  │   Azure Document Intelligence SDK       │    │   │
+│  └──────────────┘     │  │   Lokale PyMuPDF-extractie zonder OCR    │    │   │
 │                       │  │   - Paragraphs                          │    │   │
 │                       │  │   - Tables                              │    │   │
 │                       │  │   - Sections                            │    │   │
@@ -103,7 +103,7 @@ Het handmatig invoeren van gegevens uit duikinspectierapporten is tijdrovend en 
 
 Het centrale component voor documentanalyse. Verantwoordelijk voor:
 
-- **PDF-analyse** via Azure Document Intelligence
+- **PDF-analyse** via lokale PyMuPDF 2.x-extractie, zonder OCR of cloudfallback
 - **Sectie-parsing**: Splitst het document op in logische secties (Introductie, Constructies, Bijlagen)
 - **Tabel-toewijzing**: Koppelt tabellen aan de juiste secties op basis van offset
 - **Caching**: Slaat resultaten op voor hergebruik
@@ -221,7 +221,7 @@ Hulpfuncties voor dataverwerking:
 │  1. INPUT                                                                │
 │     └── PDF Duikrapport (Nebest formaat)                                │
 │                                                                          │
-│  2. DOCUMENT ANALYSE (Azure Document Intelligence)                       │
+│  2. DOCUMENT ANALYSE (lokale PyMuPDF-extractie zonder OCR)               │
 │     ├── Tekst extractie (paragraphs)                                    │
 │     ├── Tabel extractie (tables)                                        │
 │     └── Structuur herkenning (sections)                                 │
@@ -264,7 +264,7 @@ Hulpfuncties voor dataverwerking:
 |-------------|--------|---------|
 | **Python** | ≥3.13 | Programmeertaal |
 | **Pydantic** | ≥2.12.5 | Data validatie en modellen |
-| **Azure Document Intelligence** | ≥1.0.0 | PDF-analyse en OCR |
+| **PyMuPDF** | ≥2.1 (getest: 2.1) | Lokale PDF-structuur, native cellen en PNG-figuren zonder OCR |
 | **Azure OpenAI** | via openai ≥2.15.0 | LLM classificatie |
 | **tiktoken** | ≥0.12.0 | Token telling voor LLM |
 | **pandas** | ≥3.0.0 | Data manipulatie |
@@ -285,7 +285,7 @@ tekstherkenning-ark/
 ├── docs/                           # Documentatie
 │   ├── data_analyse.md             # Analyse notities
 │   ├── datamodel.mermaid           # Datamodel diagram
-│   ├── gebruik_doc_intelligence.md # Doc Intelligence handleiding
+│   ├── gebruik_doc_intelligence.md # Lokale PDF-extractie en structuur-JSON
 │   └── uitleg_velden_ark.md        # ARK velden mapping
 ├── src/tekstherkenning_ark/        # Broncode
 │   ├── __init__.py
@@ -320,22 +320,24 @@ tekstherkenning-ark/
 ### Environment Variabelen (`.env`)
 
 ```bash
-# Azure Document Intelligence
-AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://<resource>.cognitiveservices.azure.com/
-AZURE_DOCUMENT_INTELLIGENCE_KEY=<your-key>
-
 # Azure OpenAI
 AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com/
 AZURE_OPENAI_KEY=<your-key>
-DEPLOYMENT_NAME_GPT41=gpt-41
+AZURE_MODEL_NAME=<deployment-name>
+AZURE_OPENAI_API_VERSION=<api-version>
+AZURE_OPENAI_ENCODING_NAME=o200k_base
 ```
 
 ### Caching
 
 Resultaten worden gecached in `data/.cache/`:
-- `*_docai_result.pkl` - Azure Document Intelligence resultaten
-- `rak_*.pkl` - Volledige Rak objecten
+- `pymupdf_extractie/<vingerafdruk>/structuur.json` met relatieve PNG's - Gevalideerde lokale documentstructuur
+- `rak_<documentnaam>_<vingerafdruk>.pkl` - Rak-objecten gekoppeld aan broninhoud en extractieconfiguratie
 - `rakdeelomschrijving_*.pkl` - LLM classificatie resultaten
+
+Oude Azure-documentcaches worden genegeerd en blijven onaangeroerd. `use_cache=False` op `from_pdf`
+omzeilt cachelezen maar schrijft wel een nieuw resultaat; CLI `--no-cache` omzeilt uitsluitend de Rak-cache.
+Zie de extractiehandleiding voor de goedgekeurde AGPL-/commerciele PyMuPDF-licentie en detectiebeperkingen.
 
 ---
 
@@ -344,7 +346,7 @@ Resultaten worden gecached in `data/.cache/`:
 - [README.md](../README.md) - Project overzicht en samenwerking
 - [uitleg_velden_ark.md](../docs/uitleg_velden_ark.md) - Mapping duikrapport → ARK velden
 - [data_analyse.md](../docs/data_analyse.md) - Data analyse notities
-- [gebruik_doc_intelligence.md](../docs/gebruik_doc_intelligence.md) - Document Intelligence handleiding
+- [gebruik_doc_intelligence.md](../docs/gebruik_doc_intelligence.md) - Lokale PDF-extractie en structuur-JSON
 
 ---
 

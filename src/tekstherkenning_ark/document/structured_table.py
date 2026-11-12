@@ -1,10 +1,10 @@
 from __future__ import annotations
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import cached_property
 import math
-from typing import Literal
-from azure.ai.documentintelligence.models import DocumentTable
+from typing import TYPE_CHECKING, Literal
 
 from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import (
@@ -17,7 +17,132 @@ from tekstherkenning_ark.utils import (
     remove_titel_rows,
 )
 
+if TYPE_CHECKING:
+    from pymupdf.table import Table
+
+    from tekstherkenning_ark.document.sectie import BronLocatie
+
 logger = get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class TabelCel:
+    """Native tabelcel met tekst, rasterpositie en de oorspronkelijke brongebieden.
+
+    Attributes
+    ----------
+    content : str
+        Ongewijzigde celtekst, inclusief eventuele regeleinden.
+    row_index, column_index : int
+        Op nul gebaseerde positie van de begincel.
+    row_span, column_span : int
+        Aantal rijen en kolommen dat de cel beslaat.
+    bronlocaties : tuple[BronLocatie, ...]
+        Brongebieden van de cel, eventueel op meerdere pagina's.
+    """
+
+    content: str
+    row_index: int
+    column_index: int
+    row_span: int = 1
+    column_span: int = 1
+    bronlocaties: tuple[BronLocatie, ...] = ()
+
+
+@dataclass(frozen=True)
+class DocumentTabel:
+    """Ruwe tabelsegmenten, zonder normalisatie van koppen, eenheden of meetwaarden.
+
+    Attributes
+    ----------
+    row_count, column_count : int
+        Afmetingen van het volledige celraster, inclusief lege cellen.
+    cells : tuple[TabelCel, ...]
+        Alleen de begincellen; samengevoegde posities worden niet gedupliceerd.
+    id : str
+        Identificatie binnen hetzelfde document en dezelfde parserconfiguratie.
+    leesvolgorde : int
+        Positie tussen de overige documentelementen.
+    bronlocaties : tuple[BronLocatie, ...]
+        Brongebieden van de tabelsegmenten.
+    herkomst : str
+        PyMuPDF-raster of historische fixture met een andere fysieke celindeling.
+    """
+
+    row_count: int
+    column_count: int
+    cells: tuple[TabelCel, ...] = ()
+    id: str = ""
+    leesvolgorde: int = 0
+    bronlocaties: tuple[BronLocatie, ...] = ()
+    herkomst: str = "pymupdf"
+
+    @classmethod
+    def from_pymupdf(cls, tabel: Table, pagina: int, id: str, leesvolgorde: int = 0) -> DocumentTabel:
+        """Kopieer een native tabel voordat de PDF of layoutanalyse deze kan wijzigen.
+
+        Parameters
+        ----------
+        tabel : Table
+            Resultaat van Page.find_tables(), zolang de bronpagina nog geopend is.
+        pagina : int
+            Op een gebaseerde bronpagina.
+        id : str
+            Documentgebonden identiteit van dit fysieke tabelsegment.
+        leesvolgorde : int
+            Positie in de gemengde elementstroom.
+
+        Returns
+        -------
+        DocumentTabel
+            Eigen tekst- en geometriegegevens zonder levende PyMuPDF-objecten.
+        """
+        from tekstherkenning_ark.document.sectie import BronLocatie
+
+        matrix = tabel.extract()
+        gebieden = [gebied for rij in tabel.rows for gebied in rij.cells if gebied is not None]
+        # Alleen celstarts definieren native rasterposities; kortere eindranden zijn geen extra kolommen.
+        xgrenzen = sorted({gebied[0] for gebied in gebieden})
+        ygrenzen = sorted({gebied[1] for gebied in gebieden})
+        cellen = []
+        for rij_index, rij in enumerate(tabel.rows):
+            for kolom_index, gebied in enumerate(rij.cells):
+                if gebied is None:
+                    continue
+                links, boven, rechts, onder = gebied
+                cellen.append(
+                    TabelCel(
+                        content=matrix[rij_index][kolom_index] or "",
+                        row_index=rij_index,
+                        column_index=kolom_index,
+                        row_span=sum(boven <= grens < onder for grens in ygrenzen),
+                        column_span=sum(links <= grens < rechts for grens in xgrenzen),
+                        bronlocaties=(BronLocatie(pagina, tuple(gebied)),),
+                    )
+                )
+        return cls(
+            row_count=tabel.row_count,
+            column_count=tabel.col_count,
+            cells=tuple(cellen),
+            id=id,
+            leesvolgorde=leesvolgorde,
+            bronlocaties=(BronLocatie(pagina, tuple(tabel.bbox)),),
+        )
+
+    @property
+    def matrix(self) -> tuple[tuple[str | None, ...], ...]:
+        """Leid de ruwe matrix af zonder samengevoegde cellen door te vullen.
+
+        Returns
+        -------
+        tuple[tuple[str | None, ...], ...]
+            Celtekst of None waar geen afzonderlijke begincel bestaat.
+        """
+        # De cellen blijven de enige bron; de matrix is geen tweede muteerbare kopie.
+        rijen = [[None for _ in range(self.column_count)] for _ in range(self.row_count)]
+        for cel in self.cells:
+            rijen[cel.row_index][cel.column_index] = cel.content
+        return tuple(tuple(rij) for rij in rijen)
 
 
 class TableType(StrEnum):
@@ -125,15 +250,15 @@ class StructuredTable:
     @classmethod
     def from_doc_table(
         cls,
-        tables: list[DocumentTable],
+        tables: Sequence[DocumentTabel],
         table_type: TableType,
     ) -> StructuredTable | None:
         """Parse and return a StructuredTable object from table rows.
 
         Parameters
         ----------
-        tables: list[DocumentTable]
-            List of DocumentTable objects to parse and find the relevant table based on the table type.
+        tables: Sequence[DocumentTabel]
+            Eigen native of historische referentietabellen om op tabeltype te selecteren.
         table_type: TableType
             The type of the table to parse, which determines how headers, sub-headers and units are identified and how the values are extracted.
             Possible values: "palen", "kespen", "houtmonsters", "gebreken", "toestandsbepaling".
@@ -154,6 +279,12 @@ class StructuredTable:
         }
 
         id_func = id_func_dict.get(table_type, None)
+
+        # Historische referentiecellen zijn geen native rasters, ook na omzetting naar eigen typen.
+        if tables and id_func is not None and all(
+            isinstance(tabel, DocumentTabel) and tabel.herkomst == "pymupdf" for tabel in tables
+        ):
+            return cls._from_native_meettabellen(tables, table_type, id_func)
 
         # Extract rows from all tables
         rows: list[list[str]] = []
@@ -176,6 +307,93 @@ class StructuredTable:
         table_columns = TableColumn.from_column_lists(columns, table_type)
 
         return StructuredTable(columns=table_columns, table_type=table_type)
+
+    @classmethod
+    def _from_native_meettabellen(
+        cls, tables: Sequence[DocumentTabel], table_type: TableType, id_func: Callable[[str], str | None]
+    ) -> StructuredTable | None:
+        """Projecteer fysieke meetcellen zonder smallere vervolgpagina's weg te filteren.
+
+        Parameters
+        ----------
+        tables : Sequence[DocumentTabel]
+            Ongewijzigde fysieke bronsegmenten binnen dezelfde sectie.
+        table_type : TableType
+            Paal- of kesptabel met bestaande kop- en eenheidconventies.
+        id_func : callable
+            Bestaande herkenning van een meetrecord-ID.
+
+        Returns
+        -------
+        StructuredTable | None
+            Kopgestuurde domeinkolommen, met behoud van alle herkenbare meetrecords.
+
+        Raises
+        ------
+        ValueError
+            Als fysieke segmenten niet eenduidig dezelfde koppen en eenheden hebben.
+        """
+        koprijen = None
+        kopsignatuur = None
+        meetrijen = []
+        for tabel in tables:
+            kopnaam = "paalnummer" if table_type == TableType.PALEN else "kespnummer"
+            heeft_meetkop = any(
+                cel.column_index == 0 and clean_string(cel.content).lower() == kopnaam for cel in tabel.cells
+            )
+            # Een korte laatste pagina kan meer legenda dan meetrijen hebben; de meetkop bevestigt het type.
+            if not heeft_meetkop and not is_table_type_by_id_func(tabel, id_func):
+                continue
+            record_indices = {
+                cel.row_index for cel in tabel.cells if cel.column_index == 0 and id_func(cel.content) is not None
+            }
+            if not record_indices:
+                continue
+            kolommen = sorted({cel.column_index for cel in tabel.cells if cel.row_index in record_indices})
+            rijen = [["" for _ in kolommen] for _ in range(tabel.row_count)]
+            for cel in tabel.cells:
+                doel = next(
+                    (
+                        index
+                        for index, kolom in enumerate(kolommen)
+                        if cel.column_index <= kolom < cel.column_index + cel.column_span
+                    ),
+                    None,
+                )
+                if doel is not None:
+                    rijen[cel.row_index][doel] = cel.content
+
+            subkop_index = next(
+                (index for index, rij in enumerate(rijen) if clean_string(rij[0]).lower() == kopnaam), None
+            )
+            if subkop_index is not None:
+                begin = subkop_index - int(table_type.has_sub_header)
+                einde = begin + table_type.values_offset
+                if table_type.has_unit and (
+                    subkop_index + 1 in record_indices or not any(cel.strip() for cel in rijen[subkop_index + 1])
+                ):
+                    einde -= 1
+                segmentkop = rijen[begin:einde]
+                signatuur = tuple(
+                    tuple(clean_string(" ".join(cel.split())).lower() for cel in rij) for rij in segmentkop
+                )
+                if kopsignatuur is not None and signatuur != kopsignatuur[:len(signatuur)]:
+                    raise ValueError(
+                        f"Onverenigbare native tabelkoppen voor {table_type}; bronsegmenten blijven bewaard."
+                    )
+                if len(segmentkop) == table_type.values_offset:
+                    koprijen, kopsignatuur = segmentkop, signatuur
+            if koprijen is None or len(koprijen[0]) != len(kolommen):
+                raise ValueError(
+                    f"Geen eenduidige native vervolgkop voor {table_type}; bronsegmenten blijven bewaard."
+                )
+            # Alleen bevestigde meetrijen gaan naar domeinkolommen; legenda's blijven in de ruwe tabel.
+            meetrijen.extend(rijen[index] for index in sorted(record_indices))
+
+        if koprijen is None or not meetrijen:
+            return None
+        kolommen = list(zip(*(koprijen + meetrijen)))
+        return cls(columns=TableColumn.from_column_lists(kolommen, table_type), table_type=table_type)
 
     def get_value(
         self,

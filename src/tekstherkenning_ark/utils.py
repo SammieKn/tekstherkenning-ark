@@ -3,15 +3,17 @@ from __future__ import annotations
 from functools import cache
 from pathlib import Path
 import re
-from azure.ai.documentintelligence.models import DocumentTable
 from unidecode import unidecode
 
 from tekstherkenning_ark.constants import CACHE_DIR
 from tekstherkenning_ark.enums import NietBeschikbaar
 
-from typing import Callable, TypeVar
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from tekstherkenning_ark.logger import get_logger
+
+if TYPE_CHECKING:
+    from tekstherkenning_ark.document.structured_table import DocumentTabel
 
 
 # Regex patterns for ID extraction and validation
@@ -26,13 +28,13 @@ logger = get_logger(__name__)
 T = TypeVar("T")
 
 
-def get_table_content(table: DocumentTable) -> list[list[str]]:
-    """Get a table from the parsed_pdf as a pandas dataframe
+def get_table_content(table: DocumentTabel) -> list[list[str]]:
+    """Geef celtekst als matrix zonder de ruwe broncellen te wijzigen.
 
     Parameters
     ----------
-    table : DocumentTable
-        The table to convert
+    table : DocumentTabel
+        Native tabel of tijdelijke Azure-fixture.
 
     Returns
     -------
@@ -286,13 +288,13 @@ def clean_string(value: str) -> str:
 
 
 def is_table_type_by_id_func(
-    tabel: DocumentTable, id_func: Callable[[str], str | None], threshold: float = 0.5
+    tabel: DocumentTabel, id_func: Callable[[str], str | None], threshold: float = 0.5
 ) -> bool:
     """Check of een tabel bij een type hoort op basis van een ID-extractie functie.
 
     Parameters
     ----------
-    tabel : DocumentTable
+    tabel : DocumentTabel
         De tabel om te controleren.
     id_func : callable
         Functie die een string neemt en een ID of None teruggeeft (bijv. get_paal_id).

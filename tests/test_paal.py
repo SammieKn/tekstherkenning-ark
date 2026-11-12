@@ -5,17 +5,17 @@ Module to test methods related to Paal model.
 from tekstherkenning_ark.enums import NietBeschikbaar, SchoorStand
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rakdeel import Rakdeel
-from azure.ai.documentintelligence.models import DocumentTable
+from tekstherkenning_ark.document.structured_table import StructuredTable
 
 
-def test_get_palen_from_doc_tables_dict_dimensions(paal_tables: DocumentTable):
+def test_get_palen_from_doc_tables_dict_dimensions(paal_tables: StructuredTable):
     """check type and dimensions"""
     palen_dict = Paal.from_doc_tables(paal_tables)
     assert isinstance(palen_dict, dict)
     assert len(palen_dict) == 10
 
 
-def test_get_palen_from_doc_tables_no_onverwacht_resultaat(paal_tables: DocumentTable):
+def test_get_palen_from_doc_tables_no_onverwacht_resultaat(paal_tables: StructuredTable):
     """check no onverwacht resultaat in parsed palen"""
 
     palen_dict = Paal.from_doc_tables(paal_tables)

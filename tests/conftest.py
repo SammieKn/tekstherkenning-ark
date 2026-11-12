@@ -7,11 +7,16 @@ tests work only local -with data dir for now- what do we want?
 from functools import cache
 import json
 import pickle
+import shutil
+import socket
 import pytest
 from copy import deepcopy
 from pathlib import Path
 
 from tekstherkenning_ark.document.smart_document import SmartDocument
+from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.llm.azureopenaillm import AzureOpenAILLM
+import pymupdf
 from tekstherkenning_ark import constants
 from pathlib import Path
 
@@ -21,7 +26,6 @@ from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.enums import AansluitingStatus
-from azure.ai.documentintelligence.models import DocumentTable
 
 
 # Import mock data creators
@@ -35,25 +39,107 @@ TEST_DIR = Path(__file__).parent
 TEST_DATA_DIR = TEST_DIR / "data"
 
 KZG_0202_DOC_NAME = "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325"
-KZG_0202_PKL_NAME = f"{KZG_0202_DOC_NAME}_smart_document_sanitized.pkl"
+KZG_0202_PKL_NAME = f"{KZG_0202_DOC_NAME}_smart_document_lokaal.pkl"
 KZG_0202_TEST_DIR = TEST_DATA_DIR / "KZG0202_Houtmonstername&VisueleInspectie_V1.2_20220325"
 
-# Set the CACHE_DIR to the test directory for KZG0202
-constants.CACHE_DIR = KZG_0202_TEST_DIR
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Registreer de optionele lokale corpuscontrole.
+
+    Parameters
+    ----------
+    parser : pytest.Parser
+        Pytest-commandoregelparser.
+    """
+    parser.addoption("--pdf-corpus", action="store_true", help="Controleer alle lokale duikrapporten zonder cloudcalls.")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isoleer_testcache(tmp_path_factory: pytest.TempPathFactory):
+    """Kopieer gecachte LLM-antwoorden; schrijf nooit in de referentiefixtures.
+
+    Parameters
+    ----------
+    tmp_path_factory : pytest.TempPathFactory
+        Maakt een tijdelijke cache voor de hele testsessie.
+
+    Yields
+    ------
+    Path
+        Tijdelijke cache met uitsluitend bestaande classificatieantwoorden.
+    """
+    cache_map = tmp_path_factory.mktemp("llm_cache")
+    for bestand in KZG_0202_TEST_DIR.glob("*.pkl"):
+        if not bestand.name.startswith("rak_") and "_smart_document_" not in bestand.name:
+            shutil.copyfile(bestand, cache_map / bestand.name)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(constants, "CACHE_DIR", cache_map)
+        yield cache_map
+
+
+@pytest.fixture(scope="session", autouse=True)
+def verbied_externe_diensten():
+    """Laat ontbrekende fixtures hard falen in plaats van OCR of betaalde calls te starten.
+
+    Yields
+    ------
+    None
+        Actieve netwerk-, OCR- en Azure OpenAI-blokkade.
+    """
+    def verboden_aanroep(*args, **kwargs):
+        """Meld een verboden externe bewerking tijdens een offline test."""
+        pytest.fail("OCR/netwerk/echte LLM-verwerking is verboden; gebruik een fixture of mock.", pytrace=False)
+
+    originele_connect = socket.socket.connect
+
+    def controleer_connect(verbinding: socket.socket, adres):
+        """Sta alleen interne loopbacksockets voor de Windows-eventloop toe.
+
+        Parameters
+        ----------
+        verbinding : socket.socket
+            Te verbinden socket.
+        adres : tuple | str
+            Bestemming; uitsluitend lokale loopback is toegestaan.
+        """
+        if isinstance(adres, tuple) and adres[0] in {"127.0.0.1", "::1"}:
+            return originele_connect(verbinding, adres)
+        verboden_aanroep()
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(socket.socket, "connect", controleer_connect)
+        patch.setattr(socket, "create_connection", verboden_aanroep)
+        patch.setattr(pymupdf.Page, "get_textpage_ocr", verboden_aanroep)
+        patch.setattr(AzureOpenAILLM, "__init__", verboden_aanroep)
+        yield
 
 
 @cache
 def load_kzg0202_smart_document() -> SmartDocument:
-    """Load the SmartDocument for the KZG0202 test PDF from the test cache."""
+    """Lees de gemigreerde eigen fixture zonder SDK-import of nieuwe extractie.
 
-    doc_pkl_path = KZG_0202_TEST_DIR / f"{KZG_0202_DOC_NAME}_smart_document_sanitized.pkl"
-    smart_doc = pickle.loads(doc_pkl_path.read_bytes())
+    Returns
+    -------
+    SmartDocument
+        Eigen documenttypen met dezelfde historische domeininvoer.
+    """
 
-    return smart_doc
+    return pickle.loads((KZG_0202_TEST_DIR / KZG_0202_PKL_NAME).read_bytes())
 
 
 @pytest.fixture(scope="session")
-def kzg0202_rak() -> Rak:
+def kzg0202_smart_document() -> SmartDocument:
+    """Geef de vertrouwde SDK-vrije documentfixture.
+
+    Returns
+    -------
+    SmartDocument
+        Historische referentiedata in eigen documenttypen.
+    """
+    return load_kzg0202_smart_document()
+
+
+@pytest.fixture(scope="session")
+def kzg0202_rak(isoleer_testcache: Path, verbied_externe_diensten) -> Rak:
 
     smart_doc = load_kzg0202_smart_document()
 
@@ -63,7 +149,7 @@ def kzg0202_rak() -> Rak:
 
 
 @pytest.fixture(scope="session")
-def paal_tables() -> DocumentTable:
+def paal_tables() -> StructuredTable:
     """Fixture to provide a complete mock Rak object with gebreken at various levels."""
     loaded_doc = load_kzg0202_smart_document()
 

@@ -16,12 +16,65 @@ zodat we de testdata kunnen controleren en aanpassen indien nodig.
 """
 
 import json
+import pickle
+from pathlib import Path
+from unittest.mock import Mock
 
 from polyfactory.factories.pydantic_factory import ModelFactory
 import pytest
 
+from tekstherkenning_ark import constants
+from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.houtmonster import Houtmonster
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak import Rak
+
+
+def test_rak_cache_volgt_documentvingerafdruk_en_behoudt_oude_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Scheid nieuwe extracties van oude naamcaches zonder LLM- of netwerkverwerking.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Geisoleerde Rak-cachemap.
+    monkeypatch : pytest.MonkeyPatch
+        Vervangt meettabelconversie door lege, gecontroleerde resultaten.
+    """
+    monkeypatch.setattr(constants, "CACHE_DIR", tmp_path)
+    palen_maken = Mock(return_value={})
+    monkeypatch.setattr(Paal, "from_doc_tables", palen_maken)
+    monkeypatch.setattr(Kesp, "from_doc_tables", Mock(return_value={}))
+    monkeypatch.setattr(Houtmonster, "from_doc_tables", Mock(return_value=[]))
+    document = SmartDocument("KZG0202", bron_hash="eerste-bron", extractie_metadata={"extractor_versie": 1})
+    monkeypatch.setattr(document, "get_meettabel_fundering_paal", Mock(return_value=None))
+    monkeypatch.setattr(document, "get_meettabel_fundering_kesp", Mock(return_value=None))
+    monkeypatch.setattr(document, "get_meettabel_houtmonsters", Mock(return_value=None))
+    monkeypatch.setattr(document, "get_rakdeel_secties", Mock(return_value=[]))
+    oude_cache = tmp_path / "rak_KZG0202.pkl"
+    oude_inhoud = pickle.dumps(Rak(raknaam="VEROUDERD", totale_lengte_m=0, rakdelen=[]))
+    oude_cache.write_bytes(oude_inhoud)
+
+    nieuw = Rak.from_smart_document(document)
+    assert nieuw.raknaam == "KZG0202"
+    assert (tmp_path / f"rak_KZG0202_{document.documentvingerafdruk}.pkl").is_file()
+    assert palen_maken.call_count == 1
+    assert Rak.from_smart_document(document).model_dump() == nieuw.model_dump()
+    assert palen_maken.call_count == 1
+
+    document.bron_hash = "gewijzigde-bron"
+    Rak.from_smart_document(document)
+    assert palen_maken.call_count == 2
+    document.extractie_metadata = {"extractor_versie": 2}
+    Rak.from_smart_document(document)
+    assert palen_maken.call_count == 3
+    Rak.from_smart_document(document, use_caching=False)
+    assert palen_maken.call_count == 4
+    assert oude_cache.read_bytes() == oude_inhoud
+    assert "documentvingerafdruk" not in nieuw.model_dump()
 
 
 def test_kzg0202(kzg0202_rak: Rak):

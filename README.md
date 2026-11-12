@@ -6,7 +6,7 @@ Deze tool ondersteunt het **ARK-proces** (Amsterdamse Risicobeoordeling Kademure
 
 ### Wat doet de tool?
 Duikinspectierapporten (PDF-formaat van Nebest) worden:
-1. Ingelezen met **Azure Document Intelligence** voor tekstherkenning
+1. Lokaal ingelezen met **PyMuPDF 2.x**, zonder OCR op pagina's of afbeeldingen
 2. Geanalyseerd met **AI-gebaseerde classificatie** voor gebrekdetectie
 3. Omgezet naar een gevalideerde datastructuur (Pydantic models)
 4. Geëxporteerd naar **JSON** of **Excel**
@@ -28,22 +28,19 @@ cd tekstherkenning-ark
 # Installeer dependencies met UV
 uv sync
 
-# Maak een .env bestand aan met Azure credentials
+# Maak alleen voor de LLM-classificatie een .env bestand aan
 cp .env.example .env
-# Vul je Azure Document Intelligence en OpenAI credentials in
+# Vul je Azure OpenAI credentials in; PDF-extractie heeft geen credentials nodig
 ```
 
 ### 3. Benodigde Environment Variabelen (.env)
 ```env
-# Azure Document Intelligence
-AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://your-resource.cognitiveservices.azure.com/
-AZURE_DOCUMENT_INTELLIGENCE_KEY=your-key-here
-
 # Azure OpenAI (voor LLM-gebaseerde gebrekdetectie)
 AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o
+AZURE_OPENAI_KEY=your-api-key
+AZURE_MODEL_NAME=your-deployment-name
 AZURE_OPENAI_API_VERSION=2024-08-01-preview
+AZURE_OPENAI_ENCODING_NAME=o200k_base
 ```
 
 ### Command-line interface
@@ -57,7 +54,7 @@ uv run tekstherkenning-ark -i <input_pdf_path> [-o <output_directory>]
 **Parameters:**
 - `-i`, `--input`: Pad naar het input PDF bestand (verplicht)
 - `-o`, `--output`: Output directory voor het JSON bestand (optioneel, default: huidige directory)
-- `--no-cache`: Gebruik geen cache voor Azure Document Intelligence (optioneel)
+- `--no-cache`: Bouw het Rak-model opnieuw op; document- en LLM-caches blijven bruikbaar (optioneel)
 
 **Voorbeelden:**
 
@@ -101,7 +98,7 @@ tekstherkenning-ark/
 │   ├── datamodel.mermaid           # Datamodel visualisatie
 │   ├── llm-gebrektype-detectie.md  # LLM detectie documentatie
 │   ├── uitleg_velden_ark.md        # ARK velden mapping
-│   └── gebruik_doc_intelligence.md # Document Intelligence gebruik
+│   └── gebruik_doc_intelligence.md # Lokale PDF-extractie en structuur-JSON
 ├── data/                           # Data directory (niet in git)
 │   ├── duikrapporten/              # Input PDF rapporten
 │   ├── json_exports/               # Geëxporteerde JSON bestanden
@@ -125,7 +122,7 @@ Tests zijn georganiseerd per component met:
 
 ```mermaid
 graph LR
-    A[PDF Duikrapport<br/>Nebest] --> B[Azure Document<br/>Intelligence]
+    A[PDF Duikrapport<br/>Nebest] --> B[Lokale PyMuPDF-extractie<br/>Geen OCR]
     B --> C[Tekstherkenning ARK<br/>Parser + AI]
     C --> D[JSON Export<br/>Gestructureerde Data]
     D --> E[Viktor Platform]
@@ -141,7 +138,7 @@ graph LR
 
 ### Proces Flow Details
 1. **Input**: PDF duikinspectierapporten van Nebest
-2. **OCR/Extractie**: Azure Document Intelligence leest tabellen, paragrafen en tekst
+2. **Lokale extractie**: PyMuPDF leest bestaande tekst, native tabellen en figuurgebieden zonder OCR
 3. **Parsing & AI**: 
    - Structuur wordt herkend en gevalideerd
    - LLM classificeert gebrektypes intelligent
@@ -198,22 +195,18 @@ Zie [docs/datamodel.mermaid](docs/datamodel.mermaid) voor het volledige UML clas
 
 ## AI en Azure Resources
 
-### Azure Document Intelligence
-**Doel:** Optical Character Recognition (OCR) en layout analyse van PDF-documenten.
+### Lokale PyMuPDF-extractie
+**Doel:** Bestaande selecteerbare PDF-tekst en documentstructuur behouden, zonder OCR of cloudfallback.
 
-**Gebruik:**
-- Extractie van tabellen, paragrafen en tekst uit duikinspectierapporten
-- Layout herkenning voor structuuranalyse
-- Multi-page document processing
+- PyMuPDF 2.1 is getest en vastgelegd in de lockfile; de geintegreerde `Document.to_json()`-API levert layout.
+- Native tabellen worden vooraf met `Page.find_tables(use_layout=False)` gekopieerd om celwaarden te behouden.
+- Volledige gedetecteerde figuurgebieden worden PNG's op 150 DPI; native figuurlabels blijven tekst.
+- Beeld-PDF's zonder selecteerbare tekst worden expliciet geweigerd. Pixeltekst wordt niet herkend.
+- Er zijn geen Document Intelligence-resource, SDK of credentials nodig.
+- PyMuPDF valt onder AGPL of een commerciele licentie. De licentiekeuze is voor dit project goedgekeurd;
+    distributie moet aan die voorwaarden voldoen. De repositorylicentie verandert niet.
 
-**Setup:**
-1. Maak een Azure Document Intelligence resource aan in Azure Portal
-2. Verkrijg endpoint en API key
-3. Configureer in `.env` bestand
-
-**Resources:**
-- [Azure Document Intelligence Docs](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/)
-- [Python SDK](https://pypi.org/project/azure-ai-documentintelligence/)
+Zie [lokale PDF-extractie](docs/gebruik_doc_intelligence.md) voor export, cachebeheer en beperkingen.
 
 ### Azure OpenAI (LLM-gebaseerde Gebrekdetectie)
 **Doel:** Intelligente classificatie van gebrektypen met contextbegrip.
@@ -239,9 +232,27 @@ Traditionele keyword-matching faalt bij:
 - [LLM Gebrekdetectie Details](docs/llm-gebrektype-detectie.md)
 
 ### Caching en Performance
-- Document Intelligence resultaten worden gecached in `data/logs/`
+- Structuur-JSON en PNG's staan in `data/.cache/pymupdf_extractie/<vingerafdruk>/`.
+- De vingerafdruk omvat PDF-inhoud, schema-/extractorversie, PyMuPDF-versie en extractieopties inclusief DPI.
+- Cachehits valideren alle assets en slaan PDF-opening, layoutanalyse en figuurrendering over.
+- Een ontbrekende of ongeldige asset veroorzaakt lokale herextractie. Oude Azure-caches worden niet gebruikt of gewist.
+- Rak-caches gebruiken dezelfde documentvingerafdruk; bestaande Rak-JSON-/Excel-schema's veranderen niet.
 - LLM classificaties worden gecached om kosten te reduceren
 - Cache management scripts: `clear_llm_cache.py`, `delete_llm_cache.py`
+
+### Afzonderlijke Documentexport
+
+Deze export bevat de bronstructuur, los van de bestaande Rak-export en zonder LLM-verwerking:
+
+```python
+from pathlib import Path
+from tekstherkenning_ark.document.smart_document import SmartDocument
+
+document = SmartDocument.from_pdf(Path("data/duikrapporten/HEG0201_Houtmonstername.pdf"))
+document.exporteer_structuur(Path("data/structuur_exports/HEG0201"))
+```
+
+De exportmap bevat `structuur.json` en relatieve PNG-paden onder `afbeeldingen/` en kan als geheel worden verplaatst.
 
 ---
 
@@ -251,7 +262,7 @@ Traditionele keyword-matching faalt bij:
 | Package | Versie | Gebruik |
 |---------|--------|---------|
 | **pydantic** | ≥2.12.5 | Datavalidatie en type-safe models |
-| **azure-ai-documentintelligence** | ≥1.0.0 | OCR en document parsing |
+| **pymupdf** | ≥2.1 (getest: 2.1) | Lokale PDF-structuur, native tekst/tabellen en PNG-figuren, zonder OCR |
 | **openai** | ≥2.15.0 | Azure OpenAI integratie voor LLM |
 | **tiktoken** | ≥0.12.0 | Token counting voor LLM calls |
 | **python-dotenv** | ≥1.0.0 | Environment variabelen management |
@@ -286,7 +297,7 @@ uv run tekstherkenning-ark -i <input_pdf_path> [-o <output_directory>]
 **Parameters:**
 - `-i`, `--input`: Pad naar het input PDF bestand (verplicht)
 - `-o`, `--output`: Output directory voor het JSON bestand (optioneel, default: huidige directory)
-- `--no-cache`: Gebruik geen cache voor Azure Document Intelligence (optioneel)
+- `--no-cache`: Bouw het Rak-model opnieuw op; document- en LLM-caches blijven bruikbaar (optioneel)
 
 **Voorbeelden:**
 
@@ -334,7 +345,7 @@ Zie de [docs/](docs/) folder voor gedetailleerde documentatie:
 - [datamodel.mermaid](docs/datamodel.mermaid) - Volledig UML class diagram
 - [llm-gebrektype-detectie.md](docs/llm-gebrektype-detectie.md) - LLM classificatie details
 - [uitleg_velden_ark.md](docs/uitleg_velden_ark.md) - Mapping duikrapporten naar ARK-velden
-- [gebruik_doc_intelligence.md](docs/gebruik_doc_intelligence.md) - Document Intelligence usage
+- [gebruik_doc_intelligence.md](docs/gebruik_doc_intelligence.md) - Lokale PDF-extractie en structuur-JSON
 - [testing.md](docs/testing.md) - Testing strategieën
 - [logging.md](docs/logging.md) - Logging configuratie
 

@@ -2,10 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from azure.ai.documentintelligence.models import DocumentTable, DocumentParagraph
 
-from tekstherkenning_ark.document.sectie import Sectie
-from tekstherkenning_ark.document.structured_table import StructuredTable, TableType
+from tekstherkenning_ark.document.sectie import Paragraaf, Sectie
+from tekstherkenning_ark.document.structured_table import DocumentTabel, StructuredTable, TableType
 from tekstherkenning_ark.utils import get_constructienaam
 
 
@@ -17,7 +16,7 @@ class RakdeelSectie:
     ----------
     constructie_naam : str
         Naam van de constructie.
-    beschrijving : list[DocumentParagraph]
+    beschrijving : list[Paragraaf]
         Beschrijvende paragrafen.
     toestand_tabel : StructuredTable | None
         Structured table met toestandsinformatie.
@@ -26,7 +25,7 @@ class RakdeelSectie:
     """
 
     constructie_naam: str
-    beschrijving: list[DocumentParagraph]
+    beschrijving: list[Paragraaf]
     toestand_tabel: StructuredTable | None
     gebreken_tabel: StructuredTable | None
 
@@ -55,6 +54,9 @@ class RakdeelSectie:
         gebreken_tabel = None
 
         for sectie in secties:
+            # Ontbrekende tabellen mogen nooit uit de volgende constructie worden overgenomen.
+            if constructie_naam and get_constructienaam(sectie.titel):
+                break
             # if sectie titel contains "constructie [a-z]" then it is the base rakdeelsectie
             if get_constructienaam(sectie.titel) and not constructie_naam:
                 constructie_naam = get_constructienaam(sectie.titel) or ""
@@ -73,7 +75,7 @@ class RakdeelSectie:
         )
 
     @staticmethod
-    def _get_toestand_tabel(list_of_tables: list[DocumentTable]) -> StructuredTable | None:
+    def _get_toestand_tabel(list_of_tables: list[DocumentTabel]) -> StructuredTable | None:
         """Helper om de juiste toestand tabel te vinden uit een lijst van tabellen."""
         if not list_of_tables:
             return None
@@ -81,7 +83,7 @@ class RakdeelSectie:
         return StructuredTable.from_doc_table(list_of_tables, table_type=TableType.TOESTANDSBEPALING)
 
     @staticmethod
-    def _get_gebreken_tabel(list_of_tables: list[DocumentTable]) -> StructuredTable | None:
+    def _get_gebreken_tabel(list_of_tables: list[DocumentTabel]) -> StructuredTable | None:
         """Helper om de juiste gebreken tabel te vinden uit een lijst van tabellen."""
         # Filter tables with 3 columns (gebreken tables have 3 columns)
         gebreken_tables = [tabel for tabel in list_of_tables if tabel.column_count == 3 and tabel.cells]
