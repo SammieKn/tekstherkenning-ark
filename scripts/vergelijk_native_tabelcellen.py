@@ -16,7 +16,6 @@ from tekstherkenning_ark import constants
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.document.structured_table import DocumentTabel
 
-
 TabelMatrix = tuple[tuple[str | None, ...], ...]
 
 
@@ -36,11 +35,7 @@ def lees_broncellen(pdf_pad: Path, *, via_byte_stream: bool = False) -> dict[str
         Native celmatrices, gesleuteld op pagina- en tabelnummer.
     """
     tabellen = {}
-    pdf = (
-        pymupdf.open(stream=pdf_pad.read_bytes(), filetype="pdf")
-        if via_byte_stream
-        else pymupdf.open(pdf_pad)
-    )
+    pdf = pymupdf.open(stream=pdf_pad.read_bytes(), filetype="pdf") if via_byte_stream else pymupdf.open(pdf_pad)
     with pdf:
         for pagina in pdf:
             pagina.remove_rotation()
