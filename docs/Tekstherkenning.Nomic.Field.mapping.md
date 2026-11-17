@@ -33,6 +33,8 @@ identifies a rakdeel within a rak. Keys in the section headings refer only to co
 
 ### Values and columns
 
+- Column origin is `PDF` by default: read or extract the value directly from the report. Notes marked
+  `[Linked]` values connect rows or identify their location in the workbook; `[Classified]` values are categories assigned from report content;
 - Use the listed column order. For `gebreken`, include the union of defect fields in first-appearance order.
   Leave cells empty for fields that do not apply to a row.
 - A column with no scalar values in any row is omitted. Do not expand lists or nested records into columns.
@@ -68,9 +70,9 @@ One row per report.
 |raknaam|string|Rak code, e.g. `ABC1234`|
 |objectnaam|string|Descriptive name, such as a street or quay name|
 |bedrijf|enum|`Nebest`, `Wals`, `Overig`|
-|rapport_type|enum|`houtmonster`, `boorweerstandsmeting`, `visuele_inspectie`, `overig`|
-|template|enum|`wals`, `nebest_bwm`, `nebest_hm`, `overig`|
-|template_versie|enum|Nebest: `klassiek` or `2024`; Wals and overig: `""`|
+|rapport_type|enum|`houtmonster`, `boorweerstandsmeting`, `visuele_inspectie`, `overig`; [Classified] from report contents|
+|template|enum|`wals`, `nebest_bwm`, `nebest_hm`, `overig`; [Classified] from report layout|
+|template_versie|enum|Nebest: `klassiek` or `2024`; Wals and overig: `""`; [Classified] from report layout|
 |rapportnummer|string|Report number, if present|
 |versie|string|Version as printed in the report|
 |rapportdatum|date|Report date|
@@ -78,8 +80,8 @@ One row per report.
 |totale_lengte_m|number, m|Total length of the rak|
 |jaar_van_aanleg_tekst|string|As printed; may list several years|
 |stadsdeel|string|District|
-|aantal_rakdelen|integer|Number of rakdelen in the report|
-|secties|string|`onderdeel: p.x-y; …` using PDF page numbers|
+|aantal_rakdelen|integer|Number of rakdelen in the report; [Computed] by counting the rakdelen|
+|secties|string|`onderdeel: p.x-y; …` using PDF page numbers; [Computed] summary of report sections|
 |opmerkingen|string|Notable information about the report|
 |bron|string|Citation to the report location|
 |pagina|integer|PDF page number, not printed page number|
@@ -101,16 +103,13 @@ One row per rakdeel.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Reference to `rakken.raknaam`|
+|rak_id|string|Reference to `rakken.raknaam`; [Linked]|
 |opmerkingen|string|Remarks about the rakdeel|
 |rakdeel_id|string|Construction label, e.g. `Constructie A`|
 |omschrijving|string|Full construction description|
 |lengte_m_omschrijving|number, m / empty|Length stated in the description|
 |bouwjaar|integer / empty|Construction year, if available|
-|percentage_niet_functionerend_schuifhout|number, % / empty|Percentage of present opsluitklossen that are damaged|
-|vijf_slechte_kespen_naast_elkaar|bool|Whether five successive kespen are bad|
-|lengte_m|number, m / empty|Use stated length; otherwise derive from pile spacing when the required distances are available|
-|aantal_scheuren_per_meter|number, 1/m / empty|Crack count divided by rakdeel length|
+
 
 ## C4. `bovenbouw`: key `<rak_id>|<rakdeel_id>`
 
@@ -118,19 +117,11 @@ One row per rakdeel.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
 |opmerkingen|string|Remarks about the upper structure|
 |materiaal|enum / empty|Upper-structure material; use the exact enum cell text above|
 |bovenkant_deksteen_cm_tov_nap|number, cm / empty|Top of coping relative to NAP|
-|maximaal_aantal_scheuren_per_10_m|integer|Maximum number of cracks in any 10 m interval|
-|totaal_aantal_scheuren|integer|Total number of cracks, including crack subtypes|
-|maximale_scheurwijdte_mm|number, mm / empty|Maximum available crack width|
-|is_buik_in_wand_aanwezig|bool|Whether a `BuikInWand` defect is present|
-|is_grondvoerend_gat_aanwezig|bool|Whether a `GrondVoerendGat` defect is present|
-|is_lokaal_verdwenen_metselwerk|bool|Whether a `LokaalVerdwenenMetselwerk` defect is present|
-|is_scheefstand_met_scheur_aanwezig|bool|Whether a `Scheefstand` is associated with a crack|
-|is_buik_met_scheur_aanwezig|bool|Whether a `BuikInWand` is associated with a crack|
 
 Associate a crack with a `Scheefstand` or `BuikInWand` when their codings match or the crack's numeric
 distance falls within the defect's start and end distances.
@@ -141,33 +132,13 @@ One row per rakdeel.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
 |opmerkingen|string|Remarks about the lower structure|
-|vloer|empty, conditional|Include as an empty column only when a rakdeel has no floor; do not place floor details here|
-|onderloopsheidscherm|empty, conditional|Include as an empty column only when a rakdeel has no underseepage screen; do not place its details here|
+|vloer|empty, conditional|Include as an empty column only when a rakdeel has no floor; do not place floor details here; [Linked]|
+|onderloopsheidscherm|empty, conditional|Include as an empty column only when a rakdeel has no underseepage screen; do not place its details here; [Linked]|
 |materiaal|enum / empty|Lower-structure material|
 |materiaal_fundering|enum / empty|Foundation material|
-|aantal_onderzochte_paalrijen|integer|Number of distinct pile-row numbers|
-|max_aantal_palen_per_rij|integer / empty|Maximum number of piles in one row|
-|aantal_rijen_onderzocht|integer|Number of pile rows examined|
-|aantal_palen_dwars|integer|Highest pile-row number across the structure|
-|aantal_aansluitingen|integer|Number of piles with connection status `G` or `S`|
-|aantal_slechte_aansluitingen|integer|Number of piles with connection status `S`|
-|ingeschat_aantal_paalrijen|integer / unexpected result|Estimated number of piles in the first row, accounting for large gaps|
-|is_vijf_aansluitende_slechte_paal_kesp_verbinding_in_rij|bool / unexpected result|Whether five consecutive pile-to-kesp connections are bad|
-|aantal_onderzochte_palen|integer|Number of piles examined|
-|aantal_ongewenst_schoor|integer|Number of first-row piles with direction `PNA`|
-|percentage_ongewenste_schoorstand|number, % / empty|Unwanted batter count divided by number of piles|
-|aantal_palen_met_scheefstand|integer|Number of piles with scheefstand|
-|is_schoorpalen_in_een_richting|bool / `NVT` / empty|Whether batter piles have at most one direction; `NVT` if pile data is present and there are no batter piles|
-|aantal_schoorpalen|integer|Number of piles with direction `PNV` or `PNA`|
-|aantal_palen_met_paalbreuk|integer|Number of piles with paalbreuk|
-|totaal_aantal_kespen|integer|Total number of kespen|
-|aantal_beschadigde_kespen|integer|Number of kespen with deformation or damage|
-|percentage_beschadigde_kespen|number, % / empty|Damaged kespen divided by total kespen|
-|percentage_vervormde_kespen|number, % / empty|Deformed kespen divided by total kespen|
-|percentage_beschadigde_verbinding|number, % / empty|Bad connections divided by number of piles|
 
 The `vloer` and `onderloopsheidscherm` columns contain no nested details. Include each only if it is empty for
 at least one row; omit it if every row has that component. Leave percentages empty when their denominator is zero.
@@ -179,8 +150,8 @@ for `rakdeel_id` when the houtmonster is not assigned to a rakdeel.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference or `unassigned`|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference or `unassigned`; [Linked]|
 |opmerkingen|string|Remarks about the houtmonster|
 |codering|string|Houtmonster coding as printed|
 |rak_code|string|Rak code associated with the houtmonster|
@@ -200,9 +171,8 @@ One row per pile assigned to a rakdeel.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
-|afstand_van_startrak_cm|number, cm / empty|Distance from the start of the rakdeel|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
 |opmerkingen|string|Remarks about the pile|
 |paal_nummer|string|Pile ID in the form `P<x>.<y>`|
 |diameter_haaks|integer, mm / empty|Diameter perpendicular to the wall|
@@ -218,10 +188,6 @@ One row per pile assigned to a rakdeel.
 |is_aantasting|bool / empty|Whether aantasting is present|
 |aansluiting_status|enum / empty|Connection condition: `G`, `S`, or `NM`; use the exact enum cell text above|
 |positionering_aansluiting_cm|string / empty|Connection position as stated|
-|paalrij_nummer|integer|Second number in `P<x>.<y>`; e.g. `P1.12` gives `12`|
-|paal_nummer_main|integer|First number in `P<x>.<y>`; e.g. `P1.12` gives `1`|
-|n_scheuren|integer|Number of associated cracks, including crack subtypes|
-|is_ongewenste_schoorstand|bool / empty|Whether the direction is `PNA`|
 
 For `afstand_van_startrak_cm`, begin each rakdeel at its length in centimetres. Advance the distance by
 `hoh_afstand_cm` along the first pile row, following the pile order in the table. Leave it empty when the
@@ -233,8 +199,8 @@ One row per kesp. Use `unassigned` for `rakdeel_id` when a kesp is not assigned 
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference or `unassigned`|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference or `unassigned`; [Linked]|
 |opmerkingen|string|Remarks about the kesp|
 |kesp_nummer|string|Kesp ID in the form `K<nr>`|
 |hoogte_cm|integer, cm / empty|Kesp height|
@@ -254,7 +220,7 @@ Include this sheet only if the report contains a boorweerstandsmeting table. One
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rakdeel_id|string|Rakdeel reference|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
 |codering|string|Measurement coding, e.g. `ABC1234/Constructie A/P1.1/BM`|
 |rak_code|string|Rak code|
 |paal_nummer|string|Pile number|
@@ -274,72 +240,27 @@ One row per condition item.
 
 |Column|Type|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
-|model_pad|string|Path to the item, e.g. `bovenbouw`, `onderbouw`, `onderbouw/vloer`, or `rakdeel`|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
+|model_pad|string|Path to the item, e.g. `bovenbouw`, `onderbouw`, `onderbouw/vloer`, or `rakdeel`; [Linked]|
 |onderdeel|string|Name of the construction component|
-|aangetast|bool / text / empty|Boolean, `NM`, `NVT`, empty, or a string in the form `{'waarde': ..., 'onverwacht_resultaat_type': <OnverwachtResultaatType.NAME: 'value'>, 'details': '...'}`|
+|aangetast|bool / text / empty|Boolean, `NM`, `NVT`, empty|
 
-## C11. `onverwachte_resultaten`: key `<rak_id>|<rakdeel_id>|<model_pad>|<onverwacht_resultaat_type>|<details>`
-
-One row per unexpected result.
-
-|Column|Type|Values / notes|
-|---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
-|model_pad|string|Path to the item with the unexpected result|
-|waarde|scalar / empty|Unexpected value; leave empty if it is not a scalar|
-|onverwacht_resultaat_type|string|Use one of the exact values below|
-|details|string|Explanation of the unexpected result|
-
-|Value|Excel cell text|
-|---|---|
-|`exceptie`|`OnverwachtResultaatType.EXCEPTIE`|
-|`incorrect_type`|`OnverwachtResultaatType.INCORRECT_TYPE`|
-|`parsing_fout`|`OnverwachtResultaatType.PARSING_FOUT`|
-|`onbekend`|`OnverwachtResultaatType.ONBEKEND`|
-|`onderliggende_data_incorrect`|`OnverwachtResultaatType.ONDERLIGGENDE_DATA_INCORRECT`|
-
-## C12. `gebreken` and `gebreken_<type>`: key `<rak_id>|<rakdeel_id>|<model_pad>|<codering>|<gebrek_type>`
+## C11. `gebreken` : key `<rak_id>|<rakdeel_id>|<model_pad>|<codering>|<gebrek_type>`
 
 One row per defect. Keep duplicate codings when more than one defect type is present; do not add a row number
 to the coding.
-
-### `gebreken`
-
 The first four columns are `rak_id`, `rakdeel_id`, `model_pad`, and `gebrek_type`. Follow these with the
 applicable defect fields below. The sheet's columns are the union of fields present in its rows, in the order
 they first occur. Leave fields that do not apply to a row empty.
 
 |Column|Type / unit|Values / notes|
 |---|---|---|
-|rak_id|string|Rak reference|
-|rakdeel_id|string|Rakdeel reference|
-|model_pad|string|Path to the item with the defect|
-|gebrek_type|string|Defect type, as listed below|
+|rak_id|string|Rak reference; [Linked]|
+|rakdeel_id|string|Rakdeel reference; [Linked]|
+|model_pad|string|Path to the item with the defect; [Linked]|
+|gebrek_type|string|Defect type, as listed below; [Classified]|
 |codering|string|Defect coding|
 |omschrijving|string|Full defect description|
 |figuurnummer|string / empty|Figure or photo reference|
 |Type-specific fields|varies|Use the fields and order specified for the defect type|
-
-### `gebreken_<type>`: key `<rak_id>|<rakdeel_id>|<model_pad>|<codering>|<gebrek_type>`
-
-Create one sheet for each defect type present. Its name is `gebreken_<type>`, limited to 30 characters.
-Columns begin with `rak_id`, `rakdeel_id`, and `model_pad`, followed by the fields listed for that type.
-
-|Defect type|Fields after `rak_id`, `rakdeel_id`, and `model_pad`, in order|
-|---|---|
-|`Gebrek`|`codering`, `omschrijving`, `figuurnummer`, `gebrek_type`|
-|`Scheur`|`codering`, `omschrijving`, `figuurnummer`, `afstand_van_startrak_m`, `lengte_cm`, `scheurwijdte_mm`, `gebrek_type`|
-|`ScheurMetselwerk`|`codering`, `omschrijving`, `figuurnummer`, `afstand_van_startrak_m`, `lengte_cm`, `scheurwijdte_mm`, `afstand_van_waterlijn_cm`, `afstand_van_deksloof_cm`, `is_inprikbaar`, `orientatie`, `gebrek_type`|
-|`ScheurHout`|`codering`, `omschrijving`, `figuurnummer`, `afstand_van_startrak_m`, `lengte_cm`, `scheurwijdte_mm`, `diepte_cm`, `orientatie`, `gebrek_type`|
-|`GrondVoerendGat`|`codering`, `omschrijving`, `figuurnummer`, `afstand_van_startrak_m`, `breedte_cm`, `hoogte_cm`, `diepte_cm`, `gebrek_type`|
-|`BuikInWand`|`codering`, `omschrijving`, `figuurnummer`, `start_buik_van_startrak_m_ingevuld`, `eind_buik_van_startrak_m_ingevuld`, `lengte_buik_m_ingevuld`, `uitbuiking_cm`, `gebrek_type`, `start_buik_van_startrak_m`, `eind_buik_van_startrak_m`, `lengte_buik_m`|
-|`Scheefstand`|`codering`, `omschrijving`, `figuurnummer`, `start_scheefstand_van_startrak_m_ingevuld`, `eind_scheefstand_van_startrak_m_ingevuld`, `lengte_scheefstand_m_ingevuld`, `hoek_graden`, `gebrek_type`, `start_scheefstand_van_startrak_m`, `eind_scheefstand_van_startrak_m`, `lengte_scheefstand_m`|
-|`LokaalVerdwenenMetselwerk`|`codering`, `omschrijving`, `figuurnummer`, `afstand_van_startrak_m`, `breedte_cm`, `hoogte_cm`, `diepte_cm`, `gebrek_type`|
-|`OnderloopsheidschermBeschadigd`|`codering`, `omschrijving`, `figuurnummer`, `is_beschadigd`, `gebrek_type`|
-
-Numeric defect fields use their named units: distances and lengths in metres or centimetres as indicated,
-crack width in millimetres, and angles in degrees. `orientatie` is `verticaal`, `horizontaal`, or
-`diagonaal` for masonry cracks, and `verticaal` or `horizontaal` for timber cracks.
