@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from typing_extensions import TYPE_CHECKING
 
 from tekstherkenning_ark.document.smart_document import SmartDocument
-from typing_extensions import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
@@ -15,6 +16,8 @@ from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.logger import get_logger
 
 logger = get_logger(__name__)
+
+_ONGELDIGE_XML_TEKENS = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\uD800-\uDFFF\uFFFE\uFFFF]")
 
 RAK_TABLE_NAME = "rakken"
 RAKDEEL_TABLE_NAME = "rakdelen"
@@ -47,6 +50,42 @@ def remove_collection_fields(data: dict[str, Any]) -> dict[str, Any]:
 
     cleaned_data = {key: value for key, value in data.items() if not isinstance(value, (list, dict))}
     return cleaned_data
+
+
+def _remove_unsafe_values(waarde: Any) -> Any:
+    """Verwijder tekens die niet in XML 1.0-tekst mogen voorkomen.
+
+    Parameters
+    ----------
+    waarde : Any
+        Waarde uit een Excel-exportcel.
+
+    Returns
+    -------
+    Any
+        Dezelfde waarde, met verboden tekens verwijderd als het een tekst is.
+    """
+    if isinstance(waarde, str):
+        return _ONGELDIGE_XML_TEKENS.sub("", waarde)
+    return waarde
+
+
+def remove_unsafe_values_for_excel(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Verwijder XML-ongeldige tekens uit celwaarden en kolomnamen.
+
+    Parameters
+    ----------
+    dataframe : pd.DataFrame
+        DataFrame die naar Excel wordt geëxporteerd.
+
+    Returns
+    -------
+    pd.DataFrame
+        Een opgeschoonde kopie van de DataFrame.
+    """
+    veilig_dataframe = dataframe.map(_remove_unsafe_values)
+    veilig_dataframe.columns = [_remove_unsafe_values(kolom) for kolom in dataframe.columns]
+    return veilig_dataframe
 
 
 def get_dfs_from_pdfs(pdf_rapporten: list[Path]) -> dict[str, pd.DataFrame]:

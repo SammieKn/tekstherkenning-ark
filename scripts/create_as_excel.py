@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from tekstherkenning_ark.export_utils import get_dfs_from_pdfs
-from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.logger import get_logger
-
 import pandas as pd
+
+from tekstherkenning_ark.constants import DATA_DIR
+from tekstherkenning_ark.export_utils import get_dfs_from_pdfs, remove_unsafe_values_for_excel
+from tekstherkenning_ark.logger import get_logger
 
 EXCEL_EXPORT_DIR = DATA_DIR / "excel_exports"
 EXCEL_EXPORT_DIR.mkdir(exist_ok=True)
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 if __name__ == "__main__":
 
-    pdf_rapporten = [file for file in (DATA_DIR / "duikrapporten").glob("*.pdf")]
+    pdf_rapporten = [file for file in (DATA_DIR / "duikrapporten").glob("*.pdf") if "KZG0202" in file.stem]
     df_dict = get_dfs_from_pdfs(pdf_rapporten)
 
     # Zet om naar DataFrames en exporteer naar Excel met meerdere sheets
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
         for name, df in df_dict.items():
             logger.info(f"Exporteer {len(df)} rijen van {name} naar Excel sheet")
+            df = remove_unsafe_values_for_excel(df)
             sheet_name = name[:30]
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
