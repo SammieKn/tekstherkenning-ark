@@ -17,9 +17,7 @@ Create these sheets in this order:
 8. `kespen`
 9. `boorweerstandsmetingen` (optional)
 10. `toestandsbepalingen`
-11. `onverwachte_resultaten`
-12. `gebreken`
-13. One `gebreken_<type>` sheet for each defect type present
+11. `gebreken`
 
 Include `document` and the non-optional sheets even when they have no rows; an empty sheet has no column headers.
 Include `houtmonsters` and `boorweerstandsmetingen` only when the corresponding table is present in the report;
