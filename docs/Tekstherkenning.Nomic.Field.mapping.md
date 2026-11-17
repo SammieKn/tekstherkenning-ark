@@ -1,63 +1,17 @@
 # ARK WF1 – Field dictionary
 
-Output specification for the **ARK WF1 – Extract duikrapport** workflow. Create an Excel workbook with the
-sheet names, column names, column order, values and relationships described below.
+Reference for the **ARK WF1 – Extract duikrapport** workflow. Table names, column names, keys, units and enum values here are a contract with the `tekstherkenning-ark` code: do not rename or add columns. Value conventions and the change policy are in the workflow Instructions.
 
-## Workbook structure
+## Meta columns
 
-Create these sheets in this order:
+Present on the tables indicated (code removes them before pydantic validation):
 
-1. `document`
-2. `rakken`
-3. `rakdelen`
-4. `bovenbouw`
-5. `onderbouw`
-6. `houtmonsters` (optional)
-7. `palen`
-8. `kespen`
-9. `boorweerstandsmetingen` (optional)
-10. `toestandsbepalingen`
-11. `gebreken`
-
-Include `document` and the non-optional sheets even when they have no rows; an empty sheet has no column headers.
-Include `houtmonsters` and `boorweerstandsmetingen` only when the corresponding table is present in the report;
-otherwise omit that sheet. Only include a defect-type sheet when at least one row of that type is present.
-Sheet names have a maximum length of 30 characters. Put column headers in the first row and do not add an
-index column.
-
-Rows follow the order of the reports and items within them. Do not sort, deduplicate, or add identifiers.
-`rak_id` refers to `rakken.raknaam`; `rakdeel_id` is the construction label. The combination of these values
-identifies a rakdeel within a rak. Keys in the section headings refer only to columns in that section's table.
-
-### Values and columns
-
-- Column origin is `PDF` by default: read or extract the value directly from the report. Notes marked
-  `[Linked]` values connect rows or identify their location in the workbook; `[Classified]` values are categories assigned from report content;
-- Use the listed column order. For `gebreken`, include the union of defect fields in first-appearance order.
-  Leave cells empty for fields that do not apply to a row.
-- A column with no scalar values in any row is omitted. Do not expand lists or nested records into columns.
-- If a value is not found in the report, leave its cell empty. Do not guess, infer, or insert a placeholder.
-  Fill derived values only when their calculation is specified and the required inputs are available.
-  Preserve `0` and `False` when they are actual values.
-- Replace newlines in text with spaces and remove characters that cannot be stored in an Excel cell.
-- Use the exact enum cell text shown in this document, not a shortened label.
-
-|Value|Excel cell text|
-|---|---|
-|Upper-structure material `Metselwerk`|`MateriaalBovenbouw.METSELWERK`|
-|Upper-structure material `Basalt`|`MateriaalBovenbouw.BASALT`|
-|Upper-structure material `Beton+Metselwerk`|`MateriaalBovenbouw.BETON_METSELWERK`|
-|Upper-structure material `Beton+Basalt`|`MateriaalBovenbouw.BETON_BASALT`|
-|Upper-structure material `Beton`|`MateriaalBovenbouw.BETON`|
-|Lower-structure materials `Hout`, `Staal`, `Beton`|`MateriaalOnderbouw.HOUT`, `MateriaalOnderbouw.STAAL`, `MateriaalOnderbouw.BETON`|
-|Foundation materials `Hout`, `Staal`, `Beton`|`MateriaalFundering.HOUT`, `MateriaalFundering.STAAL`, `MateriaalFundering.BETON`|
-|Batter direction `PNV`, `PNA`, `LR`|`SchoorStand.POSITIEF`, `SchoorStand.NEGATIEF`, `SchoorStand.NEUTRAAL`|
-|Connection status `G`, `S`, `NM`|`AansluitingStatus.GOED`, `AansluitingStatus.SLECHT`, `AansluitingStatus.NIET_MEETBAAR`|
-|Explicitly stated status `NM` or `NVT`|`NietBeschikbaar.NIET_MEETBAAR` or `NietBeschikbaar.NIET_VAN_TOEPASSING`|
-
-Only use `NM` or `NVT` when that status is stated in the report or is explicitly defined for the field.
-For `toestandsbepalingen.aangetast`, write those statuses as `NM` or `NVT`; leave unreported values empty.
-Write booleans as Excel booleans.
+- `bron`: citation to the table block or page region the row sits in (not an estimated row region).
+    
+- `pagina`: integer page number of the PDF, not the printed page number.
+    
+- `bron_rij`: verbatim source row, cells joined with `|`, in left-to-right order including the header unit where the cell has none.
+    
 
 ## C1. `document`: 1 row, key `<raknaam>`
 
