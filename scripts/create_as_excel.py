@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 if __name__ == "__main__":
 
-    pdf_rapporten = [file for file in (DATA_DIR / "duikrapporten").glob("*.pdf") if "KZG0202" in file.stem]
+    pdf_rapporten = [file for file in (DATA_DIR / "duikrapporten").glob("*.pdf") if "HEG0201" in file.stem]
     df_dict = get_dfs_from_pdfs(pdf_rapporten)
 
     # Zet om naar DataFrames en exporteer naar Excel met meerdere sheets
