@@ -829,6 +829,7 @@ source = { editable = "." }
 dependencies = [
     { name = "azure-ai-documentintelligence" },
     { name = "azure-identity" },
+    { name = "httpx" },
     { name = "openai" },
     { name = "openpyxl" },
     { name = "pandas" },
@@ -845,6 +846,7 @@ dependencies = [
 requires-dist = [
     { name = "azure-ai-documentintelligence", specifier = ">=1.0.0" },
     { name = "azure-identity", specifier = ">=1.25.3" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "openai", specifier = ">=2.15.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=3.0.0" },

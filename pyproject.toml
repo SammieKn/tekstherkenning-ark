@@ -21,6 +21,7 @@ dependencies = [
     "polyfactory>=3.3.0",
     "plotly>=6.6.0",
     "azure-identity>=1.25.3",
+    "httpx>=0.28.1",
 ]
 
 [project.scripts]
