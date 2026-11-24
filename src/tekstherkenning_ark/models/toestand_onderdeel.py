@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import pandas as pd
 from pydantic import BaseModel, model_validator
 
 from tekstherkenning_ark import constants, utils
@@ -13,6 +15,53 @@ logger = get_logger(__name__)
 class ToestandOnderdeel(BaseModel):
     constructie_onderdeel: str
     aangetast: bool | NietBeschikbaar | OnverwachtResultaat
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[str, list[ToestandOnderdeel]]:
+        """Create condition records grouped by rakdeel ID.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Rows from ``toestandsbepalingen.csv``.
+
+        Returns
+        -------
+        dict[str, list[ToestandOnderdeel]]
+            Condition records keyed by rakdeel ID.
+        """
+        columns = ("rakdeel_id", "onderdeel", "aangetast")
+        missing_columns = set(columns) - set(frame.columns)
+        if missing_columns:
+            raise ValueError(
+                f"toestandsbepalingen.csv is missing required columns: {', '.join(sorted(missing_columns))}"
+            )
+
+        grouped: dict[str, list[ToestandOnderdeel]] = {}
+        for row in frame.to_dict(orient="records"):
+            aangetast = row["aangetast"]
+            if isinstance(aangetast, str):
+                normalized = aangetast.strip().lower()
+                if normalized in {"true", "ja", "yes", "1"}:
+                    aangetast = True
+                elif normalized in {"false", "nee", "no", "0"}:
+                    aangetast = False
+                elif not normalized:
+                    aangetast = NietBeschikbaar.LEEG
+                else:
+                    aangetast = utils.parse_ja_nee(aangetast)
+            elif pd.isna(aangetast):
+                aangetast = NietBeschikbaar.LEEG
+            elif isinstance(aangetast, (int, float)):
+                aangetast = bool(aangetast)
+            onderdeel = "" if pd.isna(row["onderdeel"]) else str(row["onderdeel"]).strip()
+            toestand = cls(
+                constructie_onderdeel=onderdeel,
+                aangetast=aangetast,
+            )
+            rakdeel_id = "" if pd.isna(row["rakdeel_id"]) else str(row["rakdeel_id"]).strip()
+            grouped.setdefault(rakdeel_id, []).append(toestand)
+        return grouped
 
     @model_validator(mode="after")
     def validate_single_classification(self) -> ToestandOnderdeel:

@@ -1,27 +1,33 @@
 from __future__ import annotations
+
 import asyncio
+import pickle
 from datetime import datetime
 from pathlib import Path
-import pickle
+from typing import Any
 
 import pandas as pd
 from pydantic import ConfigDict, computed_field
 
 from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
-from tekstherkenning_ark.models.houtmonster import Houtmonster
-from tekstherkenning_ark.models.kesp import Kesp
-from tekstherkenning_ark.models.paal import Paal
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel
-from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.document.smart_document import SmartDocument
-from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.export_utils import (
+    haal_rakdeel_id_en_model_pad,
     remove_collection_fields,
     remove_onverwacht_resultaat_from_table_rows,
     waarde_naar_excel,
-    haal_rakdeel_id_en_model_pad,
 )
+from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.bovenbouw import Bovenbouw
+from tekstherkenning_ark.models.gebrek import Gebrek
+from tekstherkenning_ark.models.houtmonster import Houtmonster
+from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
+from tekstherkenning_ark.models.rakdeel import Rakdeel
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
 
 logger = get_logger(__name__)
 
@@ -58,6 +64,149 @@ class Rak(RakBaseModel):
     unassigned_palen: list[Paal] = []
     unassigned_kespen: list[Kesp] = []
     unassigned_houtmonsters: list[Houtmonster] = []
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> list[Rak]:
+        """Create Rak metadata objects from the Nomic rak table.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Rows from ``rakken.csv``.
+
+        Returns
+        -------
+        list[Rak]
+            Rak metadata objects in source row order.
+        """
+        fields = ("raknaam", "totale_lengte_m", "opmerkingen")
+        cls._require_nomic_columns(frame, fields)
+        return [cls(rakdelen=[], **cls.nomic_model_values(row, fields)) for row in frame.to_dict(orient="records")]
+
+    @classmethod
+    def from_nomic_csvs(cls, csv_dir: Path) -> Rak:
+        """Load Nomic tables through their model parsers and assemble one Rak hierarchy."""
+
+        parsers = {
+            "Rak": cls.from_nomic_df,
+            "Rakdeel": Rakdeel.from_nomic_df,
+            "Bovenbouw": Bovenbouw.from_nomic_df,
+            "Onderbouw": Onderbouw.from_nomic_df,
+            "Paal": Paal.from_nomic_df,
+            "Kesp": Kesp.from_nomic_df,
+            "Gebrek": Gebrek.from_nomic_df,
+            "ToestandOnderdeel": ToestandOnderdeel.from_nomic_df,
+            "Houtmonster": Houtmonster.from_nomic_df,
+        }
+
+        # Load all CSV data and parse objects
+        parsed: dict[str, Any] = {}
+        for class_name, file_name in constants.NOMIC_CSV_FILES.items():
+            path = csv_dir / file_name
+            if not path.is_file():
+                if class_name in constants.OPTIONAL_NOMIC_CSV_CLASSES:
+                    frame = pd.DataFrame()
+                else:
+                    raise FileNotFoundError(f"Required Nomic CSV file not found: {path}")
+            else:
+                frame = pd.read_csv(path, keep_default_na=False)
+            parsed[class_name] = parsers[class_name](frame)
+
+        rak_objects = parsed["Rak"]
+        if len(rak_objects) != 1:
+            rak_path = csv_dir / constants.NOMIC_CSV_FILES["Rak"]
+            raise ValueError(f"Expected exactly one rak record in {rak_path}")
+
+        rak = rak_objects[0]
+        if not rak.raknaam.strip():
+            raise ValueError(f"The raknaam in {csv_dir / constants.NOMIC_CSV_FILES['Rak']} must not be empty")
+        rakdelen: list[Rakdeel] = parsed["Rakdeel"]
+        rakdeel_by_id = {rakdeel.rakdeel_id: rakdeel for rakdeel in rakdelen}
+        if len(rakdeel_by_id) != len(rakdelen):
+            raise ValueError("rakdelen.csv contains duplicate rakdeel IDs")
+        rak.rakdelen = rakdelen
+
+        bovenbouw_by_id: dict[str, Bovenbouw] = parsed["Bovenbouw"]
+        onderbouw_by_id: dict[str, Onderbouw] = parsed["Onderbouw"]
+        for rakdeel_id, rakdeel in rakdeel_by_id.items():
+            if rakdeel_id not in bovenbouw_by_id:
+                raise ValueError(f"No bovenbouw row found for rakdeel {rakdeel_id!r}")
+            if rakdeel_id not in onderbouw_by_id:
+                raise ValueError(f"No onderbouw row found for rakdeel {rakdeel_id!r}")
+            rakdeel.bovenbouw = bovenbouw_by_id[rakdeel_id]
+            rakdeel.onderbouw = onderbouw_by_id[rakdeel_id]
+
+        palen_by_id: dict[str, list[Paal]] = parsed["Paal"]
+        kespen_by_id: dict[str, list[Kesp]] = parsed["Kesp"]
+        paal_count = sum(len(palen) for palen in palen_by_id.values())
+        kesp_count = sum(len(kespen) for kespen in kespen_by_id.values())
+        if paal_count != sum(len(set(paal.paal_nummer for paal in palen)) for palen in palen_by_id.values()):
+            raise ValueError("palen.csv contains duplicate paal numbers within a rakdeel")
+        if kesp_count != sum(len(set(kesp.kesp_nummer for kesp in kespen)) for kespen in kespen_by_id.values()):
+            raise ValueError("kespen.csv contains duplicate kesp numbers within a rakdeel")
+        for rakdeel_id, palen in palen_by_id.items():
+            if rakdeel_id in rakdeel_by_id:
+                rakdeel_by_id[rakdeel_id].onderbouw.palen = palen
+            else:
+                rak.unassigned_palen.extend(palen)
+        for rakdeel_id, kespen in kespen_by_id.items():
+            if rakdeel_id in rakdeel_by_id:
+                rakdeel_by_id[rakdeel_id].onderbouw.kespen = kespen
+            else:
+                rak.unassigned_kespen.extend(kespen)
+
+        paal_by_key = {
+            (rakdeel_id, paal.paal_nummer): paal for rakdeel_id, palen in palen_by_id.items() for paal in palen
+        }
+        houtmonsters_by_paal: dict[tuple[str, str], list[Houtmonster]] = parsed["Houtmonster"]
+        for key, houtmonsters in houtmonsters_by_paal.items():
+            paal = paal_by_key.get(key)
+            if paal is None:
+                rak.unassigned_houtmonsters.extend(houtmonsters)
+            else:
+                paal.houtmonsters.extend(houtmonsters)
+
+        toestanden_by_id: dict[str, list[ToestandOnderdeel]] = parsed["ToestandOnderdeel"]
+        for rakdeel_id, toestanden in toestanden_by_id.items():
+            rakdeel = rakdeel_by_id.get(rakdeel_id)
+            if rakdeel is None:
+                rak.toestand_onderdelen.extend(toestanden)
+                continue
+            rakdeel.toestand_onderdelen.extend(toestanden)
+            rakdeel.assign_toestandsbepalingen_to_children()
+
+        gebreken_by_target: dict[tuple[str, str, str], list[Gebrek]] = parsed["Gebrek"]
+        for (rakdeel_id, model_pad, component_id), gebreken in gebreken_by_target.items():
+            rakdeel = rakdeel_by_id.get(rakdeel_id)
+            if rakdeel is None:
+                rak.gebreken.extend(gebreken)
+                if rakdeel_id:
+                    logger.warning(f"Gebreken refer to unknown rakdeel {rakdeel_id!r}; assigned to Rak")
+                continue
+            if model_pad in {"", "rakdeel"}:
+                rakdeel.gebreken.extend(gebreken)
+            elif model_pad == "bovenbouw":
+                rakdeel.bovenbouw.gebreken.extend(gebreken)
+            elif model_pad == "onderbouw":
+                rakdeel.onderbouw.gebreken.extend(gebreken)
+            elif model_pad == "onderbouw/vloer" and rakdeel.onderbouw.vloer is not None:
+                rakdeel.onderbouw.vloer.gebreken.extend(gebreken)
+            elif model_pad == "onderbouw/onderloopsheidscherm" and rakdeel.onderbouw.onderloopsheidscherm is not None:
+                rakdeel.onderbouw.onderloopsheidscherm.gebreken.extend(gebreken)
+            elif model_pad == "onderbouw/palen":
+                paal = paal_by_key.get((rakdeel_id, component_id))
+                (paal.gebreken if paal else rakdeel.gebreken).extend(gebreken)
+            elif model_pad == "onderbouw/kespen":
+                kesp = next(
+                    (item for item in rakdeel.onderbouw.kespen if item.kesp_nummer == component_id),
+                    None,
+                )
+                (kesp.gebreken if kesp else rakdeel.gebreken).extend(gebreken)
+            else:
+                rakdeel.gebreken.extend(gebreken)
+                logger.warning(f"Unknown model_pad {model_pad!r}; assigned defects to rakdeel {rakdeel_id!r}")
+
+        return rak
 
     @property
     def identifier(self) -> str:

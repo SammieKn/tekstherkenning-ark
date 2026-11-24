@@ -1,19 +1,16 @@
 from __future__ import annotations
-from typing import TypeVar
-from pydantic import computed_field
 
+from typing import TypeVar
+
+import pandas as pd
 from pydantic import computed_field
 
 from tekstherkenning_ark import constants, utils
-from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
-from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
-from tekstherkenning_ark.models.paal import Paal
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel, T_Gebrek
-from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
-from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.document.smart_document import RakdeelSectie
+from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
+from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import (
     BuikInWand,
@@ -25,11 +22,15 @@ from tekstherkenning_ark.models.gebrek import (
     ScheurHout,
     ScheurMetselwerk,
 )
-from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
+from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
+from tekstherkenning_ark.models.paal import Paal
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel, T_Gebrek
+from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
+from tekstherkenning_ark.models.vloer import Vloer
 from tekstherkenning_ark.utils import get_kesp_id, get_paal_id
-from tekstherkenning_ark.logger import get_logger
-from tekstherkenning_ark.document.structured_table import StructuredTable
 
 logger = get_logger(__name__)
 
@@ -73,6 +74,37 @@ class Rakdeel(RakBaseModel):
 
     bovenbouw: Bovenbouw
     onderbouw: Onderbouw
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> list[Rakdeel]:
+        """Create rakdelen from their Nomic dataframe rows.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Rakdeel rows from the Nomic export.
+
+        Returns
+        -------
+        list[Rakdeel]
+            Rakdelen in source row order.
+        """
+        fields = ("omschrijving", "lengte_m_omschrijving", "bouwjaar", "opmerkingen")
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        rakdelen = []
+        for row in frame.to_dict(orient="records"):
+            rakdeel_id = cls._nomic_text(row["rakdeel_id"])
+            if not rakdeel_id:
+                raise ValueError("A Nomic rakdeel row has no rakdeel_id")
+            rakdelen.append(
+                cls(
+                    rakdeel_id=rakdeel_id,
+                    bovenbouw=Bovenbouw(),
+                    onderbouw=Onderbouw(palen=[], kespen=[]),
+                    **cls.nomic_model_values(row, fields),
+                )
+            )
+        return rakdelen
 
     @property
     def identifier(self) -> str:

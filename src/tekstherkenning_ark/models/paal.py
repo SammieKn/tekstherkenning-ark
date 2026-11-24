@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import pandas as pd
 from pydantic import computed_field
 
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.enums import MateriaalOnderbouw, SchoorStand, NietBeschikbaar, AansluitingStatus
+from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.enums import AansluitingStatus, MateriaalOnderbouw, NietBeschikbaar, SchoorStand
+from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.gebrek import Gebrek, Scheefstand, Scheur, ScheurHout
 from tekstherkenning_ark.models.houtmonster import Houtmonster
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel
-from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
-from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 logger = get_logger(__name__)
 
@@ -78,6 +79,34 @@ class Paal(RakBaseModel):
     # Te vinden in bijlage 2 en houtmonsters csv.
     # Te vinden in Bijlage 1, kolom 'Paalnummer' en 'Houtmonster'. @Sammie welke van deze twee is waar?
     houtmonsters: list[Houtmonster] = []
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[str, list[Paal]]:
+        """Parse piles from a Nomic dataframe, grouped by rakdeel ID."""
+        fields = (
+            "paal_nummer",
+            "diameter_haaks",
+            "diameter_parallel",
+            "diameter_gemiddeld",
+            "hoh_afstand_cm",
+            "hoh_paalnummer",
+            "schoor_graden",
+            "schoor_richting",
+            "afstand_frontwand_cm",
+            "is_scheefstand",
+            "is_paalbreuk",
+            "is_aantasting",
+            "aansluiting_status",
+            "positionering_aansluiting_cm",
+            "opmerkingen",
+        )
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        palen = cls._models_from_nomic_df(frame, fields)
+        grouped: dict[str, list[Paal]] = {}
+        for row, paal in zip(frame.to_dict(orient="records"), palen):
+            rakdeel_id = cls._nomic_text(row["rakdeel_id"])
+            grouped.setdefault(rakdeel_id, []).append(paal)
+        return grouped
 
     @property
     def identifier(self) -> str:
@@ -238,9 +267,9 @@ class Paal(RakBaseModel):
 
 if __name__ == "__main__":
 
+    from tekstherkenning_ark import constants
     from tekstherkenning_ark.document.smart_document import SmartDocument
     from tekstherkenning_ark.document.structured_table import StructuredTable, TableColumn
-    from tekstherkenning_ark import constants
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 

@@ -1,8 +1,14 @@
 from __future__ import annotations
-from typing import Type, TypeVar, cast, get_args, get_origin, Union, Annotated, Any, Union
+
+from typing import Annotated, Any, Self, Type, TypeVar, Union, cast, get_args, get_origin
+
+import pandas as pd
 from pydantic import BaseModel, ValidationError
 from pydantic.functional_validators import WrapValidator
 from pydantic_core.core_schema import ValidationInfo
+
+from tekstherkenning_ark import utils
+from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat
 from tekstherkenning_ark.models.toestand_onderdeel import ToestandOnderdeel
@@ -40,6 +46,91 @@ class RakBaseModel(BaseModel):
     gebreken: list[T_Gebrek] = []
     opmerkingen: str = ""
     toestand_onderdelen: list[ToestandOnderdeel] = []
+
+    @classmethod
+    def _models_from_nomic_df(cls, frame: pd.DataFrame, fields: tuple[str, ...]) -> list[Self]:
+        """Create model instances from matching columns in a Nomic dataframe.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Rows containing the source model data.
+        fields : tuple[str, ...]
+            Model fields to read from the dataframe columns.
+
+        Returns
+        -------
+        list[Self]
+            One instance per dataframe row.
+        """
+        return [cls(**cls.nomic_model_values(row, fields)) for row in frame.to_dict(orient="records")]
+
+    @staticmethod
+    def _require_nomic_columns(frame: pd.DataFrame, columns: tuple[str, ...]) -> None:
+        """Raise a clear error if required Nomic columns are missing."""
+        missing_columns = set(columns) - set(frame.columns)
+        if missing_columns:
+            raise ValueError(f"Nomic dataframe is missing required columns: {', '.join(sorted(missing_columns))}")
+
+    @staticmethod
+    def _nomic_text(value: Any) -> str:
+        """Normalize an identifier or text value from a Nomic dataframe."""
+        if value is None or bool(pd.isna(value)):
+            return ""
+        return str(value).strip()
+
+    @classmethod
+    def nomic_model_values(cls, row: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
+        """Extract and normalize model fields from a Nomic CSV row.
+
+        Parameters
+        ----------
+        row : dict[str, Any]
+            A row whose keys are Nomic column names.
+        fields : tuple[str, ...]
+            Model fields to extract.
+
+        Returns
+        -------
+        dict[str, Any]
+            Normalized values ready for model construction.
+        """
+        values = {}
+        for field in fields:
+            value = row.get(field)
+            if value is None or (isinstance(value, str) and not value.strip()) or bool(pd.isna(value)):
+                annotation = cls.model_fields[field].annotation
+                if cls._annotation_contains(annotation, type(None)):
+                    value = None
+                elif cls._annotation_contains(annotation, str):
+                    value = ""
+                elif cls._annotation_contains(annotation, NietBeschikbaar):
+                    value = NietBeschikbaar.LEEG
+                else:
+                    value = None
+            elif cls._annotation_contains(cls.model_fields[field].annotation, bool):
+                value = cls._parse_nomic_bool(value)
+            values[field] = value
+        return values
+
+    @staticmethod
+    def _annotation_contains(annotation: Any, expected_type: type) -> bool:
+        """Return whether an annotation contains a type within its arguments."""
+        return annotation is expected_type or any(
+            RakBaseModel._annotation_contains(argument, expected_type) for argument in get_args(annotation)
+        )
+
+    @staticmethod
+    def _parse_nomic_bool(value: Any) -> bool | NietBeschikbaar | OnverwachtResultaat:
+        """Parse common boolean values from Nomic exports."""
+        if isinstance(value, bool) or isinstance(value, NietBeschikbaar):
+            return value
+        text = str(value).strip().lower()
+        if text in {"true", "ja", "yes", "1"}:
+            return True
+        if text in {"false", "nee", "no", "0"}:
+            return False
+        return utils.parse_ja_nee(text)
 
     @property
     def identifier(self) -> str:

@@ -13,6 +13,20 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 TEST_PDF_PATH = DUIKRAPPORTEN_DIR / "HEG0201_Houtmonstername&VisueleInspectie_V1.1_20220504.pdf"
 
+# Class names are strings to keep constants independent from model imports.
+NOMIC_CSV_FILES = {
+    "Rak": "rakken.csv",
+    "Rakdeel": "rakdelen.csv",
+    "Bovenbouw": "bovenbouw.csv",
+    "Onderbouw": "onderbouw.csv",
+    "Paal": "palen.csv",
+    "Kesp": "kespen.csv",
+    "Gebrek": "gebreken.csv",
+    "ToestandOnderdeel": "toestandsbepalingen.csv",
+    "Houtmonster": "houtmonsters.csv",
+}
+OPTIONAL_NOMIC_CSV_CLASSES = {"Houtmonster"}
+
 NAP_CM_HOOGTE_WATERLIJN = 40
 # Constructieonderdeel mapping
 CONSTRUCTIE_ONDERDELEN_VLOER = ["vloer"]

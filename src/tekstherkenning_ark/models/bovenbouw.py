@@ -1,3 +1,4 @@
+import pandas as pd
 from pydantic import computed_field
 
 from tekstherkenning_ark.enums import MateriaalBovenbouw, NietBeschikbaar
@@ -45,6 +46,22 @@ class Bovenbouw(RakBaseModel):
 
     # Te vinden in de constructiebeschrijving (paragraaf 5.x) of af te leiden uit de doorsnedetekening.
     bovenkant_deksteen_cm_tov_nap: float | None = None
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[str, Bovenbouw]:
+        """Parse upper structures from a Nomic dataframe, keyed by rakdeel ID."""
+        fields = ("materiaal", "bovenkant_deksteen_cm_tov_nap", "opmerkingen")
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        bovenbouwen = cls._models_from_nomic_df(frame, fields)
+        result: dict[str, Bovenbouw] = {}
+        for row, bovenbouw in zip(frame.to_dict(orient="records"), bovenbouwen):
+            rakdeel_id = cls._nomic_text(row["rakdeel_id"])
+            if not rakdeel_id:
+                raise ValueError("A Nomic bovenbouw row has no rakdeel_id")
+            if rakdeel_id in result:
+                raise ValueError(f"Multiple bovenbouw rows found for rakdeel {rakdeel_id!r}")
+            result[rakdeel_id] = bovenbouw
+        return result
 
     @property
     def identifier(self) -> str:
