@@ -19,6 +19,7 @@ import csv
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
@@ -37,20 +38,80 @@ def _write_nomic_csv(path: Path, columns: tuple[str, ...], rows: list[dict[str, 
         writer.writerows(rows)
 
 
+def _create_boorweerstandsmetingen_csv_fixture(csv_dir: Path) -> None:
+    """Create one boorweerstandsmeting row with an unmodeled source column."""
+    _write_nomic_csv(
+        csv_dir / "boorweerstandsmetingen.csv",
+        (
+            "rakdeel_id",
+            "codering",
+            "rak_code",
+            "paal_nummer",
+            "bma_nummer",
+            "diameter_paal_mm",
+            "hoogte_onder_nap_cm",
+            "hoogte_tov_onderzijde_fundering_cm",
+            "datum_meting",
+            "resultaat_tekst",
+            "pagina",
+            "bron",
+            "bron_rij",
+            "extractie_id",
+        ),
+        [
+            {
+                "rakdeel_id": "Constructie A",
+                "codering": "TESTRAK/Con.A/P1.1/BM",
+                "rak_code": "TESTRAK",
+                "paal_nummer": "P1.1",
+                "bma_nummer": "28en 29",
+                "diameter_paal_mm": "240",
+                "hoogte_onder_nap_cm": "108",
+                "hoogte_tov_onderzijde_fundering_cm": "15",
+                "datum_meting": "2025-01-15",
+                "resultaat_tekst": "Door grond loopt de weerstand niet terug",
+                "pagina": "28",
+                "bron": "[BMA 18](report?page=28)",
+                "bron_rij": "TESTRAK/Con.A/P1.1/BM | 240 | 18",
+                "extractie_id": "BM-001",
+            }
+        ],
+    )
+
+
 def _create_nomic_csv_fixture(
     csv_dir: Path,
     include_houtmonsters: bool = False,
-    onderloopsheidscherm: str | None = None,
 ) -> None:
     """Create the required CSV tables for one rak and one rakdeel."""
     _write_nomic_csv(
         csv_dir / "rakken.csv",
-        ("raknaam", "totale_lengte_m", "opmerkingen"),
-        [{"raknaam": "TESTRAK", "totale_lengte_m": "12.5", "opmerkingen": "Raknotitie"}],
+        ("raknaam", "totale_lengte_m", "opmerkingen", "aantal_rakdelen", "bron", "pagina"),
+        [
+            {
+                "raknaam": "TESTRAK",
+                "totale_lengte_m": "12.5",
+                "opmerkingen": "Raknotitie",
+                "aantal_rakdelen": "1",
+                "bron": "rakkenbron",
+                "pagina": "2",
+            }
+        ],
     )
     _write_nomic_csv(
-        csv_dir / "rakdelen.csv",
-        ("rak_id", "rakdeel_id", "omschrijving", "lengte_m_omschrijving", "bouwjaar", "opmerkingen"),
+        csv_dir / "constructieomschrijvingen.csv",
+        (
+            "rak_id",
+            "rakdeel_id",
+            "omschrijving",
+            "lengte_m_omschrijving",
+            "bouwjaar",
+            "opmerkingen",
+            "toelichting",
+            "conflicten",
+            "bron",
+            "pagina",
+        ),
         [
             {
                 "rak_id": "TESTRAK",
@@ -59,34 +120,13 @@ def _create_nomic_csv_fixture(
                 "lengte_m_omschrijving": "12.5",
                 "bouwjaar": "1998",
                 "opmerkingen": "Rakdeelnotitie",
+                "toelichting": "Nomic toelichting",
+                "conflicten": "Geen",
+                "bron": "rakdelenbron",
+                "pagina": "3",
             }
         ],
     )
-    _write_nomic_csv(
-        csv_dir / "bovenbouw.csv",
-        ("rak_id", "rakdeel_id", "materiaal", "bovenkant_deksteen_cm_tov_nap", "opmerkingen"),
-        [
-            {
-                "rak_id": "TESTRAK",
-                "rakdeel_id": "Constructie A",
-                "materiaal": "Metselwerk",
-                "bovenkant_deksteen_cm_tov_nap": "1.5",
-                "opmerkingen": "Bovenbouwnotitie",
-            }
-        ],
-    )
-    onderbouw_columns = ("rak_id", "rakdeel_id", "materiaal", "materiaal_fundering", "opmerkingen")
-    onderbouw_row = {
-        "rak_id": "TESTRAK",
-        "rakdeel_id": "Constructie A",
-        "materiaal": "Hout",
-        "materiaal_fundering": "Hout",
-        "opmerkingen": "Onderbouwnotitie",
-    }
-    if onderloopsheidscherm is not None:
-        onderbouw_columns += ("onderloopsheidscherm",)
-        onderbouw_row["onderloopsheidscherm"] = onderloopsheidscherm
-    _write_nomic_csv(csv_dir / "onderbouw.csv", onderbouw_columns, [onderbouw_row])
     _write_nomic_csv(
         csv_dir / "palen.csv",
         (
@@ -107,6 +147,9 @@ def _create_nomic_csv_fixture(
             "aansluiting_status",
             "positionering_aansluiting_cm",
             "opmerkingen",
+            "bron",
+            "pagina",
+            "bron_rij",
         ),
         [
             {
@@ -127,6 +170,9 @@ def _create_nomic_csv_fixture(
                 "aansluiting_status": "G",
                 "positionering_aansluiting_cm": "0",
                 "opmerkingen": "Paalnotitie",
+                "bron": "palenbron",
+                "pagina": "6",
+                "bron_rij": "P1.1 | 200 | 210",
             }
         ],
     )
@@ -147,6 +193,9 @@ def _create_nomic_csv_fixture(
             "is_vervormd",
             "is_aangetast",
             "opmerkingen",
+            "bron",
+            "pagina",
+            "bron_rij",
         ),
         [
             {
@@ -164,12 +213,28 @@ def _create_nomic_csv_fixture(
                 "is_vervormd": "False",
                 "is_aangetast": "False",
                 "opmerkingen": "Kespnotitie",
+                "bron": "kespenbron",
+                "pagina": "7",
+                "bron_rij": "K1 | 20 | 25",
             }
         ],
     )
     _write_nomic_csv(
-        csv_dir / "gebreken.csv",
-        ("rak_id", "rakdeel_id", "model_pad", "codering", "omschrijving", "figuurnummer"),
+        csv_dir / "gebrekomschrijvingen.csv",
+        (
+            "rak_id",
+            "rakdeel_id",
+            "model_pad",
+            "codering",
+            "omschrijving",
+            "figuurnummer",
+            "gebrek_sleutel",
+            "gebrek_type",
+            "citaat",
+            "afstand_van_startrak_m",
+            "bron",
+            "pagina",
+        ),
         [
             {
                 "rak_id": "TESTRAK",
@@ -178,6 +243,12 @@ def _create_nomic_csv_fixture(
                 "codering": "GB1",
                 "omschrijving": "Een generiek gebrek.",
                 "figuurnummer": "",
+                "gebrek_sleutel": "GB1",
+                "gebrek_type": "ScheurMetselwerk",
+                "citaat": "Een broncitaat.",
+                "afstand_van_startrak_m": "3.2",
+                "bron": "gebrekenbron",
+                "pagina": "8",
             },
             {
                 "rak_id": "TESTRAK",
@@ -186,19 +257,28 @@ def _create_nomic_csv_fixture(
                 "codering": "TESTRAK/P1.1/GB",
                 "omschrijving": "Een generiek paalgebrek.",
                 "figuurnummer": "",
+                "gebrek_sleutel": "GB2",
+                "gebrek_type": "Aantasting",
+                "citaat": "Een paalcitaat.",
+                "afstand_van_startrak_m": "",
+                "bron": "gebrekenbron",
+                "pagina": "9",
             },
         ],
     )
     _write_nomic_csv(
         csv_dir / "toestandsbepalingen.csv",
-        ("rak_id", "rakdeel_id", "model_pad", "onderdeel", "aangetast"),
+        ("rak_id", "rakdeel_id", "model_pad", "onderdeel", "aangetast", "bron", "pagina", "bron_rij"),
         [
             {
                 "rak_id": "TESTRAK",
                 "rakdeel_id": "Constructie A",
                 "model_pad": "bovenbouw",
-                "onderdeel": "bovenbouw",
+                "onderdeel": "metselwerk",
                 "aangetast": "Ja",
+                "bron": "toestandbron",
+                "pagina": "10",
+                "bron_rij": "bovenbouw | Ja",
             },
             {
                 "rak_id": "TESTRAK",
@@ -206,6 +286,9 @@ def _create_nomic_csv_fixture(
                 "model_pad": "onderbouw/vloer",
                 "onderdeel": "vloer",
                 "aangetast": "Nee",
+                "bron": "toestandbron",
+                "pagina": "11",
+                "bron_rij": "vloer | Nee",
             },
         ],
     )
@@ -227,6 +310,9 @@ def _create_nomic_csv_fixture(
                 "is_aangetast",
                 "stichtingjaar",
                 "opmerkingen",
+                "bron",
+                "pagina",
+                "bron_rij",
             ),
             [
                 {
@@ -244,6 +330,9 @@ def _create_nomic_csv_fixture(
                     "is_aangetast": "False",
                     "stichtingjaar": "1900",
                     "opmerkingen": "Monster notitie",
+                    "bron": "houtmonstersbron",
+                    "pagina": "12",
+                    "bron_rij": "HM00001 | P1.1",
                 }
             ],
         )
@@ -251,7 +340,8 @@ def _create_nomic_csv_fixture(
 
 def test_from_nomic_csvs_builds_rak_hierarchy_and_generic_defects(tmp_path: Path):
     """Load nested data while leaving unavailable attributes unset and defects generic."""
-    _create_nomic_csv_fixture(tmp_path)
+    _create_nomic_csv_fixture(tmp_path, include_houtmonsters=True)
+    _create_boorweerstandsmetingen_csv_fixture(tmp_path)
 
     rak = Rak.from_nomic_csvs(tmp_path)
     rakdeel = rak.rakdelen[0]
@@ -259,60 +349,71 @@ def test_from_nomic_csvs_builds_rak_hierarchy_and_generic_defects(tmp_path: Path
     assert rak.raknaam == "TESTRAK"
     assert rak.totale_lengte_m == 12.5
     assert rak.opmerkingen == "Raknotitie"
+    assert rak.nomic_aantal_rakdelen == 1
+    assert rak.bron == "rakkenbron"
+    assert rak.pagina == 2
     assert rakdeel.rakdeel_id == "Constructie A"
+    assert rakdeel.rak_id == "TESTRAK"
+    assert rakdeel.toelichting == "Nomic toelichting"
+    assert rakdeel.conflicten == "Geen"
+    assert rakdeel.bron == "rakdelenbron"
     assert rakdeel.onderbouw.palen[0].paal_nummer == "P1.1"
-    assert rakdeel.onderbouw.palen[0].gebreken[0].codering == "TESTRAK/P1.1/GB"
+    assert rakdeel.onderbouw.palen[0].bron_rij == "P1.1 | 200 | 210"
+    paal_gebrek = rakdeel.onderbouw.palen[0].gebreken[0]
+    assert paal_gebrek.codering == "TESTRAK/P1.1/GB"
+    assert paal_gebrek.nomic_gebrek_type == "Aantasting"
+    assert paal_gebrek.citaat == "Een paalcitaat."
     assert rakdeel.onderbouw.kespen[0].kesp_nummer == "K1"
     assert rakdeel.bovenbouw.gebreken[0].__class__ is Gebrek
+    assert rakdeel.bovenbouw.gebreken[0].nomic_gebrek_type == "ScheurMetselwerk"
+    assert rakdeel.bovenbouw.materiaal is NietBeschikbaar.LEEG
+    assert rakdeel.bovenbouw.bovenkant_deksteen_cm_tov_nap is None
+    assert rakdeel.onderbouw.materiaal is NietBeschikbaar.LEEG
     assert rakdeel.bovenbouw.toestand_onderdelen[0].aangetast is True
+    assert rakdeel.bovenbouw.toestand_onderdelen[0].bron == "toestandbron"
+    assert rakdeel.onderbouw.palen[0].houtmonsters[0].bron == "houtmonstersbron"
+    assert rak.boorweerstandsmetingen[0].extractie_id == "BM-001"
     assert rakdeel.onderbouw.vloer is not None
     assert rakdeel.onderbouw.vloer.materiaal == NietBeschikbaar.LEEG
     assert rakdeel.onderbouw.vloer.bovenkant_vloer_cm_tov_nap is None
     assert rakdeel.onderbouw.vloer.is_meerdere_locaties is None
-    assert rakdeel.onderbouw.onderloopsheidscherm is not None
-    assert rakdeel.onderbouw.onderloopsheidscherm.is_meerdere_locaties is None
+    assert rakdeel.onderbouw.onderloopsheidscherm is None
     assert rak.unassigned_houtmonsters == []
-    assert rak.boorweerstandsmetingen == []
+
+    gebreken_df = rak._get_gebreken_df()
+    assert gebreken_df.loc[gebreken_df["codering"] == "GB1", "citaat"].item() == "Een broncitaat."
+    assert gebreken_df.loc[gebreken_df["codering"] == "GB1", "nomic_gebrek_type"].item() == "ScheurMetselwerk"
+    toestanden_df = rak._get_toestandsbepalingen_df()
+    assert toestanden_df.loc[0, "bron"] == "toestandbron"
+
+    excel_path = rak.to_excel(tmp_path)
+    with pd.ExcelFile(excel_path) as workbook:
+        exported_rak = pd.read_excel(workbook, sheet_name="Rak")
+        exported_rakdelen = pd.read_excel(workbook, sheet_name="Rakdelen")
+        exported_bovenbouw = pd.read_excel(workbook, sheet_name="Bovenbouw")
+        exported_onderbouw = pd.read_excel(workbook, sheet_name="Onderbouw")
+        exported_palen = pd.read_excel(workbook, sheet_name="Palen")
+        exported_kespen = pd.read_excel(workbook, sheet_name="Kespen")
+        exported_defects = pd.read_excel(workbook, sheet_name="Gebreken_Gebrek")
+        exported_conditions = pd.read_excel(workbook, sheet_name="Onderdeel_Aantasting")
+        exported_houtmonsters = pd.read_excel(workbook, sheet_name="Houtmonsters")
+        exported_boorweerstandsmetingen = pd.read_excel(workbook, sheet_name="Boorweerstandsmetingen")
+    assert exported_rak.loc[0, "bron"] == "rakkenbron"
+    assert exported_rakdelen.loc[0, "toelichting"] == "Nomic toelichting"
+    assert "materiaal" in exported_bovenbouw.columns
+    assert "materiaal" in exported_onderbouw.columns
+    assert exported_palen.loc[0, "bron_rij"] == "P1.1 | 200 | 210"
+    assert exported_kespen.loc[0, "bron_rij"] == "K1 | 20 | 25"
+    assert exported_defects.loc[0, "citaat"] == "Een broncitaat."
+    assert exported_conditions["bron"].tolist() == ["toestandbron", "toestandbron"]
+    assert exported_houtmonsters.loc[0, "bron"] == "houtmonstersbron"
+    assert exported_boorweerstandsmetingen.loc[0, "extractie_id"] == "BM-001"
 
 
 def test_from_nomic_csvs_loads_optional_boorweerstandsmetingen(tmp_path: Path):
     """Load boorweerstandsmetingen when their optional Nomic CSV is present."""
     _create_nomic_csv_fixture(tmp_path)
-    _write_nomic_csv(
-        tmp_path / "boorweerstandsmetingen.csv",
-        (
-            "rakdeel_id",
-            "codering",
-            "rak_code",
-            "paal_nummer",
-            "bma_nummer",
-            "diameter_paal_mm",
-            "hoogte_onder_nap_cm",
-            "hoogte_tov_onderzijde_fundering_cm",
-            "datum_meting",
-            "resultaat_tekst",
-            "pagina",
-            "bron",
-            "bron_rij",
-        ),
-        [
-            {
-                "rakdeel_id": "Constructie A",
-                "codering": "TESTRAK/Con.A/P1.1/BM",
-                "rak_code": "TESTRAK",
-                "paal_nummer": "P1.1",
-                "bma_nummer": "28en 29",
-                "diameter_paal_mm": "240",
-                "hoogte_onder_nap_cm": "108",
-                "hoogte_tov_onderzijde_fundering_cm": "15",
-                "datum_meting": "2025-01-15",
-                "resultaat_tekst": "Door grond loopt de weerstand niet terug",
-                "pagina": "28",
-                "bron": "[BMA 18](report?page=28)",
-                "bron_rij": "TESTRAK/Con.A/P1.1/BM | 240 | 18",
-            }
-        ],
-    )
+    _create_boorweerstandsmetingen_csv_fixture(tmp_path)
 
     rak = Rak.from_nomic_csvs(tmp_path)
 
@@ -323,6 +424,64 @@ def test_from_nomic_csvs_loads_optional_boorweerstandsmetingen(tmp_path: Path):
     assert meting.bma_nummer == "28en 29"
     assert meting.diameter_paal_mm == 240
     assert meting.resultaat_tekst == "Door grond loopt de weerstand niet terug"
+    assert meting.extractie_id == "BM-001"
+
+
+def test_from_nomic_csvs_loads_and_exports_auxiliary_tables(tmp_path: Path):
+    """Preserve the complete rows from auxiliary Nomic CSVs."""
+    _create_nomic_csv_fixture(tmp_path)
+    _write_nomic_csv(
+        tmp_path / "document.csv",
+        ("document_id", "rapportnaam", "bron"),
+        [{"document_id": "doc-1", "rapportnaam": "Inspectie", "bron": "documentbron"}],
+    )
+    _write_nomic_csv(
+        tmp_path / "samenvatting.csv",
+        (
+            "tabel",
+            "rakdeel_id",
+            "rijen_gevonden",
+            "rijen_verwacht",
+            "bron_verwacht",
+            "aantal_wijzigingen",
+            "ontbrekende_items",
+            "status",
+            "toelichting",
+        ),
+        [
+            {
+                "tabel": "document",
+                "rakdeel_id": "",
+                "rijen_gevonden": "1",
+                "rijen_verwacht": "1",
+                "bron_verwacht": "",
+                "aantal_wijzigingen": "0",
+                "ontbrekende_items": "",
+                "status": "ok",
+                "toelichting": "1 document-rij.",
+            }
+        ],
+    )
+    _write_nomic_csv(
+        tmp_path / "wijzigingen.csv",
+        ("wijziging_id", "kolom", "oude_waarde", "nieuwe_waarde"),
+        [{"wijziging_id": "wijz-1", "kolom": "status", "oude_waarde": "fout", "nieuwe_waarde": "ok"}],
+    )
+
+    rak = Rak.from_nomic_csvs(tmp_path)
+
+    assert rak.nomic_document[0].rapportnaam == "Inspectie"
+    assert rak.nomic_samenvattingen[0].toelichting == "1 document-rij."
+    assert rak.nomic_wijzigingen[0].nieuwe_waarde == "ok"
+
+    excel_path = rak.to_excel(tmp_path)
+    with pd.ExcelFile(excel_path) as workbook:
+        exported_document = pd.read_excel(workbook, sheet_name="Document")
+        exported_summary = pd.read_excel(workbook, sheet_name="Samenvatting")
+        exported_changes = pd.read_excel(workbook, sheet_name="Wijzigingen")
+    assert exported_document.loc[0, "rapportnaam"] == "Inspectie"
+    assert exported_summary.loc[0, "toelichting"] == "1 document-rij."
+    assert exported_changes.loc[0, "nieuwe_waarde"] == "ok"
 
 
 def test_from_nomic_csvs_assigns_houtmonsters_to_paal(tmp_path: Path):
@@ -339,13 +498,16 @@ def test_from_nomic_csvs_assigns_houtmonsters_to_paal(tmp_path: Path):
     assert rak.unassigned_houtmonsters == []
 
 
-def test_from_nomic_csvs_honors_explicit_missing_screen_flag(tmp_path: Path):
-    """Keep the screen absent when the optional CSV flag explicitly says false."""
-    _create_nomic_csv_fixture(tmp_path, onderloopsheidscherm="False")
+def test_from_nomic_csvs_creates_empty_structures_without_csvs(tmp_path: Path):
+    """Create empty upper/lower structures without requiring their CSV files."""
+    _create_nomic_csv_fixture(tmp_path)
 
     rak = Rak.from_nomic_csvs(tmp_path)
 
-    assert rak.rakdelen[0].onderbouw.onderloopsheidscherm is None
+    assert rak.rakdelen[0].bovenbouw.materiaal is NietBeschikbaar.LEEG
+    assert rak.rakdelen[0].onderbouw.materiaal is NietBeschikbaar.LEEG
+    assert len(rak.rakdelen[0].onderbouw.palen) == 1
+    assert len(rak.rakdelen[0].onderbouw.kespen) == 1
 
 
 def test_from_nomic_csvs_requires_non_optional_csv_files(tmp_path: Path):

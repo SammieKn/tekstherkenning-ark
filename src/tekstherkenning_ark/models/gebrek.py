@@ -4,7 +4,7 @@ import asyncio
 from typing import Literal
 
 import pandas as pd
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.enums import NietBeschikbaar
@@ -49,6 +49,8 @@ class Gebrek(BaseModel):
         Het type gebrek (klassenaam van het gebrek).
     """
 
+    model_config = ConfigDict(extra="allow")
+
     codering: str
     omschrijving: str
     figuurnummer: str | NietBeschikbaar
@@ -89,11 +91,16 @@ class Gebrek(BaseModel):
                 component_id = get_paal_id(codering) or ""
             elif model_pad == "onderbouw/kespen":
                 component_id = get_kesp_id(codering) or ""
-            gebrek = cls(
-                codering=codering,
-                omschrijving=value_as_text(row["omschrijving"]),
-                figuurnummer=value_as_text(row["figuurnummer"]),
-            )
+            values = {
+                "codering": codering,
+                "omschrijving": value_as_text(row["omschrijving"]),
+                "figuurnummer": value_as_text(row["figuurnummer"]),
+            }
+            known_fields = set(cls.model_fields) | set(cls.model_computed_fields)
+            values.update({key: value for key, value in row.items() if key not in known_fields})
+            if "gebrek_type" in row:
+                values["nomic_gebrek_type"] = row["gebrek_type"]
+            gebrek = cls(**values)
             key = (value_as_text(row["rakdeel_id"]).strip(), model_pad, component_id)
             grouped.setdefault(key, []).append(gebrek)
         return grouped

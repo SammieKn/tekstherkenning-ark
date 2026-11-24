@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TypeVar
 
 import pandas as pd
-from pydantic import computed_field
+from pydantic import Field, computed_field
 
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.document.smart_document import RakdeelSectie
@@ -72,8 +72,8 @@ class Rakdeel(RakBaseModel):
     # Te vinden in paragraaf 5.1 of af te leiden uit de constructiebeschrijving.
     bouwjaar: int | None = None
 
-    bovenbouw: Bovenbouw
-    onderbouw: Onderbouw
+    bovenbouw: Bovenbouw = Field(default_factory=Bovenbouw)
+    onderbouw: Onderbouw = Field(default_factory=lambda: Onderbouw(palen=[], kespen=[]))
 
     @classmethod
     def from_nomic_df(cls, frame: pd.DataFrame) -> list[Rakdeel]:
@@ -89,7 +89,7 @@ class Rakdeel(RakBaseModel):
         list[Rakdeel]
             Rakdelen in source row order.
         """
-        fields = ("omschrijving", "lengte_m_omschrijving", "bouwjaar", "opmerkingen")
+        fields = ("omschrijving",)
         cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
         rakdelen = []
         for row in frame.to_dict(orient="records"):
@@ -99,8 +99,6 @@ class Rakdeel(RakBaseModel):
             rakdelen.append(
                 cls(
                     rakdeel_id=rakdeel_id,
-                    bovenbouw=Bovenbouw(),
-                    onderbouw=Onderbouw(palen=[], kespen=[]),
                     **cls.nomic_model_values(row, fields),
                 )
             )

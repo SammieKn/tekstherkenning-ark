@@ -18,17 +18,24 @@ TEST_PDF_PATH = DUIKRAPPORTEN_DIR / "HEG0201_Houtmonstername&VisueleInspectie_V1
 # Class names are strings to keep constants independent from model imports.
 NOMIC_CSV_FILES = {
     "Rak": "rakken.csv",
-    "Rakdeel": "rakdelen.csv",
-    "Bovenbouw": "bovenbouw.csv",
-    "Onderbouw": "onderbouw.csv",
+    "Rakdeel": "constructieomschrijvingen.csv",
     "Paal": "palen.csv",
     "Kesp": "kespen.csv",
-    "Gebrek": "gebreken.csv",
+    "Gebrek": "gebrekomschrijvingen.csv",
     "ToestandOnderdeel": "toestandsbepalingen.csv",
     "Houtmonster": "houtmonsters.csv",
     "Boorweerstandsmeting": "boorweerstandsmetingen.csv",
+    "NomicDocument": "document.csv",
+    "NomicSamenvatting": "samenvatting.csv",
+    "NomicWijziging": "wijzigingen.csv",
 }
-OPTIONAL_NOMIC_CSV_CLASSES = {"Houtmonster", "Boorweerstandsmeting"}
+OPTIONAL_NOMIC_CSV_CLASSES = {
+    "Houtmonster",
+    "Boorweerstandsmeting",
+    "NomicDocument",
+    "NomicSamenvatting",
+    "NomicWijziging",
+}
 
 NAP_CM_HOOGTE_WATERLIJN = 40
 # Constructieonderdeel mapping

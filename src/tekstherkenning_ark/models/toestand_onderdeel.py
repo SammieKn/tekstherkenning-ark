@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from tekstherkenning_ark import constants, utils
 from tekstherkenning_ark.document.structured_table import StructuredTable
@@ -13,6 +13,8 @@ logger = get_logger(__name__)
 
 
 class ToestandOnderdeel(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     constructie_onderdeel: str
     aangetast: bool | NietBeschikbaar | OnverwachtResultaat
 
@@ -58,6 +60,7 @@ class ToestandOnderdeel(BaseModel):
             toestand = cls(
                 constructie_onderdeel=onderdeel,
                 aangetast=aangetast,
+                **{key: value for key, value in row.items() if key not in cls.model_fields},
             )
             rakdeel_id = "" if pd.isna(row["rakdeel_id"]) else str(row["rakdeel_id"]).strip()
             grouped.setdefault(rakdeel_id, []).append(toestand)

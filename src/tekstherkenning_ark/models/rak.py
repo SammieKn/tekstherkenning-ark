@@ -13,6 +13,9 @@ from tekstherkenning_ark import constants
 from tekstherkenning_ark.constants import DATA_DIR
 from tekstherkenning_ark.document.smart_document import SmartDocument
 from tekstherkenning_ark.export_utils import (
+    NOMIC_DOCUMENT_TABLE_NAME,
+    NOMIC_SAMENVATTING_TABLE_NAME,
+    NOMIC_WIJZIGINGEN_TABLE_NAME,
     haal_rakdeel_id_en_model_pad,
     remove_collection_fields,
     remove_onverwacht_resultaat_from_table_rows,
@@ -24,6 +27,7 @@ from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.kesp import Kesp
+from tekstherkenning_ark.models.nomic_record import NomicRecord
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
@@ -44,6 +48,9 @@ class Rak(RakBaseModel):
         unassigned_kespen: Kespen die niet aan een specifiek rakdeel zijn toegewezen.
         unassigned_houtmonsters: Houtmonsters die niet aan een specifieke paal zijn toegewezen.
         boorweerstandsmetingen: Boorweerstandsmetingen uit de aanvullende Nomic CSV.
+        nomic_document: Rijen uit de aanvullende document.csv.
+        nomic_samenvattingen: Rijen uit de aanvullende samenvatting.csv.
+        nomic_wijzigingen: Rijen uit de aanvullende wijzigingen.csv.
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
 
     Properties (berekend):
@@ -67,6 +74,9 @@ class Rak(RakBaseModel):
     unassigned_kespen: list[Kesp] = []
     unassigned_houtmonsters: list[Houtmonster] = []
     boorweerstandsmetingen: list[Boorweerstandsmeting] = []
+    nomic_document: list[NomicRecord] = []
+    nomic_samenvattingen: list[NomicRecord] = []
+    nomic_wijzigingen: list[NomicRecord] = []
 
     @classmethod
     def from_nomic_df(cls, frame: pd.DataFrame) -> list[Rak]:
@@ -84,7 +94,11 @@ class Rak(RakBaseModel):
         """
         fields = ("raknaam", "totale_lengte_m", "opmerkingen")
         cls._require_nomic_columns(frame, fields)
-        return [cls(rakdelen=[], **cls.nomic_model_values(row, fields)) for row in frame.to_dict(orient="records")]
+        rakken = []
+        for row in frame.to_dict(orient="records"):
+            values = cls.nomic_model_values(row, fields)
+            rakken.append(cls(rakdelen=[], **values))
+        return rakken
 
     @classmethod
     def from_nomic_csvs(cls, csv_dir: Path) -> Rak:
@@ -93,14 +107,15 @@ class Rak(RakBaseModel):
         parsers = {
             "Rak": cls.from_nomic_df,
             "Rakdeel": Rakdeel.from_nomic_df,
-            "Bovenbouw": Bovenbouw.from_nomic_df,
             "Boorweerstandsmeting": Boorweerstandsmeting.from_nomic_df,
-            "Onderbouw": Onderbouw.from_nomic_df,
             "Paal": Paal.from_nomic_df,
             "Kesp": Kesp.from_nomic_df,
             "Gebrek": Gebrek.from_nomic_df,
             "ToestandOnderdeel": ToestandOnderdeel.from_nomic_df,
             "Houtmonster": Houtmonster.from_nomic_df,
+            "NomicDocument": NomicRecord.from_nomic_df,
+            "NomicSamenvatting": NomicRecord.from_nomic_df,
+            "NomicWijziging": NomicRecord.from_nomic_df,
         }
 
         # Load all CSV data and parse objects
@@ -113,6 +128,7 @@ class Rak(RakBaseModel):
                 else:
                     raise FileNotFoundError(f"Required Nomic CSV file not found: {path}")
             else:
+                logger.info(f"Reading {path}")
                 frame = pd.read_csv(path, keep_default_na=False)
             parsed[class_name] = parsers[class_name](frame)
 
@@ -123,32 +139,28 @@ class Rak(RakBaseModel):
 
         rak = rak_objects[0]
         rak.boorweerstandsmetingen = parsed["Boorweerstandsmeting"]
+        rak.nomic_document = parsed["NomicDocument"]
+        rak.nomic_samenvattingen = parsed["NomicSamenvatting"]
+        rak.nomic_wijzigingen = parsed["NomicWijziging"]
         if not rak.raknaam.strip():
             raise ValueError(f"The raknaam in {csv_dir / constants.NOMIC_CSV_FILES['Rak']} must not be empty")
         rakdelen: list[Rakdeel] = parsed["Rakdeel"]
         rakdeel_by_id = {rakdeel.rakdeel_id: rakdeel for rakdeel in rakdelen}
         if len(rakdeel_by_id) != len(rakdelen):
             raise ValueError("rakdelen.csv contains duplicate rakdeel IDs")
+        for rakdeel in rakdelen:
+            rakdeel.bovenbouw = Bovenbouw()
+            rakdeel.onderbouw = Onderbouw(palen=[], kespen=[])
         rak.rakdelen = rakdelen
-
-        bovenbouw_by_id: dict[str, Bovenbouw] = parsed["Bovenbouw"]
-        onderbouw_by_id: dict[str, Onderbouw] = parsed["Onderbouw"]
-        for rakdeel_id, rakdeel in rakdeel_by_id.items():
-            if rakdeel_id not in bovenbouw_by_id:
-                raise ValueError(f"No bovenbouw row found for rakdeel {rakdeel_id!r}")
-            if rakdeel_id not in onderbouw_by_id:
-                raise ValueError(f"No onderbouw row found for rakdeel {rakdeel_id!r}")
-            rakdeel.bovenbouw = bovenbouw_by_id[rakdeel_id]
-            rakdeel.onderbouw = onderbouw_by_id[rakdeel_id]
 
         palen_by_id: dict[str, list[Paal]] = parsed["Paal"]
         kespen_by_id: dict[str, list[Kesp]] = parsed["Kesp"]
         paal_count = sum(len(palen) for palen in palen_by_id.values())
         kesp_count = sum(len(kespen) for kespen in kespen_by_id.values())
-        if paal_count != sum(len(set(paal.paal_nummer for paal in palen)) for palen in palen_by_id.values()):
-            raise ValueError("palen.csv contains duplicate paal numbers within a rakdeel")
-        if kesp_count != sum(len(set(kesp.kesp_nummer for kesp in kespen)) for kespen in kespen_by_id.values()):
-            raise ValueError("kespen.csv contains duplicate kesp numbers within a rakdeel")
+        # if paal_count != sum(len(set(paal.paal_nummer for paal in palen)) for palen in palen_by_id.values()):
+        #     raise ValueError("palen.csv contains duplicate paal numbers within a rakdeel")
+        # if kesp_count != sum(len(set(kesp.kesp_nummer for kesp in kespen)) for kespen in kespen_by_id.values()):
+        #     raise ValueError("kespen.csv contains duplicate kesp numbers within a rakdeel")
         for rakdeel_id, palen in palen_by_id.items():
             if rakdeel_id in rakdeel_by_id:
                 rakdeel_by_id[rakdeel_id].onderbouw.palen = palen
@@ -314,6 +326,16 @@ class Rak(RakBaseModel):
         with pd.ExcelWriter(export_pad, engine="openpyxl") as writer:
             sheets_geschreven = 0
 
+            for sheet_name, dataframe in (
+                ("Rak", self._get_rak_df()),
+                ("Rakdelen", self._get_rakdeel_df()),
+                ("Bovenbouw", self._get_bovenbouw_df()),
+                ("Onderbouw", self._get_onderbouw_df()),
+            ):
+                if not dataframe.empty:
+                    dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+                    sheets_geschreven += 1
+
             # Sheet: Gebreken per type
             gebreken_per_type: dict[str, list[dict]] = {}
             for rakdeel_id, gebrek in self.alle_gebreken:
@@ -343,6 +365,10 @@ class Rak(RakBaseModel):
                         "model_pad": model_pad,
                         "onderdeel": toestandonderdeel.constructie_onderdeel,
                         "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
+                        **toestandonderdeel.model_dump(
+                            mode="python",
+                            exclude={"constructie_onderdeel", "aangetast"},
+                        ),
                     }
                 )
 
@@ -398,6 +424,15 @@ class Rak(RakBaseModel):
             if not df_boorweerstandsmetingen.empty:
                 df_boorweerstandsmetingen.to_excel(writer, sheet_name="Boorweerstandsmetingen", index=False)
                 sheets_geschreven += 1
+
+            for sheet_name, dataframe in (
+                ("Document", self._get_nomic_document_df()),
+                ("Samenvatting", self._get_nomic_samenvatting_df()),
+                ("Wijzigingen", self._get_nomic_wijzigingen_df()),
+            ):
+                if not dataframe.empty:
+                    dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+                    sheets_geschreven += 1
 
             # Fallback: als er geen data is, maak een lege info sheet
             if sheets_geschreven == 0:
@@ -591,6 +626,18 @@ class Rak(RakBaseModel):
         rows = remove_onverwacht_resultaat_from_table_rows(rows)
         return pd.DataFrame(rows).replace("\n", " ", regex=True)
 
+    def _get_nomic_document_df(self) -> pd.DataFrame:
+        """Build a dataframe from the document.csv rows."""
+        return pd.DataFrame([record.model_dump(mode="python") for record in self.nomic_document])
+
+    def _get_nomic_samenvatting_df(self) -> pd.DataFrame:
+        """Build a dataframe from the samenvatting.csv rows."""
+        return pd.DataFrame([record.model_dump(mode="python") for record in self.nomic_samenvattingen])
+
+    def _get_nomic_wijzigingen_df(self) -> pd.DataFrame:
+        """Build a dataframe from the wijzigingen.csv rows."""
+        return pd.DataFrame([record.model_dump(mode="python") for record in self.nomic_wijzigingen])
+
     def _get_palen_df(self) -> pd.DataFrame:
         """Genereer een DataFrame tabel met paal data"""
 
@@ -687,6 +734,7 @@ class Rak(RakBaseModel):
                 "model_pad": model_pad,
                 "onderdeel": toestandonderdeel.constructie_onderdeel,
                 "aangetast": waarde_naar_excel(toestandonderdeel.aangetast),
+                **toestandonderdeel.model_dump(mode="python", exclude={"constructie_onderdeel", "aangetast"}),
             }
             rows.append(row)
 

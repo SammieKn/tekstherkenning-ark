@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Self, Type, TypeVar, Union, cast, get_args, get_origin
 
 import pandas as pd
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from pydantic.functional_validators import WrapValidator
 from pydantic_core.core_schema import ValidationInfo
 
@@ -41,6 +41,8 @@ def validate_with_onverwacht_fallback(value: Any, handler, info: ValidationInfo)
 
 class RakBaseModel(BaseModel):
     """Base model for RAK related models."""
+
+    model_config = ConfigDict(extra="allow")
 
     # We add all gebrek subtypes here for proper json serialization of gebrek subclasses
     gebreken: list[T_Gebrek] = []
@@ -111,6 +113,10 @@ class RakBaseModel(BaseModel):
             elif cls._annotation_contains(cls.model_fields[field].annotation, bool):
                 value = cls._parse_nomic_bool(value)
             values[field] = value
+        computed_fields = set(cls.model_computed_fields)
+        known_fields = set(cls.model_fields) | computed_fields
+        values.update({key: value for key, value in row.items() if key not in known_fields})
+        values.update({f"nomic_{key}": row[key] for key in computed_fields if key in row})
         return values
 
     @staticmethod

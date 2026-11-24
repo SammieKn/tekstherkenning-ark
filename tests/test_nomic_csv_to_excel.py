@@ -1,18 +1,26 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pandas as pd
 import pytest
 
-from scripts.nomic_csv_to_excel import _resolve_paths, export_rak_to_excel, process_rak
+from scripts.nomic_csv_to_excel import (
+    _get_all_rak_csv_dirs,
+    _resolve_paths,
+    export_rak_to_excel,
+    main,
+    process_rak,
+)
 from tekstherkenning_ark.enums import NietBeschikbaar
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.boorweerstandsmeting import Boorweerstandsmeting
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import Gebrek, ScheurHout
+from tekstherkenning_ark.models.nomic_record import NomicRecord
 from tekstherkenning_ark.models.onderbouw import Onderbouw
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
@@ -37,6 +45,48 @@ def test_resolve_paths_keeps_explicit_directories(tmp_path: Path) -> None:
     assert _resolve_paths(None, csv_dir, output_dir) == (csv_dir, output_dir)
 
 
+def test_get_all_rak_csv_dirs_filters_by_name_and_sorts(tmp_path: Path) -> None:
+    """Select immediate child folders with seven-character names and no underscores."""
+    csv_root = tmp_path / "csv"
+    csv_root.mkdir()
+    (csv_root / "LYG0201").mkdir()
+    (csv_root / "HEG0201").mkdir()
+    (csv_root / "ABC_DEF").mkdir()
+    (csv_root / "TOOLONG8").mkdir()
+    (csv_root / "NESTED00").mkdir()
+    (csv_root / "NESTED00" / "ABC1234").mkdir()
+    (csv_root / "BAD0001").write_text("not a folder", encoding="utf-8")
+
+    assert _get_all_rak_csv_dirs(csv_root) == [csv_root / "HEG0201", csv_root / "LYG0201"]
+
+
+def test_main_all_processes_matching_folders_with_processed_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Process each matching folder in sorted order using the default processed folder."""
+    nomic_dir = tmp_path / "nomic"
+    csv_root = nomic_dir / "csv"
+    (csv_root / "LYG0201").mkdir(parents=True)
+    (csv_root / "HEG0201").mkdir()
+    (csv_root / "ABC_DEF").mkdir()
+    monkeypatch.setattr("scripts.nomic_csv_to_excel.constants.NOMIC_DIR", nomic_dir)
+
+    calls: list[tuple[Path, Path | None]] = []
+    monkeypatch.setattr(
+        "scripts.nomic_csv_to_excel._process_and_export_rak",
+        lambda csv_dir, output_dir: calls.append((csv_dir, output_dir)),
+    )
+    monkeypatch.setattr(sys, "argv", ["nomic_csv_to_excel.py", "--all"])
+
+    main()
+
+    assert calls == [
+        (csv_root / "HEG0201", nomic_dir / "processed"),
+        (csv_root / "LYG0201", nomic_dir / "processed"),
+    ]
+
+
 def test_export_rak_to_excel_writes_table_sheets(tmp_path: Path) -> None:
     """Write Rak table dataframes to a multi-sheet Excel workbook."""
     rak = Rak(
@@ -49,6 +99,7 @@ def test_export_rak_to_excel_writes_table_sheets(tmp_path: Path) -> None:
         ],
         raknaam="TESTRAK",
         totale_lengte_m=12.0,
+        nomic_samenvattingen=[NomicRecord(tabel="rakken", toelichting="Summary row")],
         boorweerstandsmetingen=[
             Boorweerstandsmeting(
                 rakdeel_id="Constructie A",
@@ -79,12 +130,16 @@ def test_export_rak_to_excel_writes_table_sheets(tmp_path: Path) -> None:
             "bovenbouw",
             "onderbouw",
             "boorweerstandsmetingen",
+            "samenvatting",
             "gebreken",
         }.issubset(workbook.sheet_names)
+        exported_summary = pd.read_excel(workbook, sheet_name="samenvatting")
+    assert exported_summary.loc[0, "toelichting"] == "Summary row"
 
     model_excel_path = rak.to_excel(tmp_path)
     with pd.ExcelFile(model_excel_path) as workbook:
         assert "Boorweerstandsmetingen" in workbook.sheet_names
+        assert "Samenvatting" in workbook.sheet_names
 
 
 def test_process_rak_enriches_missing_fields_and_classifies_generic_defects(monkeypatch: pytest.MonkeyPatch) -> None:

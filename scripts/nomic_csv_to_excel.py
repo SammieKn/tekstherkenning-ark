@@ -24,6 +24,9 @@ from tekstherkenning_ark.export_utils import (
     GEBREKEN_TABLE_NAME,
     HOUTMONSTER_TABLE_NAME,
     KESPEN_TABLE_NAME,
+    NOMIC_DOCUMENT_TABLE_NAME,
+    NOMIC_SAMENVATTING_TABLE_NAME,
+    NOMIC_WIJZIGINGEN_TABLE_NAME,
     ONDERBOUW_TABLE_NAME,
     ONVERWACHT_RESULTATEN_TABLE_NAME,
     PALEN_TABLE_NAME,
@@ -88,10 +91,7 @@ def _apply_description(rakdeel: Rakdeel, description: RakdeelOmschrijving) -> No
 
     if _is_empty(rakdeel.onderbouw.materiaal) and description.materiaal_onderbouw is not NietBeschikbaar.LEEG:
         rakdeel.onderbouw.materiaal = description.materiaal_onderbouw
-    if (
-        _is_empty(rakdeel.onderbouw.materiaal_fundering)
-        and description.materiaal_fundering is not NietBeschikbaar.LEEG
-    ):
+    if _is_empty(rakdeel.onderbouw.materiaal_fundering) and description.materiaal_fundering is not NietBeschikbaar.LEEG:
         rakdeel.onderbouw.materiaal_fundering = description.materiaal_fundering
     if _is_empty(rakdeel.bovenbouw.materiaal) and description.materiaal_bovenbouw is not NietBeschikbaar.LEEG:
         rakdeel.bovenbouw.materiaal = description.materiaal_bovenbouw
@@ -190,6 +190,37 @@ def _resolve_paths(rak_code: str | None, csv_dir: Path | None, output_dir: Path 
     return csv_dir, output_dir
 
 
+def _get_all_rak_csv_dirs(csv_root: Path) -> list[Path]:
+    """Return Rak CSV folders with seven-character names and no underscores."""
+    if not csv_root.is_dir():
+        raise FileNotFoundError(f"Nomic CSV directory not found: {csv_root}")
+
+    finished = set([f.name for f in (constants.NOMIC_DIR / "processed").glob("*.xlsx")])
+
+    csv_dirs = sorted(
+        path
+        for path in csv_root.iterdir()
+        if path.is_dir() and len(path.name) == 7 and "_" not in path.name and not path.name in finished
+    )
+    if not csv_dirs:
+        raise ValueError(f"No seven-character Rak CSV folders without underscores found in {csv_root}")
+    return csv_dirs
+
+
+def _process_and_export_rak(csv_dir: Path, output_dir: Path | None) -> Path:
+    """Load, enrich, classify, and export one Rak."""
+    logger.info(f"Loading Nomic CSV files from {csv_dir}")
+    rak = Rak.from_nomic_csvs(csv_dir)
+    logger.info(f"Loaded Rak {rak.raknaam} with {len(rak.rakdelen)} rakdelen")
+
+    logger.info("Enriching rakdelen and classifying generic defects")
+    asyncio.run(process_rak(rak))
+
+    export_path = export_rak_to_excel(rak, output_dir)
+    logger.info(f"Processed Rak exported to {export_path}")
+    return export_path
+
+
 def _get_rak_dataframes(rak: Rak) -> dict[str, pd.DataFrame]:
     """Build the Excel export sheets from a processed Rak.
 
@@ -210,6 +241,9 @@ def _get_rak_dataframes(rak: Rak) -> dict[str, pd.DataFrame]:
         ONDERBOUW_TABLE_NAME: rak._get_onderbouw_df(),
         HOUTMONSTER_TABLE_NAME: rak._get_houtmonsters_df(),
         BOORWEERSTANDSMETINGEN_TABLE_NAME: rak._get_boorweerstandsmetingen_df(),
+        NOMIC_DOCUMENT_TABLE_NAME: rak._get_nomic_document_df(),
+        NOMIC_SAMENVATTING_TABLE_NAME: rak._get_nomic_samenvatting_df(),
+        NOMIC_WIJZIGINGEN_TABLE_NAME: rak._get_nomic_wijzigingen_df(),
         PALEN_TABLE_NAME: rak._get_palen_df(),
         KESPEN_TABLE_NAME: rak._get_kespen_df(),
         TOESTANDBEPALINGEN_TABLE_NAME: rak._get_toestandsbepalingen_df(),
@@ -268,6 +302,11 @@ def main() -> None:
     input_group = parser.add_mutually_exclusive_group()
     input_group.add_argument("--rak-code", help="Rakcode, bijvoorbeeld HEG0201.")
     input_group.add_argument("--csv-dir", type=Path, help="Map met Nomic CSV-bestanden voor één Rak.")
+    input_group.add_argument(
+        "--all",
+        action="store_true",
+        help="Verwerk alle Rak-mappen met een naam van zeven tekens zonder underscores.",
+    )
     parser.add_argument("rak_code_positional", nargs="?", help="Rakcode als positioneel argument.")
     parser.add_argument(
         "--output-dir",
@@ -277,23 +316,22 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.rak_code_positional and (args.rak_code or args.csv_dir):
-        parser.error("Use a positional rak code, --rak-code, or --csv-dir, not more than one.")
+    if args.rak_code_positional and (args.rak_code or args.csv_dir or args.all):
+        parser.error("Use a positional rak code, --rak-code, --csv-dir, or --all, not more than one.")
+
+    if args.all:
+        csv_root = constants.NOMIC_DIR / "csv"
+        for csv_dir in _get_all_rak_csv_dirs(csv_root):
+            _, output_dir = _resolve_paths(csv_dir.name, None, args.output_dir)
+            _process_and_export_rak(csv_dir, output_dir)
+        return
+
     rak_code = args.rak_code or args.rak_code_positional
 
     if bool(rak_code) == bool(args.csv_dir):
         parser.error("Provide exactly one of a rak code or --csv-dir.")
     csv_dir, output_dir = _resolve_paths(rak_code, args.csv_dir, args.output_dir)
-
-    logger.info(f"Loading Nomic CSV files from {csv_dir}")
-    rak = Rak.from_nomic_csvs(csv_dir)
-    logger.info(f"Loaded Rak {rak.raknaam} with {len(rak.rakdelen)} rakdelen")
-
-    logger.info("Enriching rakdelen and classifying generic defects")
-    asyncio.run(process_rak(rak))
-
-    export_path = export_rak_to_excel(rak, output_dir)
-    logger.info(f"Processed Rak exported to {export_path}")
+    _process_and_export_rak(csv_dir, output_dir)
 
 
 if __name__ == "__main__":
