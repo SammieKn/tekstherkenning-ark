@@ -8,6 +8,7 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
 DUIKRAPPORTEN_DIR = DATA_DIR / "duikrapporten"
 CACHE_DIR = DATA_DIR / ".cache"
+NOMIC_DIR = DATA_DIR / "nomic"
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
