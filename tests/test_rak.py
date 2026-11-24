@@ -23,6 +23,7 @@ import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.models.boorweerstandsmeting import Boorweerstandsmeting
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.houtmonster import Houtmonster
 from tekstherkenning_ark.models.rak import Rak
@@ -271,6 +272,57 @@ def test_from_nomic_csvs_builds_rak_hierarchy_and_generic_defects(tmp_path: Path
     assert rakdeel.onderbouw.onderloopsheidscherm is not None
     assert rakdeel.onderbouw.onderloopsheidscherm.is_meerdere_locaties is None
     assert rak.unassigned_houtmonsters == []
+    assert rak.boorweerstandsmetingen == []
+
+
+def test_from_nomic_csvs_loads_optional_boorweerstandsmetingen(tmp_path: Path):
+    """Load boorweerstandsmetingen when their optional Nomic CSV is present."""
+    _create_nomic_csv_fixture(tmp_path)
+    _write_nomic_csv(
+        tmp_path / "boorweerstandsmetingen.csv",
+        (
+            "rakdeel_id",
+            "codering",
+            "rak_code",
+            "paal_nummer",
+            "bma_nummer",
+            "diameter_paal_mm",
+            "hoogte_onder_nap_cm",
+            "hoogte_tov_onderzijde_fundering_cm",
+            "datum_meting",
+            "resultaat_tekst",
+            "pagina",
+            "bron",
+            "bron_rij",
+        ),
+        [
+            {
+                "rakdeel_id": "Constructie A",
+                "codering": "TESTRAK/Con.A/P1.1/BM",
+                "rak_code": "TESTRAK",
+                "paal_nummer": "P1.1",
+                "bma_nummer": "28en 29",
+                "diameter_paal_mm": "240",
+                "hoogte_onder_nap_cm": "108",
+                "hoogte_tov_onderzijde_fundering_cm": "15",
+                "datum_meting": "2025-01-15",
+                "resultaat_tekst": "Door grond loopt de weerstand niet terug",
+                "pagina": "28",
+                "bron": "[BMA 18](report?page=28)",
+                "bron_rij": "TESTRAK/Con.A/P1.1/BM | 240 | 18",
+            }
+        ],
+    )
+
+    rak = Rak.from_nomic_csvs(tmp_path)
+
+    assert len(rak.boorweerstandsmetingen) == 1
+    meting = rak.boorweerstandsmetingen[0]
+    assert isinstance(meting, Boorweerstandsmeting)
+    assert meting.rakdeel_id == "Constructie A"
+    assert meting.bma_nummer == "28en 29"
+    assert meting.diameter_paal_mm == 240
+    assert meting.resultaat_tekst == "Door grond loopt de weerstand niet terug"
 
 
 def test_from_nomic_csvs_assigns_houtmonsters_to_paal(tmp_path: Path):

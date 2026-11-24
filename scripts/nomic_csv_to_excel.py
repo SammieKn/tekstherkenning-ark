@@ -2,8 +2,9 @@
 
 Usage
 -----
-    uv run python scripts/nomic_csv_to_excel.py --csv-dir data/nomic_output/csv/LYG0201
-    uv run python scripts/nomic_csv_to_excel.py --csv-dir data/nomic_output/csv/HEG0201 --output-dir data/excel_exports
+    uv run python scripts/nomic_csv_to_excel.py HEG0201
+    uv run python scripts/nomic_csv_to_excel.py --rak-code LYG0201
+    uv run python scripts/nomic_csv_to_excel.py --csv-dir data/nomic/csv/HEG0201 --output-dir data/excel_exports
 """
 
 from __future__ import annotations
@@ -13,13 +14,33 @@ import asyncio
 from collections.abc import Iterator
 from pathlib import Path
 
+import pandas as pd
+
+from tekstherkenning_ark import constants
 from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.export_utils import (
+    BOORWEERSTANDSMETINGEN_TABLE_NAME,
+    BOVENBOUW_TABLE_NAME,
+    GEBREKEN_TABLE_NAME,
+    HOUTMONSTER_TABLE_NAME,
+    KESPEN_TABLE_NAME,
+    ONDERBOUW_TABLE_NAME,
+    ONVERWACHT_RESULTATEN_TABLE_NAME,
+    PALEN_TABLE_NAME,
+    RAK_TABLE_NAME,
+    RAKDEEL_TABLE_NAME,
+    TOESTANDBEPALINGEN_TABLE_NAME,
+    remove_unsafe_values_for_excel,
+)
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
+from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 from tekstherkenning_ark.models.vloer import Vloer
+
+logger = get_logger(__name__)
 
 
 def _walk_models(model: RakBaseModel) -> Iterator[RakBaseModel]:
@@ -140,22 +161,139 @@ async def process_rak(rak: Rak) -> None:
     await _classify_generic_defects(rak)
 
 
+def _resolve_paths(rak_code: str | None, csv_dir: Path | None, output_dir: Path | None) -> tuple[Path, Path | None]:
+    """Resolve CSV and Excel directories from a rak code or explicit paths.
+
+    Parameters
+    ----------
+    rak_code : str | None
+        Rak code used to derive paths under ``NOMIC_DIR``.
+    csv_dir : Path | None
+        Explicit CSV directory, used when no rak code is given.
+    output_dir : Path | None
+        Explicit export directory, if supplied.
+
+    Returns
+    -------
+    tuple[Path, Path | None]
+        Resolved input CSV directory and export directory. With a rak code,
+        the defaults are ``NOMIC_DIR/csv/<rak_code>`` and
+        ``NOMIC_DIR/processed``.
+    """
+    if rak_code:
+        return (
+            constants.NOMIC_DIR / "csv" / rak_code,
+            output_dir if output_dir is not None else constants.NOMIC_DIR / "processed",
+        )
+    if csv_dir is None:
+        raise ValueError("Provide either a rak code or a CSV directory.")
+    return csv_dir, output_dir
+
+
+def _get_rak_dataframes(rak: Rak) -> dict[str, pd.DataFrame]:
+    """Build the Excel export sheets from a processed Rak.
+
+    Parameters
+    ----------
+    rak : Rak
+        Rak to export.
+
+    Returns
+    -------
+    dict[str, pandas.DataFrame]
+        Table dataframes using the same tables as the PDF-to-Excel export.
+    """
+    dataframes = {
+        RAK_TABLE_NAME: rak._get_rak_df(),
+        RAKDEEL_TABLE_NAME: rak._get_rakdeel_df(),
+        BOVENBOUW_TABLE_NAME: rak._get_bovenbouw_df(),
+        ONDERBOUW_TABLE_NAME: rak._get_onderbouw_df(),
+        HOUTMONSTER_TABLE_NAME: rak._get_houtmonsters_df(),
+        BOORWEERSTANDSMETINGEN_TABLE_NAME: rak._get_boorweerstandsmetingen_df(),
+        PALEN_TABLE_NAME: rak._get_palen_df(),
+        KESPEN_TABLE_NAME: rak._get_kespen_df(),
+        TOESTANDBEPALINGEN_TABLE_NAME: rak._get_toestandsbepalingen_df(),
+        ONVERWACHT_RESULTATEN_TABLE_NAME: rak._get_onverwacht_resultaten_df(),
+        GEBREKEN_TABLE_NAME: rak._get_gebreken_df(),
+    }
+    dataframes.update(
+        {
+            f"{GEBREKEN_TABLE_NAME}_{gebrek_type}": dataframe
+            for gebrek_type, dataframe in rak._get_gebreken_per_type_dfs().items()
+        }
+    )
+    return dataframes
+
+
+def export_rak_to_excel(rak: Rak, output_dir: Path | None) -> Path:
+    """Export Rak dataframes using the multi-sheet Excel writer workflow.
+
+    Parameters
+    ----------
+    rak : Rak
+        Processed Rak to export.
+    output_dir : Path | None
+        Output folder. If omitted, use ``data/excel_exports``.
+
+    Returns
+    -------
+    Path
+        Path to the generated Excel workbook.
+    """
+    export_dir = output_dir if output_dir is not None else constants.DATA_DIR / "excel_exports"
+    export_dir.mkdir(parents=True, exist_ok=True)
+    excel_path = export_dir / f"{rak.raknaam}.xlsx"
+    dataframes = _get_rak_dataframes(rak)
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        for name, dataframe in dataframes.items():
+            logger.info(f"Exporting {len(dataframe)} rows from {name} to Excel sheet")
+            dataframe = remove_unsafe_values_for_excel(dataframe)
+            sheet_name = name[:30]
+            dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+
+            worksheet = writer.sheets[sheet_name]
+            for column in worksheet.columns:
+                max_length = max((len(str(cell.value)) for cell in column if cell.value), default=0)
+                column_letter = column[0].column_letter
+                worksheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+
+    logger.info(f"Excel file saved: {excel_path}")
+    return excel_path
+
+
 def main() -> None:
     """Load, enrich, classify, and export a Rak from Nomic CSV files."""
     parser = argparse.ArgumentParser(description="Exporteer Nomic CSV-data naar een verrijkte Rak Excel-export.")
-    parser.add_argument("--csv-dir", type=Path, required=True, help="Map met Nomic CSV-bestanden voor één Rak.")
+    input_group = parser.add_mutually_exclusive_group()
+    input_group.add_argument("--rak-code", help="Rakcode, bijvoorbeeld HEG0201.")
+    input_group.add_argument("--csv-dir", type=Path, help="Map met Nomic CSV-bestanden voor één Rak.")
+    parser.add_argument("rak_code_positional", nargs="?", help="Rakcode als positioneel argument.")
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
-        help="Uitvoermap voor Excel (standaard: data/excel_exports).",
+        help="Uitvoermap voor Excel (standaard met --rak-code: data/nomic/processed).",
     )
     args = parser.parse_args()
 
-    rak = Rak.from_nomic_csvs(args.csv_dir)
+    if args.rak_code_positional and (args.rak_code or args.csv_dir):
+        parser.error("Use a positional rak code, --rak-code, or --csv-dir, not more than one.")
+    rak_code = args.rak_code or args.rak_code_positional
+
+    if bool(rak_code) == bool(args.csv_dir):
+        parser.error("Provide exactly one of a rak code or --csv-dir.")
+    csv_dir, output_dir = _resolve_paths(rak_code, args.csv_dir, args.output_dir)
+
+    logger.info(f"Loading Nomic CSV files from {csv_dir}")
+    rak = Rak.from_nomic_csvs(csv_dir)
+    logger.info(f"Loaded Rak {rak.raknaam} with {len(rak.rakdelen)} rakdelen")
+
+    logger.info("Enriching rakdelen and classifying generic defects")
     asyncio.run(process_rak(rak))
-    export_path = rak.to_excel(args.output_dir)
-    print(f"Verrijkte Rak geëxporteerd naar: {export_path}")
+
+    export_path = export_rak_to_excel(rak, output_dir)
+    logger.info(f"Processed Rak exported to {export_path}")
 
 
 if __name__ == "__main__":

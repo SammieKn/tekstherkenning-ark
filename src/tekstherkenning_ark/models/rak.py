@@ -19,6 +19,7 @@ from tekstherkenning_ark.export_utils import (
     waarde_naar_excel,
 )
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.boorweerstandsmeting import Boorweerstandsmeting
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.houtmonster import Houtmonster
@@ -42,6 +43,7 @@ class Rak(RakBaseModel):
         unassigned_palen: Palen die niet aan een specifiek rakdeel zijn toegewezen.
         unassigned_kespen: Kespen die niet aan een specifiek rakdeel zijn toegewezen.
         unassigned_houtmonsters: Houtmonsters die niet aan een specifieke paal zijn toegewezen.
+        boorweerstandsmetingen: Boorweerstandsmetingen uit de aanvullende Nomic CSV.
         opmerkingen: Eventuele opmerkingen (inherited from RakBaseModel).
 
     Properties (berekend):
@@ -64,6 +66,7 @@ class Rak(RakBaseModel):
     unassigned_palen: list[Paal] = []
     unassigned_kespen: list[Kesp] = []
     unassigned_houtmonsters: list[Houtmonster] = []
+    boorweerstandsmetingen: list[Boorweerstandsmeting] = []
 
     @classmethod
     def from_nomic_df(cls, frame: pd.DataFrame) -> list[Rak]:
@@ -91,6 +94,7 @@ class Rak(RakBaseModel):
             "Rak": cls.from_nomic_df,
             "Rakdeel": Rakdeel.from_nomic_df,
             "Bovenbouw": Bovenbouw.from_nomic_df,
+            "Boorweerstandsmeting": Boorweerstandsmeting.from_nomic_df,
             "Onderbouw": Onderbouw.from_nomic_df,
             "Paal": Paal.from_nomic_df,
             "Kesp": Kesp.from_nomic_df,
@@ -118,6 +122,7 @@ class Rak(RakBaseModel):
             raise ValueError(f"Expected exactly one rak record in {rak_path}")
 
         rak = rak_objects[0]
+        rak.boorweerstandsmetingen = parsed["Boorweerstandsmeting"]
         if not rak.raknaam.strip():
             raise ValueError(f"The raknaam in {csv_dir / constants.NOMIC_CSV_FILES['Rak']} must not be empty")
         rakdelen: list[Rakdeel] = parsed["Rakdeel"]
@@ -286,6 +291,7 @@ class Rak(RakBaseModel):
         - Kespen: alle kespen met rakdeel referentie
         - Palen: alle palen met rakdeel referentie
         - Houtmonsters: alle houtmonsters met paal en rakdeel referentie
+        - Boorweerstandsmetingen: alle metingen met rakdeel en paal referentie
 
         Parameters
         ----------
@@ -385,6 +391,12 @@ class Rak(RakBaseModel):
                 ]
                 df_houtmonsters = df_houtmonsters[kolommen]
                 df_houtmonsters.to_excel(writer, sheet_name="Houtmonsters", index=False)
+                sheets_geschreven += 1
+
+            # Sheet: Boorweerstandsmetingen
+            df_boorweerstandsmetingen = self._get_boorweerstandsmetingen_df()
+            if not df_boorweerstandsmetingen.empty:
+                df_boorweerstandsmetingen.to_excel(writer, sheet_name="Boorweerstandsmetingen", index=False)
                 sheets_geschreven += 1
 
             # Fallback: als er geen data is, maak een lege info sheet
@@ -564,6 +576,18 @@ class Rak(RakBaseModel):
             }
             rows.append(houtmonster_row)
 
+        rows = remove_onverwacht_resultaat_from_table_rows(rows)
+        return pd.DataFrame(rows).replace("\n", " ", regex=True)
+
+    def _get_boorweerstandsmetingen_df(self) -> pd.DataFrame:
+        """Genereer een DataFrame tabel met boorweerstandsmetingen."""
+        rows = [
+            {
+                "rak_id": self.raknaam,
+                **remove_collection_fields(meting.model_dump(mode="python")),
+            }
+            for meting in self.boorweerstandsmetingen
+        ]
         rows = remove_onverwacht_resultaat_from_table_rows(rows)
         return pd.DataFrame(rows).replace("\n", " ", regex=True)
 
