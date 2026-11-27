@@ -65,7 +65,6 @@ class LLMClassifier(BaseModel):
                         {"role": "user", "content": f"Classificeer de volgende omschrijving:\n\n{omschrijving}"},
                     ],
                     response_format=cls,
-                    temperature=0,
                 )
 
                 parsed_result = response.choices[0].message.parsed

@@ -1,20 +1,21 @@
+import pandas as pd
 from pydantic import computed_field
 
 from tekstherkenning_ark.constants import GEM_PAAL_HOH_AFSTAND
 from tekstherkenning_ark.enums import (
     AansluitingStatus,
-    MateriaalOnderbouw,
     MateriaalFundering,
+    MateriaalOnderbouw,
     NietBeschikbaar,
     SchoorStand,
 )
+from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.kesp import Kesp
 from tekstherkenning_ark.models.onderloopsheidscherm import Onderloopsheidscherm
 from tekstherkenning_ark.models.onverwacht_resultaat import OnverwachtResultaat, OnverwachtResultaatType
 from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.models.vloer import Vloer
-from tekstherkenning_ark.models.gebrek import Gebrek
 
 
 class Onderbouw(RakBaseModel):
@@ -65,6 +66,63 @@ class Onderbouw(RakBaseModel):
     # Af te leiden uit de constructiebeschrijving (paragraaf 5.x) of doorsnedetekening.
     materiaal: MateriaalOnderbouw | NietBeschikbaar = NietBeschikbaar.LEEG
     materiaal_fundering: MateriaalFundering | NietBeschikbaar = NietBeschikbaar.LEEG
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[str, "Onderbouw"]:
+        """Create underbuilds and their nested components from Nomic rows.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Nomic underbuild rows for the rak.
+
+        Returns
+        -------
+        dict[str, Onderbouw]
+            Underbuilds keyed by rakdeel ID.
+
+        Notes
+        -----
+        If the ``onderloopsheidscherm`` column is absent, the export represents a screen on every rakdeel.
+        """
+        fields = ("materiaal", "materiaal_fundering", "opmerkingen")
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        result = {}
+        for row in frame.to_dict(orient="records"):
+            rakdeel_id = cls._nomic_text(row["rakdeel_id"])
+            if not rakdeel_id:
+                raise ValueError("A Nomic onderbouw row has no rakdeel_id")
+            if rakdeel_id in result:
+                raise ValueError(f"Multiple onderbouw rows found for rakdeel {rakdeel_id!r}")
+
+            vloer = None
+            if "onderloopsheidscherm" in row:
+                onderloopsheidscherm = cls._parse_presence(row["onderloopsheidscherm"])
+            else:
+                onderloopsheidscherm = True
+            scherm = Onderloopsheidscherm() if onderloopsheidscherm else None
+            result[rakdeel_id] = cls(
+                kespen=[],
+                palen=[],
+                vloer=vloer,
+                onderloopsheidscherm=scherm,
+                **cls.nomic_model_values(row, fields),
+            )
+        return result
+
+    @staticmethod
+    def _parse_presence(value: object) -> bool:
+        """Parse the underloopsheidscherm presence value."""
+        if isinstance(value, bool):
+            return value
+        if value is None or pd.isna(value):
+            return False
+        text = str(value).strip().lower()
+        if text in {"", "false", "nee", "no", "0", "nvt", "nm"}:
+            return False
+        if text in {"true", "ja", "yes", "1", "aanwezig"}:
+            return True
+        raise ValueError(f"Unexpected value for onderloopsheidscherm: {value!r}")
 
     @property
     def identifier(self) -> str:

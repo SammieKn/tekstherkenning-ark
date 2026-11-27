@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import pandas as pd
+
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 from tekstherkenning_ark.document.structured_table import StructuredTable
 from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 logger = get_logger(__name__)
 
@@ -49,6 +51,34 @@ class Houtmonster(RakBaseModel):
     is_aangetast: bool | None = None
     # Te vinden in bijlage 2, kolom "Stichtingjaar houtmonster:"
     stichtingjaar: int | None = None
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[tuple[str, str], list[Houtmonster]]:
+        """Parse wood samples grouped by their rakdeel and pile identifiers."""
+        if frame.empty and len(frame.columns) == 0:
+            return {}
+
+        fields = (
+            "codering",
+            "rak_code",
+            "paal_nummer",
+            "houtmonster_code",
+            "diameter_paal_ter_hoogte_houtmonster_mm",
+            "hoogte_onder_nap_cm",
+            "hoogte_tov_onderzijde_fundering_cm",
+            "is_wankant_aanwezig",
+            "datum_monstername",
+            "is_aangetast",
+            "stichtingjaar",
+            "opmerkingen",
+        )
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        houtmonsters = cls._models_from_nomic_df(frame, fields)
+        grouped: dict[tuple[str, str], list[Houtmonster]] = {}
+        for row, houtmonster in zip(frame.to_dict(orient="records"), houtmonsters):
+            key = (cls._nomic_text(row["rakdeel_id"]), houtmonster.paal_nummer)
+            grouped.setdefault(key, []).append(houtmonster)
+        return grouped
 
     @property
     def identifier(self) -> str:
@@ -134,8 +164,8 @@ class Houtmonster(RakBaseModel):
 
 if __name__ == "__main__":
 
-    from tekstherkenning_ark.document.smart_document import SmartDocument
     from tekstherkenning_ark import constants
+    from tekstherkenning_ark.document.smart_document import SmartDocument
 
     doc = SmartDocument.from_pdf(constants.TEST_PDF_PATH)
 

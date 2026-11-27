@@ -8,10 +8,34 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
 DUIKRAPPORTEN_DIR = DATA_DIR / "duikrapporten"
 CACHE_DIR = DATA_DIR / ".cache"
+NOMIC_DIR = DATA_DIR / "nomic"
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+NOMIC_DIR.mkdir(parents=True, exist_ok=True)
 
 TEST_PDF_PATH = DUIKRAPPORTEN_DIR / "HEG0201_Houtmonstername&VisueleInspectie_V1.1_20220504.pdf"
+
+# Class names are strings to keep constants independent from model imports.
+NOMIC_CSV_FILES = {
+    "Rak": "rakken.csv",
+    "Rakdeel": "constructieomschrijvingen.csv",
+    "Paal": "palen.csv",
+    "Kesp": "kespen.csv",
+    "Gebrek": "gebrekomschrijvingen.csv",
+    "ToestandOnderdeel": "toestandsbepalingen.csv",
+    "Houtmonster": "houtmonsters.csv",
+    "Boorweerstandsmeting": "boorweerstandsmetingen.csv",
+    "NomicDocument": "document.csv",
+    "NomicSamenvatting": "samenvatting.csv",
+    "NomicWijziging": "wijzigingen.csv",
+}
+OPTIONAL_NOMIC_CSV_CLASSES = {
+    "Houtmonster",
+    "Boorweerstandsmeting",
+    "NomicDocument",
+    "NomicSamenvatting",
+    "NomicWijziging",
+}
 
 NAP_CM_HOOGTE_WATERLIJN = 40
 # Constructieonderdeel mapping

@@ -79,6 +79,46 @@ De output wordt automatisch opgeslagen met een bestandsnaam gebaseerd op de rakc
 - PDF's met "boorweestand" in de bestandsnaam worden automatisch afgewezen, aangezien dit type rapport niet wordt ondersteund
 - De output directory wordt automatisch aangemaakt als deze nog niet bestaat
 
+### Excel-exports vergelijken
+
+Vergelijk twee exports van `scripts/create_as_excel.py`: een ground truth (GT) en een nieuwe versie (NV).
+
+```powershell
+uv run python scripts\compare_excel_exports.py data\excel_exports\gt.xlsx data\excel_exports\nv.xlsx --output data\excel_exports\verschillen.xlsx
+```
+
+Het uitvoerbestand is gebaseerd op GT; beide invoerbestanden blijven ongewijzigd. Het uitvoerpad moet nieuw zijn.
+Als het bestand al bestaat, gebruik dan `--overwrite` om het na een geslaagde vergelijking atomair te vervangen.
+Zonder paden gebruikt het script de standaardbestanden in `data\excel_exports` en `data\nomic_output`.
+Alleen werkbladen uit `SHEET_ID_COLS` worden vergeleken, op basis van hun naam en ingestelde ID-kolommen.
+De vergelijking gaat uit van een enkele rak. Lege IDs zijn niet toegestaan; dubbele IDs worden in rijvolgorde
+gekoppeld en als waarschuwing gelogd. Voor `toestandsbepalingen` worden volledige rijen gekoppeld; een gewijzigde
+rij telt daar als een verwijdering en een toevoeging.
+
+- **Lichtgeel:** gewijzigde cel in een gekoppelde rij waarvan beide waarden gevuld zijn, weergegeven als `GT/NV`.
+  Het scheidingsteken staat in `VALUE_SEPARATOR` bovenaan het script. Waarden worden als tekst vergeleken na het
+  verwijderen van voor- en achterliggende witruimte. Rij-ID's en volledige rijen worden op dezelfde manier gekoppeld.
+  Als een cel een gekwalificeerde enumwaarde bevat (`Enum.Member`), vergelijkt het script beide waarden tegen alle
+  enums in het project.
+- **Lichtrood/lichtgroen:** bij een verschil waarbij een celwaarde leeg is, blijft de aanwezige GT-waarde rood staan;
+  een alleen in NV aanwezige waarde wordt groen weergegeven.
+- **Lichtrood:** verwijderde rij of kolom.
+- **Lichtgroen:** nieuwe rij of kolom. Nieuwe rijen staan onderaan; nieuwe kolommen rechts van de GT-kolommen.
+- Kolomkleuren hebben voorrang op rijkleuren. Kolommen worden op naam gekoppeld; GT-volgorde en bestaande opmaak
+  blijven behouden. Werkbladen die slechts in een invoer voorkomen worden eveneens als verwijderd/toegevoegd verwerkt.
+- Niet-ingestelde GT-werkbladen blijven standaard ongewijzigd in de uitvoer, maar ontbreken in de vergelijking en
+  samenvatting. `onverwachte_resultaten` en alle werkbladen waarvan de naam met `gebreken_` begint, worden juist
+  overgeslagen en niet naar de uitvoer gekopieerd.
+
+Het werkblad `Samenvatting` toont per vergeleken werkblad de nieuwe/verwijderde rijen, het aantal gewijzigde
+cellen in gekoppelde rijen en gemeenschappelijke kolommen en het percentage **gewijzigde cellen / (aantal GT-datarijen
+× aantal GT-kolommen)**. Dit omvat gele verschillen en celverschillen met een lege waarde (rood/groen); toegevoegde of
+verwijderde rijen en kolommen tellen niet mee. De koprij telt niet mee. Zonder GT-datacellen is het percentage 0%.
+Het laatste werkblad, `mismatched columns`, somt per vergeleken werkblad de alleen-in-GT kolommen (rood) en
+alleen-in-NV kolommen (groen) op.
+Ontbrekende IDs, ongeldige kolomkoppen en al bestaande GT-werkbladen `Samenvatting` of `mismatched columns` geven
+een foutmelding.
+
 ## Repository Structuur
 
 ```

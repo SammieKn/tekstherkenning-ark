@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import pandas as pd
+
 from tekstherkenning_ark import utils
-from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.models.rak_base_model import RakBaseModel
-from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.logger import get_logger
+from tekstherkenning_ark.models.rak_base_model import RakBaseModel
 
 logger = get_logger(__name__)
 
@@ -54,6 +56,31 @@ class Kesp(RakBaseModel):
     is_vervormd: bool | NietBeschikbaar | None = None
     # Te vinden in Bijlage 3, kolom 'Schades Aantasting'.
     is_aangetast: bool | NietBeschikbaar | None = None
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[str, list[Kesp]]:
+        """Parse crossbeams from a Nomic dataframe, grouped by rakdeel ID."""
+        fields = (
+            "kesp_nummer",
+            "hoogte_cm",
+            "breedte_cm",
+            "hoek_tov_lengte_as_graden",
+            "lengte_uitstekend_deel_cm",
+            "mate_inknijping_cm",
+            "indrukking_paal_in_kesp",
+            "is_opsluitklos_aanwezig",
+            "is_opsluitklos_aangetast",
+            "is_vervormd",
+            "is_aangetast",
+            "opmerkingen",
+        )
+        cls._require_nomic_columns(frame, ("rakdeel_id",) + fields)
+        kespen = cls._models_from_nomic_df(frame, fields)
+        grouped: dict[str, list[Kesp]] = {}
+        for row, kesp in zip(frame.to_dict(orient="records"), kespen):
+            rakdeel_id = cls._nomic_text(row["rakdeel_id"])
+            grouped.setdefault(rakdeel_id, []).append(kesp)
+        return grouped
 
     @property
     def identifier(self) -> str:

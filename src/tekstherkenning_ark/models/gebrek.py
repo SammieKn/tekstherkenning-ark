@@ -2,27 +2,31 @@ from __future__ import annotations
 
 import asyncio
 from typing import Literal
-from pydantic import BaseModel, computed_field
 
+import pandas as pd
+from pydantic import BaseModel, ConfigDict, computed_field
+
+from tekstherkenning_ark.document.structured_table import StructuredTable
+from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.llm.gebrek_classificatie import (
+    BuikInWandLLM,
+    GebrekTypeDetectieLLM,
+    GrondVoerendGatLLM,
+    LokaalVerdwenenMetselwerkLLM,
+    ScheefstandLLM,
+    ScheurHoutLLM,
+    ScheurLLM,
+    ScheurMetselwerkLLM,
+)
+from tekstherkenning_ark.logger import get_logger
 from tekstherkenning_ark.utils import (
     clean_string,
     contains_kesp_id,
     contains_paal_id,
+    get_kesp_id,
+    get_paal_id,
     is_algemeen_gebrek,
 )
-from tekstherkenning_ark.enums import NietBeschikbaar
-from tekstherkenning_ark.document.structured_table import StructuredTable
-from tekstherkenning_ark.llm.gebrek_classificatie import (
-    GebrekTypeDetectieLLM,
-    ScheurLLM,
-    ScheurMetselwerkLLM,
-    ScheurHoutLLM,
-    GrondVoerendGatLLM,
-    BuikInWandLLM,
-    ScheefstandLLM,
-    LokaalVerdwenenMetselwerkLLM,
-)
-from tekstherkenning_ark.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -45,6 +49,8 @@ class Gebrek(BaseModel):
         Het type gebrek (klassenaam van het gebrek).
     """
 
+    model_config = ConfigDict(extra="allow")
+
     codering: str
     omschrijving: str
     figuurnummer: str | NietBeschikbaar
@@ -53,6 +59,51 @@ class Gebrek(BaseModel):
     @property
     def gebrek_type(self) -> str:
         return self.__class__.__name__
+
+    @classmethod
+    def from_nomic_df(cls, frame: pd.DataFrame) -> dict[tuple[str, str, str], list[Gebrek]]:
+        """Create generic defects grouped by rakdeel, model path, and component ID.
+
+        Parameters
+        ----------
+        frame : pandas.DataFrame
+            Rows from ``gebreken.csv``.
+
+        Returns
+        -------
+        dict[tuple[str, str, str], list[Gebrek]]
+            Generic defects keyed by ``(rakdeel_id, model_pad, component_id)``.
+        """
+        columns = ("rakdeel_id", "model_pad", "codering", "omschrijving", "figuurnummer")
+        missing_columns = set(columns) - set(frame.columns)
+        if missing_columns:
+            raise ValueError(f"gebreken.csv is missing required columns: {', '.join(sorted(missing_columns))}")
+
+        def value_as_text(value: object) -> str:
+            return "" if value is None or pd.isna(value) else str(value)
+
+        grouped: dict[tuple[str, str, str], list[Gebrek]] = {}
+        for row in frame.to_dict(orient="records"):
+            codering = value_as_text(row["codering"])
+            model_pad = value_as_text(row["model_pad"]).strip().lower().strip("/")
+            component_id = ""
+            if model_pad == "onderbouw/palen":
+                component_id = get_paal_id(codering) or ""
+            elif model_pad == "onderbouw/kespen":
+                component_id = get_kesp_id(codering) or ""
+            values = {
+                "codering": codering,
+                "omschrijving": value_as_text(row["omschrijving"]),
+                "figuurnummer": value_as_text(row["figuurnummer"]),
+            }
+            known_fields = set(cls.model_fields) | set(cls.model_computed_fields)
+            values.update({key: value for key, value in row.items() if key not in known_fields})
+            if "gebrek_type" in row:
+                values["nomic_gebrek_type"] = row["gebrek_type"]
+            gebrek = cls(**values)
+            key = (value_as_text(row["rakdeel_id"]).strip(), model_pad, component_id)
+            grouped.setdefault(key, []).append(gebrek)
+        return grouped
 
     @classmethod
     async def from_doc_tables(cls, structured_table: StructuredTable | None) -> list[Gebrek]:
