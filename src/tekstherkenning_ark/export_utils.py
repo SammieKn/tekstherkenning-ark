@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from typing_extensions import TYPE_CHECKING
 
+import tekstherkenning_ark.enums as _ark_enums
 from tekstherkenning_ark.document.smart_document import SmartDocument
 
 if TYPE_CHECKING:
@@ -18,6 +20,12 @@ from tekstherkenning_ark.logger import get_logger
 logger = get_logger(__name__)
 
 _ONGELDIGE_XML_TEKENS = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\uD800-\uDFFF\uFFFE\uFFFF]")
+_ENUM_VALUES_BY_STRING = {
+    str(member): member.value
+    for enum_type in vars(_ark_enums).values()
+    if isinstance(enum_type, type) and issubclass(enum_type, Enum) and enum_type.__module__ == _ark_enums.__name__
+    for member in enum_type
+}
 
 RAK_TABLE_NAME = "rakken"
 RAKDEEL_TABLE_NAME = "rakdelen"
@@ -57,7 +65,7 @@ def remove_collection_fields(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _remove_unsafe_values(waarde: Any) -> Any:
-    """Verwijder tekens die niet in XML 1.0-tekst mogen voorkomen.
+    """Converteer enums naar hun waarden en verwijder XML-ongeldige tekens.
 
     Parameters
     ----------
@@ -67,15 +75,19 @@ def _remove_unsafe_values(waarde: Any) -> Any:
     Returns
     -------
     Any
-        Dezelfde waarde, met verboden tekens verwijderd als het een tekst is.
+    De Excel-waarde, met enumwaarden en zonder verboden teksttekens.
     """
+    if isinstance(waarde, Enum):
+        waarde = waarde.value
+    elif isinstance(waarde, str):
+        waarde = _ENUM_VALUES_BY_STRING.get(waarde, waarde)
     if isinstance(waarde, str):
         return _ONGELDIGE_XML_TEKENS.sub("", waarde)
     return waarde
 
 
 def remove_unsafe_values_for_excel(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Verwijder XML-ongeldige tekens uit celwaarden en kolomnamen.
+    """Converteer enums naar hun waarden en verwijder XML-ongeldige tekens.
 
     Parameters
     ----------

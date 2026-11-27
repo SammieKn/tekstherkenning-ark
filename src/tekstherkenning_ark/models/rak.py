@@ -19,6 +19,7 @@ from tekstherkenning_ark.export_utils import (
     haal_rakdeel_id_en_model_pad,
     remove_collection_fields,
     remove_onverwacht_resultaat_from_table_rows,
+    remove_unsafe_values_for_excel,
     waarde_naar_excel,
 )
 from tekstherkenning_ark.logger import get_logger
@@ -333,7 +334,7 @@ class Rak(RakBaseModel):
                 ("Onderbouw", self._get_onderbouw_df()),
             ):
                 if not dataframe.empty:
-                    dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+                    remove_unsafe_values_for_excel(dataframe).to_excel(writer, sheet_name=sheet_name, index=False)
                     sheets_geschreven += 1
 
             # Sheet: Gebreken per type
@@ -352,7 +353,7 @@ class Rak(RakBaseModel):
                 kolommen = ["rakdeel_id"] + [k for k in df.columns if k != "rakdeel_id"]
                 df = df[kolommen]
                 sheet_naam = f"Gebreken_{type_naam}"[:31]  # Excel max 31 chars
-                df.to_excel(writer, sheet_name=sheet_naam, index=False)
+                remove_unsafe_values_for_excel(df).to_excel(writer, sheet_name=sheet_naam, index=False)
                 sheets_geschreven += 1
 
             # Sheet: Onderdeel Aantasting (hiërarchisch)
@@ -374,7 +375,9 @@ class Rak(RakBaseModel):
 
             if aantasting_rows:
                 df_aantasting = pd.DataFrame(aantasting_rows)
-                df_aantasting.to_excel(writer, sheet_name="Onderdeel_Aantasting", index=False)
+                remove_unsafe_values_for_excel(df_aantasting).to_excel(
+                    writer, sheet_name="Onderdeel_Aantasting", index=False
+                )
                 sheets_geschreven += 1
 
             # Sheet: Kespen
@@ -387,7 +390,7 @@ class Rak(RakBaseModel):
                 df_kespen = pd.DataFrame(kespen_rows)
                 kolommen = ["rakdeel_id"] + [k for k in df_kespen.columns if k != "rakdeel_id"]
                 df_kespen = df_kespen[kolommen]
-                df_kespen.to_excel(writer, sheet_name="Kespen", index=False)
+                remove_unsafe_values_for_excel(df_kespen).to_excel(writer, sheet_name="Kespen", index=False)
                 sheets_geschreven += 1
 
             # Sheet: Palen
@@ -400,7 +403,7 @@ class Rak(RakBaseModel):
                 df_palen = pd.DataFrame(palen_rows)
                 kolommen = ["rakdeel_id"] + [k for k in df_palen.columns if k != "rakdeel_id"]
                 df_palen = df_palen[kolommen]
-                df_palen.to_excel(writer, sheet_name="Palen", index=False)
+                remove_unsafe_values_for_excel(df_palen).to_excel(writer, sheet_name="Palen", index=False)
                 sheets_geschreven += 1
 
             # Sheet: Houtmonsters
@@ -416,13 +419,17 @@ class Rak(RakBaseModel):
                     k for k in df_houtmonsters.columns if k not in ["rakdeel_id", "paal_nummer_ref"]
                 ]
                 df_houtmonsters = df_houtmonsters[kolommen]
-                df_houtmonsters.to_excel(writer, sheet_name="Houtmonsters", index=False)
+                remove_unsafe_values_for_excel(df_houtmonsters).to_excel(
+                    writer, sheet_name="Houtmonsters", index=False
+                )
                 sheets_geschreven += 1
 
             # Sheet: Boorweerstandsmetingen
             df_boorweerstandsmetingen = self._get_boorweerstandsmetingen_df()
             if not df_boorweerstandsmetingen.empty:
-                df_boorweerstandsmetingen.to_excel(writer, sheet_name="Boorweerstandsmetingen", index=False)
+                remove_unsafe_values_for_excel(df_boorweerstandsmetingen).to_excel(
+                    writer, sheet_name="Boorweerstandsmetingen", index=False
+                )
                 sheets_geschreven += 1
 
             for sheet_name, dataframe in (
@@ -431,7 +438,7 @@ class Rak(RakBaseModel):
                 ("Wijzigingen", self._get_nomic_wijzigingen_df()),
             ):
                 if not dataframe.empty:
-                    dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+                    remove_unsafe_values_for_excel(dataframe).to_excel(writer, sheet_name=sheet_name, index=False)
                     sheets_geschreven += 1
 
             # Fallback: als er geen data is, maak een lege info sheet

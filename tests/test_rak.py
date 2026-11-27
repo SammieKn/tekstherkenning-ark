@@ -23,7 +23,7 @@ import pandas as pd
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.enums import MateriaalBovenbouw, MateriaalOnderbouw, NietBeschikbaar
 from tekstherkenning_ark.models.boorweerstandsmeting import Boorweerstandsmeting
 from tekstherkenning_ark.models.gebrek import Gebrek
 from tekstherkenning_ark.models.houtmonster import Houtmonster
@@ -408,6 +408,23 @@ def test_from_nomic_csvs_builds_rak_hierarchy_and_generic_defects(tmp_path: Path
     assert exported_conditions["bron"].tolist() == ["toestandbron", "toestandbron"]
     assert exported_houtmonsters.loc[0, "bron"] == "houtmonstersbron"
     assert exported_boorweerstandsmetingen.loc[0, "extractie_id"] == "BM-001"
+
+
+def test_to_excel_exports_enum_values(tmp_path: Path) -> None:
+    """Write enum values rather than enum member names to Excel."""
+    _create_nomic_csv_fixture(tmp_path)
+    rak = Rak.from_nomic_csvs(tmp_path)
+    rak.rakdelen[0].bovenbouw.materiaal = MateriaalBovenbouw.METSELWERK
+    rak.rakdelen[0].onderbouw.materiaal = MateriaalOnderbouw.HOUT
+
+    excel_path = rak.to_excel(tmp_path)
+
+    with pd.ExcelFile(excel_path) as workbook:
+        bovenbouw = pd.read_excel(workbook, sheet_name="Bovenbouw")
+        onderbouw = pd.read_excel(workbook, sheet_name="Onderbouw")
+
+    assert bovenbouw.loc[0, "materiaal"] == "Metselwerk"
+    assert onderbouw.loc[0, "materiaal"] == "Hout"
 
 
 def test_from_nomic_csvs_loads_optional_boorweerstandsmetingen(tmp_path: Path):

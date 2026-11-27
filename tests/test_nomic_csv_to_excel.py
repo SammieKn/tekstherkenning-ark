@@ -15,13 +15,14 @@ from scripts.nomic_csv_to_excel import (
     main,
     process_rak,
 )
-from tekstherkenning_ark.enums import NietBeschikbaar
+from tekstherkenning_ark.enums import AansluitingStatus, MateriaalBovenbouw, NietBeschikbaar
 from tekstherkenning_ark.llm.rakdeel_omschrijving import RakdeelOmschrijving
 from tekstherkenning_ark.models.boorweerstandsmeting import Boorweerstandsmeting
 from tekstherkenning_ark.models.bovenbouw import Bovenbouw
 from tekstherkenning_ark.models.gebrek import Gebrek, ScheurHout
 from tekstherkenning_ark.models.nomic_record import NomicRecord
 from tekstherkenning_ark.models.onderbouw import Onderbouw
+from tekstherkenning_ark.models.paal import Paal
 from tekstherkenning_ark.models.rak import Rak
 from tekstherkenning_ark.models.rakdeel import Rakdeel
 
@@ -118,6 +119,26 @@ def test_export_rak_to_excel_writes_table_sheets(tmp_path: Path) -> None:
             )
         ],
     )
+    rakdeel = rak.rakdelen[0]
+    rakdeel.bovenbouw.materiaal = MateriaalBovenbouw.METSELWERK
+    rakdeel.onderbouw.palen.append(
+        Paal(
+            paal_nummer="P1",
+            diameter_haaks=NietBeschikbaar.LEEG,
+            diameter_parallel=NietBeschikbaar.LEEG,
+            diameter_gemiddeld=NietBeschikbaar.LEEG,
+            hoh_afstand_cm=NietBeschikbaar.LEEG,
+            hoh_paalnummer="",
+            schoor_graden=NietBeschikbaar.LEEG,
+            schoor_richting=NietBeschikbaar.LEEG,
+            afstand_frontwand_cm=NietBeschikbaar.LEEG,
+            is_scheefstand=NietBeschikbaar.LEEG,
+            is_paalbreuk=NietBeschikbaar.LEEG,
+            is_aantasting=NietBeschikbaar.LEEG,
+            aansluiting_status=AansluitingStatus.GOED,
+            positionering_aansluiting_cm=NietBeschikbaar.LEEG,
+        )
+    )
 
     excel_path = export_rak_to_excel(rak, tmp_path)
 
@@ -134,7 +155,11 @@ def test_export_rak_to_excel_writes_table_sheets(tmp_path: Path) -> None:
             "gebreken",
         }.issubset(workbook.sheet_names)
         exported_summary = pd.read_excel(workbook, sheet_name="samenvatting")
+        exported_bovenbouw = pd.read_excel(workbook, sheet_name="bovenbouw")
+        exported_palen = pd.read_excel(workbook, sheet_name="palen")
     assert exported_summary.loc[0, "toelichting"] == "Summary row"
+    assert exported_bovenbouw.loc[0, "materiaal"] == "Metselwerk"
+    assert pd.isna(exported_palen.loc[0, "diameter_haaks"])
 
     model_excel_path = rak.to_excel(tmp_path)
     with pd.ExcelFile(model_excel_path) as workbook:
